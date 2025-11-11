@@ -31,7 +31,18 @@ You are processing one expense at a time. The `company_context` is critical for 
 Assign the transaction to **one** primary category from the master list below, based on its description and merchant.
 
 **Master Category List:**
-*   Marketing, Sales, Cloud & Infrastructure, Software & Subscriptions (SaaS), Payroll & Compensation, Contractors & Freelancers, Office & Facilities, Financial / Payment Fees, Legal & Professional, Hardware & Equipment, Travel & Entertainment, Miscellaneous / Other.
+*   **Marketing:** (e.g., Google Ads, Facebook Ads, Mailchimp, SEO tools)
+*   **Sales:** (e.g., Salesforce, HubSpot, ZoomInfo, Sales Commissions)
+*   **Cloud & Infrastructure:** (e.g., AWS, GCP, Azure, Vercel, DigitalOcean)
+*   **Software & Subscriptions (SaaS):** (e.g., Slack, Notion, Figma, Office 365)
+*   **Payroll & Compensation:** (e.g., Gusto, Rippling, Salaries, Bonuses)
+*   **Contractors & Freelancers:** (e.g., Upwork, Agencies, Consultants)
+*   **Office & Facilities:** (e.g., WeWork, Rent, Utilities, Office Supplies)
+*   **Financial / Payment Fees:** (e.g., Stripe Fees, Bank Fees, PayPal Fees)
+*   **Legal & Professional:** (e.g., Law Firms, Accounting Services, Consultants)
+*   **Hardware & Equipment:** (e.g., Apple, Dell, Server purchases)
+*   **Travel & Entertainment:** (e.g., Uber, Airlines, Hotels, Restaurants)
+*   **Miscellaneous / Other:** (Use only if no other category fits)
 
 ---
 
@@ -65,6 +76,7 @@ Combine your findings into a single JSON object using the exact nested structure
   "expense": {
     "name": "string",
     "tags": ["string", ...],
+    "confidence": 0.92,
     "category": "string"
   }
 }
