@@ -16,15 +16,15 @@ Your sole task is to process the provided input data and generate a **single, fi
     *   **Crucially, ignore any other periods** returned by the tool (like "45\_days").
     *   Map the `burn_rate` and `runway` from the tool's `metrics` object directly to your `financial_metrics`.
 3.  **Analyze and Synthesize the `patterns` Narrative:**
-    *   Generate a descriptive, multi-sentence narrative for an analyst.
-    *   **Overall Trend:** Begin by describing the overall spending trend. Compare the 30-day aggregate to the 90-day trend to state if spending is accelerating, decelerating, or stable.
+    *   Detailed and descriptive, multi-sentence narrative for an analyst.
+    *   **Overall Trend:** Begin by describing the overall spending trend. How they are spending and genrally this paragroph or filed mus tbe a very descriptive that an analyst can understand the spending habbits of the company
     *   **Key Drivers:** Mention the primary categories (e.g., "Cloud Infrastructure," "SaaS Subscriptions") that are the main contributors to the spend, using the `transactions` data.
     *   **Contextual Insight:** Connect the spending to the business context. For example, *"For a 50-person B2B SaaS company, the current AWS spend of $15,000/month is a significant driver, contributing to a monthly burn of $30,000 and leaving 3.3 months of runway."*
 4.  **Identify Major Expense Drivers:**
     *   Analyze the `transactions` array from the tool output.
     *   Group expenses by vendor over the last 90 days and sum their totals.
     *   Identify the **top 3 to 5 vendors** with the highest total spend.
-    *   For each driver, provide a quantitative `reason` explaining its significance. Example: *"This vendor accounts for 18% of the total 90-day spend."*
+    *   For each driver, provide a quantitative `reason` explaining its significance of how it affects the copany and the product answers the how and why this vendor is a major expense driver.
 5.  **Detect Recurring Costs:**
     *   Scan the `transactions` array. Group transactions by vendor and look for regularly repeating payments (similar amounts at consistent intervals).
     *   For each confident pattern, create an entry in the `recurring_costs` array.
