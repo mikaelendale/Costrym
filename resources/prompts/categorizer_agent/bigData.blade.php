@@ -1,23 +1,4 @@
-@php
-/**
- * =================================================================================================
- * AI PROMPT FOR BIG DATA AGENT (BDA) - BATCH EXPENSE CLASSIFICATION
- * =================================================================================================
- *
- * @version         : 5.0
- * @author          : AI Prompt Engineering
- * @description     : This prompt directs the Big Data Agent (BDA) to process a batch of financial
- *                    transactions, classify each one using company context, and then generate a
- *                    single, consolidated JSON output with a high-level summary.
- *
- * @input_1         : A JSON string containing an array of raw expense transactions.
- * @input_2         : A JSON string containing the context of the company that made the transactions.
- *
- * @output          : A single, clean JSON object containing a summary for the entire batch and a
- *                    nested array of all the classified expenses.
- * =================================================================================================
- */
-@endphp
+
 **SYSTEM PROMPT**
 
 **1. PERSONA:**
