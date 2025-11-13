@@ -44,8 +44,8 @@ Assign the transaction to **one** primary category from the master list below, b
 Apply all relevant tags from the list below. **You MUST use the `company_context` to make an accurate determination.**
 
 *   **`Direct`:** Is the cost essential to produce the company's core product/service?
-*   **`Indirect`:** Is the cost a general operational or administrative expense?
-*   **`Variable`:** Does the cost fluctuate directly with sales or production volume?
+*   **`Indirect`:** Is the cost a general operational or administrative expense for example management salaries, rent, subscriptions, admin overhead?
+*   **`Variable`:** Does the cost fluctuate directly with sales or production volume for example shipping, ad spend?
 *   **`Fixed`:** Does the cost remain constant regardless of volume?
 
 ---

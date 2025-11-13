@@ -46,6 +46,7 @@ class GetTotalCostByCategory implements ToolInterface
         // Access state: $previousValue = $context->getState('some_key');
 
         // Implement tool logic here...
+
         $mock_catagory = [
             'Cloud & Infrastructure' => 12500,
             'Operations' => 8000,
