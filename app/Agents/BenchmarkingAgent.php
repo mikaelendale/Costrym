@@ -2,15 +2,17 @@
 
 namespace App\Agents;
 
+use App\Tools\FireCrawler;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
-use Vizra\VizraADK\Contracts\ToolInterface;
 use Vizra\VizraADK\System\AgentContext;
+
 // use App\Tools\YourTool; // Example: Import your tool
 
 class BenchmarkingAgent extends BaseLlmAgent
 {
     protected string $name = 'benchmarking_agent';
+
     protected string $description = 'Describe what this agent does.';
 
     /**
@@ -19,15 +21,16 @@ class BenchmarkingAgent extends BaseLlmAgent
      * 2. Database: agent_prompt_versions table (if enabled)
      * 3. File: resources/prompts/benchmarking_agent/default.blade.php
      * 4. Fallback: This property
-     * 
+     *
      * The prompt file has been created for you at:
      * resources/prompts/benchmarking_agent/default.blade.php
      */
     protected string $instructions = 'You are Benchmarking Agent. See resources/prompts/benchmarking_agent/default.blade.php for full instructions.';
-    
+
     protected string $model = '';
 
     protected array $tools = [
+        FireCrawler::class,
         // Example: YourTool::class,
     ];
 

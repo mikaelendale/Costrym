@@ -38,7 +38,7 @@ return [
     |------------------------------------------------------------------------|
     | GitHub Auth
     |------------------------------------------------------------------------|
-    */  
+    */
     'github' => [
         'client_id' => env('GITHUB_CLIENT_ID'),
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
@@ -73,6 +73,15 @@ return [
         'project_id' => env('PIPEDREAM_PROJECT_ID'),
         'project_environment' => env('PIPEDREAM_PROJECT_ENVIRONMENT', 'development'),
         'base_url' => env('PIPEDREAM_BASE_URL', 'https://api.pipedream.com/v1'),
+    ],
+
+    /*
+    |------------------------------------------------------------------------|
+    | Firecrawl
+    |------------------------------------------------------------------------|
+    */
+    'firecrawl' => [
+        'key' => env('FIRECRAWL_KEY'),
     ],
 
 ];
