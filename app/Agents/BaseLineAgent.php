@@ -14,19 +14,9 @@ class BaseLineAgent extends BaseLlmAgent
 
     protected string $description = 'Analyzes company spending patterns to define baselines, identify recurring costs, and major expense drivers.';
 
-    /**
-     * Agent instructions hierarchy (first found wins):
-     * 1. Runtime: $agent->setPromptOverride('...')
-     * 2. Database: agent_prompt_versions table (if enabled)
-     * 3. File: resources/prompts/base_line_agent/default.blade.php
-     * 4. Fallback: This property
-     *
-     * The prompt file has been created for you at:
-     * resources/prompts/base_line_agent/default.blade.php
-     */
     protected string $instructions = '';
 
-    protected string $model = 'gemini-2.5-flash';
+    protected string $model = 'gpt-4o-mini';
 
     protected array $tools = [
         RollingAggregateTool::class,
@@ -84,6 +74,5 @@ class BaseLineAgent extends BaseLlmAgent
         Log::info('----------------------------------------');
 
         return parent::afterLlmResponse($response, $context, $request);
-
     }
 }
