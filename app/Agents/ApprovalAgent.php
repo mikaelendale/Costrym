@@ -12,7 +12,7 @@ class ApprovalAgent extends BaseLlmAgent
 {
     protected string $name = 'approval_agent';
 
-    protected string $description = 'Describe what this agent does.';
+    protected string $description = 'Final checkpoint: summarizes a workflow plan and prepares user-facing approval notification.';
 
     /**
      * Agent instructions hierarchy (first found wins):
@@ -24,7 +24,7 @@ class ApprovalAgent extends BaseLlmAgent
      * The prompt file has been created for you at:
      * resources/prompts/approval_agent/default.blade.php
      */
-    protected string $instructions = 'You are Approval Agent. See resources/prompts/approval_agent/default.blade.php for full instructions.';
+    protected string $instructions = 'Analyze an execution workflow plan; produce JSON with notification_title, body, update summary, and distilled details (what_to_do, why, impact, dependencies, risk) for approve/reject.';
 
     protected string $model = '';
 

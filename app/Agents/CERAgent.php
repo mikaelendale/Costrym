@@ -14,7 +14,7 @@ class CERAgent extends BaseLlmAgent
 {
     protected string $name = 'c_e_r_agent';
 
-    protected string $description = 'Describe what this agent does.';
+    protected string $description = 'Computes cost efficiency ratios: actual OPEX% vs benchmark per category.';
 
     /**
      * Agent instructions hierarchy (first found wins):
@@ -26,7 +26,7 @@ class CERAgent extends BaseLlmAgent
      * The prompt file has been created for you at:
      * resources/prompts/c_e_r_agent/default.blade.php
      */
-    protected string $instructions = 'You are C E R Agent. See resources/prompts/c_e_r_agent/default.blade.php for full instructions.';
+    protected string $instructions = 'Given should_cost_opex benchmarks, normalize categories and use c_e_r_calculator to output actual/benchmark ratios (0 if unknown or benchmark=0). Return concise normalized JSON.';
 
     protected string $model = '';
 

@@ -12,7 +12,7 @@ class CategorizerAgent extends BaseLlmAgent
 {
     protected string $name = 'categorizer_agent';
 
-    protected string $description = 'Describe what this agent does.';
+    protected string $description = 'Maps and normalizes raw category names to a canonical master list.';
 
     // protected function getPromptData(?AgentContext $context): array
     // {
@@ -32,7 +32,7 @@ class CategorizerAgent extends BaseLlmAgent
      * The prompt file has been created for you at:
      * resources/prompts/categorizer_agent/default.blade.php
      */
-    protected string $instructions = 'You are Categorizer Agent. See resources/prompts/categorizer_agent/default.blade.php for full instructions.';
+    protected string $instructions = 'Normalize and map incoming category/name variants to the master category list and return a clean JSON mapping. Keep it precise; see prompt file for full details.';
 
     protected string $model = '';
 

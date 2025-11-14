@@ -12,7 +12,7 @@ class AutomationPlanningAgent extends BaseLlmAgent
 {
     protected string $name = 'automation_planning_agent';
 
-    protected string $description = 'Describe what this agent does.';
+    protected string $description = 'Turns cost optimization tasks into executable step-by-step workflow plans.';
 
     /**
      * Agent instructions hierarchy (first found wins):
@@ -24,7 +24,7 @@ class AutomationPlanningAgent extends BaseLlmAgent
      * The prompt file has been created for you at:
      * resources/prompts/automation_planning_agent/default.blade.php
      */
-    protected string $instructions = 'You are Automation Planning Agent. See resources/prompts/automation_planning_agent/default.blade.php for full instructions.';
+    protected string $instructions = 'For each incoming cost optimization task, deconstruct reasoning and output an execution_plans JSON: steps with what_to_do, impact, dependencies, risk, tool calls, plus autonomy & summary.';
 
     protected string $model = '';
 

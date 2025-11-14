@@ -13,7 +13,7 @@ class BenchmarkingAgent extends BaseLlmAgent
 {
     protected string $name = 'benchmarking_agent';
 
-    protected string $description = 'Describe what this agent does.';
+    protected string $description = 'Builds a research-backed should-cost OPEX model using FireCrawler.';
 
     /**
      * Agent instructions hierarchy (first found wins):
@@ -25,7 +25,7 @@ class BenchmarkingAgent extends BaseLlmAgent
      * The prompt file has been created for you at:
      * resources/prompts/benchmarking_agent/default.blade.php
      */
-    protected string $instructions = 'You are Benchmarking Agent. See resources/prompts/benchmarking_agent/default.blade.php for full instructions.';
+    protected string $instructions = 'Research company context with FireCrawler and output should_cost_model JSON: cost_area, optimized should_cost_percent_of_opex, justification.';
 
     protected string $model = '';
 

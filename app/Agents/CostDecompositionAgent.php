@@ -14,7 +14,7 @@ class CostDecompositionAgent extends BaseLlmAgent
 {
     protected string $name = 'cost_decomposition_agent';
 
-    protected string $description = 'Describe what this agent does.';
+    protected string $description = 'Breaks products into their direct cost components and estimates required quantities.';
 
     /**
      * Agent instructions hierarchy (first found wins):
@@ -26,7 +26,7 @@ class CostDecompositionAgent extends BaseLlmAgent
      * The prompt file has been created for you at:
      * resources/prompts/cost_decomposition_agent/default.blade.php
      */
-    protected string $instructions = 'You are Cost Decomposition Agent. See resources/prompts/cost_decomposition_agent/default.blade.php for full instructions.';
+    protected string $instructions = 'Read company_context, products, direct_cost lists; output JSON product_decompositions with quantity_required_per_product filled for each associated direct cost.';
 
     protected string $model = 'gpt-4o-mini';
 
