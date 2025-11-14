@@ -8,31 +8,23 @@ use Vizra\VizraADK\System\AgentContext;
 
 // use App\Tools\YourTool; // Example: Import your tool
 
-class CategorizerAgent extends BaseLlmAgent
+class AutomationPlanningAgent extends BaseLlmAgent
 {
-    protected string $name = 'categorizer_agent';
+    protected string $name = 'automation_planning_agent';
 
     protected string $description = 'Describe what this agent does.';
 
-    // protected function getPromptData(?AgentContext $context): array
-    // {
-    //     return [
-    //         'company_name' => config('app.company_name'),
-    //         'promotions' => $this->getActivePromotions(),
-    //         'business_hours' => '9 AM - 5 PM EST',
-    //     ];
-    // }
     /**
      * Agent instructions hierarchy (first found wins):
      * 1. Runtime: $agent->setPromptOverride('...')
      * 2. Database: agent_prompt_versions table (if enabled)
-     * 3. File: resources/prompts/categorizer_agent/default.blade.php
+     * 3. File: resources/prompts/automation_planning_agent/default.blade.php
      * 4. Fallback: This property
      *
      * The prompt file has been created for you at:
-     * resources/prompts/categorizer_agent/default.blade.php
+     * resources/prompts/automation_planning_agent/default.blade.php
      */
-    protected string $instructions = 'You are Categorizer Agent. See resources/prompts/categorizer_agent/default.blade.php for full instructions.';
+    protected string $instructions = 'You are Automation Planning Agent. See resources/prompts/automation_planning_agent/default.blade.php for full instructions.';
 
     protected string $model = '';
 

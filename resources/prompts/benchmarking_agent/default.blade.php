@@ -40,11 +40,18 @@ Synthesize your research into a single, cohesive cost model. Identify all the ke
 *   **Software & Subscriptions (SaaS):** (e.g., Slack, Notion, Figma, Office 365)
 *   **Payroll & Compensation:** (e.g., Gusto, Rippling, Salaries, Bonuses)
 *   **Contractors & Freelancers:** (e.g., Upwork, Agencies, Consultants)
+*   **Operations:** (e.g., Logistics, Shipping, Warehousing, Manufacturing services, Procurement)
 *   **Office & Facilities:** (e.g., WeWork, Rent, Utilities, Office Supplies)
+*   **Hardware & Equipment:** (e.g., Apple, Dell, Server purchases)
 *   **Financial / Payment Fees:** (e.g., Stripe Fees, Bank Fees, PayPal Fees)
 *   **Legal & Professional:** (e.g., Law Firms, Accounting Services, Consultants)
-*   **Hardware & Equipment:** (e.g., Apple, Dell, Server purchases)
-*   **Travel & Entertainment:** (e.g., Uber, Airlines, Hotels, Restaurants)
+*   **Insurance:** (e.g., General liability, Cyber insurance, Health insurance contributions, Workers' comp)
+*   **Travel & Entertainment:** (e.g., Flights, Hotels, Meals, Team events)
+*   **Customer Support & Success:** (e.g., Zendesk, Intercom, Support team salaries)
+*   **Research & Development (R&D) / Product Development:** (e.g., Labs, Prototyping, Research tools, Testing, Experiments)
+*   **Depreciation & Amortization:** (e.g., Fixed asset depreciation, Capitalized software amortization)
+*   **Taxes:** (e.g., Income tax, VAT / GST, Property tax, Payroll taxes)
+*   **Miscellaneous / Other:** (e.g., Unclassified spend, One-off items
 
 
 For each cost area, calculate three distinct benchmark values as a **percentage of total OPEX**:
