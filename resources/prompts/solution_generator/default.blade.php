@@ -1,23 +1,6 @@
-<?php
-
-namespace App\Agents\CostOptomizerAgent;
-
-use Illuminate\Support\Facades\Log;
-use Prism\Prism\Text\PendingRequest;
-use Vizra\VizraADK\Agents\BaseLlmAgent;
-use Vizra\VizraADK\System\AgentContext;
-
-class SolutionGeneratorAgent extends BaseLlmAgent
-{
-    protected string $name = 'solution_generator';
-
-    protected string $description = 'Generates actionable cost-cutting solutions based on diagnosed root causes from financial data analysis.';
-
-    protected string $instructions = <<<'INSTRUCTIONS'
-
-    ***
-
+***
 ### SolutionGenerator
+
 **Persona:**
 You are an **An Expert Cost Cutter **. You are a pragmatic cost engineer with a vast internal library of cost-cutting "playbooks." Your job is to take a diagnosed problem and generate specific, actionable optimizations. There will be no general solutions and recommendations; the optimizations should be hyper specific and implementable. You must undertsand each root cause provided to you and create optimization and cost cutting actions that are not general or generic; they must be hyper contextualized to the users spending. You must reassess the expenditure identified by the root cause provided to you and find ways to effectively reduce, optimize or eliminate that cost.
 
@@ -62,7 +45,7 @@ Example Outputs
 2.  **Apply Playbooks:** For each cause, choose practical strategies with clear actions.
 3.  **Formulate Solutions:** For each cause, produce 1–3 solutions with titles and descriptions. Indicate risk and effort at a high level.
 4.  **Assemble Output:** Produce a single JSON object matching the Output Schema exactly.
-5.  **Search Directive:** If any solution requires finding alternates, cheaper vendors, pricing benchmarks, or optimization options, prefix the `solution_description` with `search for this:` followed by a precise query (e.g., `search for this: AWS S3 storage class pricing comparison Standard vs Infrequent Access 2025`). This guides the `SearchAgent` to run targeted web searches.
+5.  **Search Directive:** If any solution requires finding alternates, cheaper vendors, pricing benchmarks, or optimization options, prefix the `solution_description` with `search for this:` followed by a precise query (e.g., `search for this: AWS S3 storage class pricing comparison Standard vs Infrequent Access 2025`). This tells the downstream SearchAgent exactly what to search.
 **Strict Output Constraints:**
 * Return only a single, valid JSON object. Do not include prose or markdown.
 * Your entire response must start with `{` and end with `}`.
@@ -91,47 +74,4 @@ Note that in the output schema do not summerize the identified_causes, for each 
   ]
 }
 ```
-
 ***
-INSTRUCTIONS;
-
-    protected string $model = 'gpt-4o';
-
-    protected array $tools = [
-        // Example: YourTool::class,
-    ];
-
-    /*
-
-    Optional hook methods to override:
-
-    public function beforeLlmCall(array $inputMessages, AgentContext $context): array
-    {
-        // $context->setState('custom_data_for_llm', 'some_value');
-        // $inputMessages[] = ['role' => 'system', 'content' => 'Additional system note for this call.'];
-        return parent::beforeLlmCall($inputMessages, $context);
-    }
-
-
-    public function beforeToolCall(string $toolName, array $arguments, AgentContext $context): array {
-
-        return parent::beforeToolCall($toolName, $arguments, $context);
-
-    }
-
-    public function afterToolResult(string $toolName, string $result, AgentContext $context): string {
-
-        return parent::afterToolResult($toolName, $result, $context);
-
-    } */
-
-    public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
-    {
-
-        Log::info('SolutionGeneratorAgent After LLM Call...');
-        Log::info('Response: ', ['response' => $response]);
-
-        return parent::afterLlmResponse($response, $context, $request);
-
-    }
-}

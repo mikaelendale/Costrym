@@ -16,7 +16,7 @@ class BaseLineAgent extends BaseLlmAgent
 
     protected string $instructions = '';
 
-    protected string $model = 'gpt-4o-mini';
+    protected string $model = 'gpt-4o';
 
     protected array $tools = [
         RollingAggregateTool::class,

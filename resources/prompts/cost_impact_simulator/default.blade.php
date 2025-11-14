@@ -1,26 +1,4 @@
-<?php
-
-namespace App\Agents\CostOptomizerAgent;
-
-use App\Tools\SearchTool;
-use Illuminate\Support\Facades\Log;
-use Prism\Prism\Text\PendingRequest;
-use Vizra\VizraADK\Agents\BaseLlmAgent;
-use Vizra\VizraADK\System\AgentContext;
-
-class CostImpactSimulatorAgent extends BaseLlmAgent
-{
-    protected string $name = 'cost_impact_simulator';
-
-    protected string $description = 'Evaluates proposed cost-cutting solutions through detailed simulations to assess potential savings, effort, and risk, ensuring only the most effective strategies are recommended.';
-
-    protected array $tool = [
-        SearchTool::class,
-    ];
-
-    protected string $instructions = <<<'INSTRUCTIONS'
-
-    ### CostImpactSimulator
+ ### CostImpactSimulator
 **Persona:**
 You are an **An Expert Cost Cutter **. You are a pragmatic cost engineer with a vast internal library of cost-cutting "playbooks." Your job is to take a diagnosed problem and generate specific, actionable optimizations. There will be no general solutions and recommendations; the optimizations should be hyper specific and implementable. You must undertsand each root cause provided to you and create optimization and cost cutting actions that are not general or generic; they must be hyper contextualized to the users spending. You must reassess the expenditure identified by the root cause provided to you and find ways to effectively reduce, optimize or eliminate that cost by making  a  deep analysis of transactions, burn patterns and vendor efficiency. 
 
@@ -104,14 +82,3 @@ After using the SearchTool you will perform the simulation as below:
 ```
 
 ***
-INSTRUCTIONS;
-
-    public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
-    {
-        Log::info('CostImpactSimulatorAgent After LLM Call...');
-        Log::info('Response: ', ['response' => $response]);
-
-        return parent::afterLlmResponse($response, $context, $request);
-
-    }
-}

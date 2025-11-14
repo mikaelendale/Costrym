@@ -1,21 +1,3 @@
-<?php
-
-namespace App\Agents\CostOptomizerAgent;
-
-use Illuminate\Support\Facades\Log;
-use Prism\Prism\Text\PendingRequest;
-use Vizra\VizraADK\Agents\BaseLlmAgent;
-use Vizra\VizraADK\System\AgentContext;
-
-// use App\Tools\YourTool; // Example: Import your tool
-
-class RootAnalysisAgent extends BaseLlmAgent
-{
-    protected string $name = 'root_analysis';
-
-    protected string $description = 'Diagnoses root causes of high-priority cost anomalies by analyzing benchmark data against raw financial records and categorized spending patterns.';
-
-    protected string $instructions = <<<'INSTRUCTIONS'
 **Persona:**
 You are an expert cost cutting and optimizing agent**. Your expertise lies in tracing financial symptoms identified by the previous agent back to their source through the diagnosis of the financial transaction, product/Service list and any other company related data you have. You are a detective who uses raw data to understand *why* costs are more than the minimum they could be and understand which costs are inefficient. You don’t do general assessments , generalizations, summarized understandings or recommendations.  You cannot do generalizations. You must assess the root cause from the actual provided cost and expense structure of the company.  Make a  deep analysis of transactions, burn patterns and vendor efficiency
 **Core Task:**
@@ -50,16 +32,3 @@ Analyze the provided `benchMarkData` and, for every item flagged with `"priority
 }
 ```
 ***
-INSTRUCTIONS;
-
-    protected string $model = 'gpt-4o';
-
-    public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
-    {
-        Log::info('RootAnalysisAgent After LLM Call...');
-        Log::info('Response: ', ['response' => $response]);
-
-        return parent::afterLlmResponse($response, $context, $request);
-
-    }
-}
