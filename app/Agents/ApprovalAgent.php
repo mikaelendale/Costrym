@@ -2,6 +2,7 @@
 
 namespace App\Agents;
 
+use Illuminate\Support\Facades\Log;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
@@ -36,28 +37,37 @@ class ApprovalAgent extends BaseLlmAgent
 
     Optional hook methods to override:
 
+    */
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
         // $context->setState('custom_data_for_llm', 'some_value');
         // $inputMessages[] = ['role' => 'system', 'content' => 'Additional system note for this call.'];
+        Log::info('ApprovalAgent.beforeLlmCall:start', [
+            'context' => $context,
+        ]);
+
         return parent::beforeLlmCall($inputMessages, $context);
     }
 
-    public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed {
+    public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
+    {
+        Log::info('response', ['approval_agent Response:', $response]);
 
-         return parent::afterLlmResponse($response, $context, $request);
+        return parent::afterLlmResponse($response, $context, $request);
 
     }
 
-    public function beforeToolCall(string $toolName, array $arguments, AgentContext $context): array {
+    public function beforeToolCall(string $toolName, array $arguments, AgentContext $context): array
+    {
 
         return parent::beforeToolCall($toolName, $arguments, $context);
 
     }
 
-    public function afterToolResult(string $toolName, string $result, AgentContext $context): string {
+    public function afterToolResult(string $toolName, string $result, AgentContext $context): string
+    {
 
         return parent::afterToolResult($toolName, $result, $context);
 
-    } */
+    }
 }

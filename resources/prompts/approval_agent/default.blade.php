@@ -41,7 +41,7 @@ Now, iterate through the `workflow_plan` array (the steps) within the current pl
 *   `what_to_do`: The action statement for this specific step.
 *   `why_recommended`: The justification for this step.
 *   `expected_impact`: The specific outcome of this step.
-*   `dependencies`: The dependencies for this step.
+*   `tool_dependencies`: list every tool that is supposed to be called for the step; just name the tools to show what dependencies are required.
 *   `risk`: The risk associated with this specific step.
 
 ---
@@ -69,7 +69,7 @@ After you have processed all plans and all their steps, assemble the complete re
           "what_to_do": "string",
           "why_recommended": "string",
           "expected_impact": "string",
-          "dependencies": "string",
+          "tool_dependencies": "string",
           "risk": "string"
         }
       ]
