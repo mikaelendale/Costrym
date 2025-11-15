@@ -2,10 +2,12 @@
 
 namespace App\Agents;
 
+use App\Services\CleanUpResponse;
 use App\Tools\BaseLineAnalysis\RollingAggregateTool;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
+use Prism\Prism\ValueObjects\Messages\SystemMessage;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
 
@@ -63,16 +65,23 @@ class BaseLineAgent extends BaseLlmAgent
 
         Log::info('----------------------------------------');
 
+        $company_financials = $context->getState('company_financials');
+        $category_mapping = $context->getState('categorized_data');
+
+        $inputMessages[] = new SystemMessage("Company Financials:\n".json_encode($company_financials, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\nCategory Mapping:\n".json_encode($category_mapping, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
         return parent::beforeLlmCall($inputMessages, $context);
     }
 
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
-        Log::info('BaseLineAgent After LLM Call...');
-        Log::info('Response: ', ['response' => $response]);
-        Log::info('context state: ', ['context_state' => $context->getAllState()]);
-        Log::info('request value: ', ['request' => $request ? $request : null]);
-        Log::info('----------------------------------------');
+        Log::info('After BaseLineAgent LLM response ...');
+        $parsedResponse = CleanUpResponse::extractJsonPayload($response);
+        Log::info('Parsed BaseLineAgent response payload.', ['response' => $parsedResponse]);
+
+        $context->setState('baseline_data', $parsedResponse);
+
+        Log::info('Finished setting baseline_data state.');
 
         return parent::afterLlmResponse($response, $context, $request);
     }

@@ -32,6 +32,7 @@ class CategorizerAgent extends BaseLlmAgent
         $company_profile = json_encode($company_profile, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         $contextBlock = "Company Financials:\n{$company_financials}\n\nCompany Profile:\n{$company_profile}";
+        Log::info("Category Context: {$contextBlock}");
         $inputMessages[] = new SystemMessage($contextBlock);
 
         return parent::beforeLlmCall($inputMessages, $context);

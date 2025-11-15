@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Agents\BaseLineAgent;
 use App\Agents\CategorizerAgent;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -187,8 +188,6 @@ class WorkflowController extends Controller
         // Create a workflow-level session context with a stable session ID
         $sessionId = 'workflow_'.uniqid();
         $context = new AgentContext($sessionId);
-        $context->setState('include_history', true);
-        $context->setState('history_depth', 5);
 
         // Persist CategorizerAgent's session state BEFORE executing the workflow.
         // Workflows execute steps via Agent::run(..., $context->getSessionId()),
@@ -210,11 +209,10 @@ class WorkflowController extends Controller
         $categorizerCtx->setState('company_financials', json_encode($companyFinancials, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
         $stateManager->saveContext($categorizerCtx, $categorizerAgentName, false);
-        $categorizerAgent = app(CategorizerAgent::class);
 
-        $workflow = Workflow::sequential()->start(CategorizerAgent::class);
+        $workflow = Workflow::sequential()->start(CategorizerAgent::class)->then(BaseLineAgent::class);
 
-        $result = $workflow->execute('Categories the following data: ', $context);
+        $result = $workflow->execute('Categories the following data: ', $categorizerCtx);
 
         // Be resilient to result shape (object with property vs array)
         $finalResult = $result;
