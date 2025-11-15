@@ -34,8 +34,13 @@ STEP 2 — ALLOCATE COSTS & ESTIMATE QUANTITIES
 STEP 3 — SUMMARY
 - Provide a 1–2 sentence summary: number of costs allocated and key assumptions made during your per-unit quantity estimations.
 
-STEP 4 — OUTPUT JSON
-- Return a single JSON object only, matching this schema exactly:
+
+**Strict Output Constraints:**
+* Return only a single, valid JSON object. Do not include prose or markdown.
+* Your entire response must start with `{` and end with `}`.
+* If there are no high-priority items, return `{ }`.
+
+**Output Schema (Follow Exactly):**
 
 ```json
 {
@@ -54,6 +59,7 @@ STEP 4 — OUTPUT JSON
     }
   ]
 }
+```
 Notes:
 The JSON must be the only content returned.
 The quantity_required_per_product field must be populated for every allocated cost.

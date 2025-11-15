@@ -2,10 +2,12 @@
 
 namespace App\Agents;
 
+use App\Services\CleanUpResponse;
 use App\Tools\GetTotalCostByCategory;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
+use Prism\Prism\ValueObjects\Messages\SystemMessage;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
 
@@ -40,12 +42,19 @@ class CostDecompositionAgent extends BaseLlmAgent
 
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
-        // $context->setState('custom_data_for_llm', 'some_value');
-        // $inputMessages[] = ['role' => 'system', 'content' => 'Additional system note for this call.'];
 
         Log::info('CostDecompositionAgent.beforeLlmCall:start', [
             'input_msg' => $inputMessages,
         ]);
+
+        $company_profile = $context->getState('company_profile');
+        $categorized_data = $context->getState('categorized_data');
+
+        $contextBlock = "Company categorized Financials:\n{$categorized_data}\n\nCompany Profile:\n{$company_profile}";
+
+        Log::info("Cost Decomposition Context: {$contextBlock}");
+
+        $inputMessages[] = new SystemMessage($contextBlock);
 
         $result = parent::beforeLlmCall($inputMessages, $context);
 
@@ -54,6 +63,13 @@ class CostDecompositionAgent extends BaseLlmAgent
 
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
+        Log::info('After CategorizerAgent LLM response ...');
+        $parsedResponse = CleanUpResponse::extractJsonPayload($response);
+        Log::info('Parsed CategorizerAgent response payload.', ['response' => $parsedResponse]);
+
+        $context->setState('categorized_data', $parsedResponse);
+
+        Log::info('Finished setting categorized_data state.');
 
         $processed = parent::afterLlmResponse($response, $context, $request);
 

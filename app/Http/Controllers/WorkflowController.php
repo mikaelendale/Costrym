@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Agents\BaseLineAgent;
 use App\Agents\CategorizerAgent;
+use App\Agents\CostDecomposerOrcastrator;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Vizra\VizraADK\Facades\Workflow;
@@ -210,7 +211,10 @@ class WorkflowController extends Controller
 
         $stateManager->saveContext($categorizerCtx, $categorizerAgentName, false);
 
-        $workflow = Workflow::sequential()->start(CategorizerAgent::class)->then(BaseLineAgent::class);
+        $workflow = Workflow::sequential()
+            ->start(CategorizerAgent::class)
+            ->then(BaseLineAgent::class)
+            ->then(CostDecomposerOrcastrator::class);
 
         $result = $workflow->execute('Categories the following data: ', $categorizerCtx);
 
