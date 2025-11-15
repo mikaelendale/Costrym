@@ -126,6 +126,8 @@ class CERCalculator implements ToolInterface
             'note' => 'Normalized values are actual OPEX% / benchmark OPEX% using mock DB actuals. Unknown categories or zero benchmarks result in 0.',
         ];
 
+        $context->setState('cer_calculation_result', $result);
+
         return json_encode($result);
     }
 

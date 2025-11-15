@@ -64,17 +64,26 @@ Also provide a brief `justification` for each `should_cost` value, linking it ba
 ---
 
 **STEP 4: ASSEMBLE THE FINAL JSON OUTPUT**
-Combine your complete model into a single JSON object using the exact structure below. The summary should briefly describe the profile of the company you analyzed. **Your final output must ONLY be this JSON object.**
 
-**Final Output Schema:**
+**Strict Output Constraints:**
+* Return only a single, valid JSON object. Do not include prose or markdown.
+* Your entire response must start with `{` and end with `}`.
+* If there are no high-priority items, return `{"categorized_response":{} }`.
+
+**Output Schema (Follow Exactly):**
+
+```json
 {
-  "summary": "string",
-  "should_cost_model": [
-    {
-      "cost_area": "string",
-      "should_cost_percent_of_opex": "string",
-      "justification": "string"
-    }
-  ]
+  "benchmarking_agent_response": {
+    "summary": "string",
+    "should_cost_model": [
+      {
+        "cost_area": "string",
+        "should_cost_percent_of_opex": "string",
+        "justification": "string"
+      }
+    ]
+  }
 }
 
+```

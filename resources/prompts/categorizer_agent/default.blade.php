@@ -70,23 +70,25 @@ Combine the results into a single JSON object. The `summary` key will hold the t
 **Strict Output Constraints:**
 * Return only a single, valid JSON object. Do not include prose or markdown.
 * Your entire response must start with `{` and end with `}`.
-* If there are no high-priority items, return `{ }`.
+* If there are no high-priority items, return `{"categorized_response":{} }`.
 
 **Output Schema (Follow Exactly):**
 ```json
 {
-  "summary": "string",
-  "expenses": [
-    {
-      "name": "string",
-      "tags": ["string", ...],
-      "category": "string"
-    },
-    {
-      "name": "string",
-      "tags": ["string", ...],
-      "category": "string"
-    }
-  ]
+  "categorized_response": {
+    "summary": "string",
+    "expenses": [
+      {
+        "name": "string",
+        "tags": ["string"],
+        "category": "string"
+      },
+      {
+        "name": "string",
+        "tags": ["string"],
+        "category": "string"
+      }
+    ]
+  }
 }
 ```

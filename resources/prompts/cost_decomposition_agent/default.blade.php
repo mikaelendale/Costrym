@@ -38,28 +38,24 @@ STEP 3 — SUMMARY
 **Strict Output Constraints:**
 * Return only a single, valid JSON object. Do not include prose or markdown.
 * Your entire response must start with `{` and end with `}`.
-* If there are no high-priority items, return `{ }`.
+* If there are no high-priority items, return `{"cost_decomposition_response": {} }`.
 
 **Output Schema (Follow Exactly):**
-
-```json
 {
-  "summary": "string",
-  "product_decompositions": [
-    {
-      "product_name": "string",
-      "associated_direct_costs": [
-        {
-          "name": "string",
-          "category": "string",
-          "quantity_required_per_product": "number",
-          "tags": ["Direct", "Variable"]
-        }
-      ]
-    }
-  ]
+  "cost_decomposition_response": {
+    "summary": "string",
+    "product_decompositions": [
+      {
+        "product_name": "string",
+        "associated_direct_costs": [
+          {
+            "name": "string",
+            "category": "string",
+            "quantity_required_per_product": 0,
+            "tags": ["Direct", "Variable"]
+          }
+        ]
+      }
+    ]
+  }
 }
-```
-Notes:
-The JSON must be the only content returned.
-The quantity_required_per_product field must be populated for every allocated cost.
