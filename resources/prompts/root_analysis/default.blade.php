@@ -16,6 +16,7 @@ Analyze the provided `benchMarkData` and, for every item flagged with `"priority
 * Return only a single, valid JSON object. Do not include prose or markdown.
 * Your entire response must start with `{` and end with `}`.
 * If there are no high-priority items, return `{ "root_cause_analysis": [] }`.
+
 **Output Schema (Follow Exactly):**
 ```json
 {

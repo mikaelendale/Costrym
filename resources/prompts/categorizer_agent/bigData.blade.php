@@ -66,9 +66,13 @@ After you have classified all the transactions from Step 1, create a single, hig
 
 Combine the results into a single JSON object. The `summary` key will hold the text from Step 2, and the `expenses` key will hold an array containing the classification details for every transaction you processed in Step 1.
 
-**Your final output must ONLY be this JSON object and nothing else.**
 
-**Final Output Schema:**
+**Strict Output Constraints:**
+* Return only a single, valid JSON object. Do not include prose or markdown.
+* Your entire response must start with `{` and end with `}`.
+* If there are no high-priority items, return `{ "root_cause_analysis": [] }`.
+
+**Output Schema (Follow Exactly):**
 ```json
 {
   "summary": "string",
@@ -85,3 +89,4 @@ Combine the results into a single JSON object. The `summary` key will hold the t
     }
   ]
 }
+```
