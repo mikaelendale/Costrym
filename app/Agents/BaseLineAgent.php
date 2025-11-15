@@ -4,6 +4,7 @@ namespace App\Agents;
 
 use App\Tools\BaseLineAnalysis\RollingAggregateTool;
 use Illuminate\Support\Facades\Log;
+use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
@@ -14,9 +15,9 @@ class BaseLineAgent extends BaseLlmAgent
 
     protected string $description = 'Analyzes company spending patterns to define baselines, identify recurring costs, and major expense drivers.';
 
-    protected string $instructions = '';
+    // protected ?string $provider = Provider::Groq->value;
 
-    protected string $model = 'gpt-4o';
+    protected string $model = '';
 
     protected array $tools = [
         RollingAggregateTool::class,

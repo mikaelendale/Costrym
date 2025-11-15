@@ -4,6 +4,7 @@ namespace App\Agents;
 
 use App\Tools\GetTotalCostByCategory;
 use Illuminate\Support\Facades\Log;
+use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
@@ -28,7 +29,9 @@ class CostDecompositionAgent extends BaseLlmAgent
      */
     protected string $instructions = 'Read company_context, products, direct_cost lists; output JSON product_decompositions with quantity_required_per_product filled for each associated direct cost.';
 
-    protected string $model = 'gpt-4o-mini';
+    // protected ?string $provider = Provider::Groq->value;
+
+    protected string $model = '';
 
     protected array $tools = [
         GetTotalCostByCategory::class,

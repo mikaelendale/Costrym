@@ -3,6 +3,7 @@
 namespace App\Agents;
 
 use Illuminate\Support\Facades\Log;
+use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
@@ -26,6 +27,8 @@ class AutomationPlanningAgent extends BaseLlmAgent
      * resources/prompts/automation_planning_agent/default.blade.php
      */
     protected string $instructions = 'For each incoming cost optimization task, deconstruct reasoning and output an execution_plans JSON: steps with what_to_do, impact, dependencies, risk, tool calls, plus autonomy & summary.';
+
+    // protected ?string $provider = Provider::Groq->value;
 
     protected string $model = '';
 

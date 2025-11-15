@@ -2,6 +2,7 @@
 
 namespace App\Agents;
 
+use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\Agents\SequentialWorkflow;
@@ -39,6 +40,8 @@ class AutomationOrcastrator extends BaseLlmAgent
         * Strip any non-JSON commentary from sub-agent outputs before returning.
         ***
         INSTRUCTIONS;
+
+    // protected ?string $provider = Provider::Groq->value;
 
     protected string $model = '';
 

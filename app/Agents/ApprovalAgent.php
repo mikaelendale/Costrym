@@ -3,6 +3,7 @@
 namespace App\Agents;
 
 use Illuminate\Support\Facades\Log;
+use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
@@ -26,6 +27,8 @@ class ApprovalAgent extends BaseLlmAgent
      * resources/prompts/approval_agent/default.blade.php
      */
     protected string $instructions = 'Analyze an execution workflow plan; produce JSON with notification_title, body, update summary, and distilled details (what_to_do, why, impact, dependencies, risk) for approve/reject.';
+
+    // protected ?string $provider = Provider::Groq->value;
 
     protected string $model = '';
 

@@ -3,6 +3,7 @@
 namespace App\Agents;
 
 use App\Tools\FireCrawler;
+use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
@@ -26,6 +27,8 @@ class BenchmarkingAgent extends BaseLlmAgent
      * resources/prompts/benchmarking_agent/default.blade.php
      */
     protected string $instructions = 'Research company context with FireCrawler and output should_cost_model JSON: cost_area, optimized should_cost_percent_of_opex, justification.';
+
+    // protected ?string $provider = Provider::Groq->value;
 
     protected string $model = '';
 

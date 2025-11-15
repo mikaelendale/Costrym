@@ -4,6 +4,7 @@ namespace App\Agents;
 
 use App\Tools\CERCalculator;
 use Illuminate\Support\Facades\Log;
+use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
@@ -27,6 +28,8 @@ class CERAgent extends BaseLlmAgent
      * resources/prompts/c_e_r_agent/default.blade.php
      */
     protected string $instructions = 'Given should_cost_opex benchmarks, normalize categories and use c_e_r_calculator to output actual/benchmark ratios (0 if unknown or benchmark=0). Return concise normalized JSON.';
+
+    // protected ?string $provider = Provider::Groq->value;
 
     protected string $model = '';
 

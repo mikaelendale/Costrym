@@ -2,6 +2,7 @@
 
 namespace App\Agents;
 
+use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
@@ -14,25 +15,9 @@ class CategorizerAgent extends BaseLlmAgent
 
     protected string $description = 'Maps and normalizes raw category names to a canonical master list.';
 
-    // protected function getPromptData(?AgentContext $context): array
-    // {
-    //     return [
-    //         'company_name' => config('app.company_name'),
-    //         'promotions' => $this->getActivePromotions(),
-    //         'business_hours' => '9 AM - 5 PM EST',
-    //     ];
-    // }
-    /**
-     * Agent instructions hierarchy (first found wins):
-     * 1. Runtime: $agent->setPromptOverride('...')
-     * 2. Database: agent_prompt_versions table (if enabled)
-     * 3. File: resources/prompts/categorizer_agent/default.blade.php
-     * 4. Fallback: This property
-     *
-     * The prompt file has been created for you at:
-     * resources/prompts/categorizer_agent/default.blade.php
-     */
     protected string $instructions = 'Normalize and map incoming category/name variants to the master category list and return a clean JSON mapping. Keep it precise; see prompt file for full details.';
+
+    // // protected ?string $provider = Provider::Groq->value;
 
     protected string $model = '';
 
