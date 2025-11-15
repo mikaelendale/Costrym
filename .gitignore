@@ -23,3 +23,5 @@ yarn-error.log
 /.vscode
 /.zed
 .ai
+
+resources/docs/agent-documentation-template.md

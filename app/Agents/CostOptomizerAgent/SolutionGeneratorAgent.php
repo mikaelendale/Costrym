@@ -95,8 +95,6 @@ Note that in the output schema do not summerize the identified_causes, for each 
 ***
 INSTRUCTIONS;
 
-    protected string $model = 'gpt-4o';
-
     protected array $tools = [
         // Example: YourTool::class,
     ];

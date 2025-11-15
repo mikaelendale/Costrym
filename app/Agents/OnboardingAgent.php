@@ -14,5 +14,5 @@ class OnboardingAgent extends BaseLlmAgent
     no additional text or formatting, just the summary. and no emojis. no markdown formatting. just the summary. in a simple and direct way.
     ';
 
-    protected string $model = 'gpt-4o';
+    // protected string $model = 'gpt-4o';
 }

@@ -52,8 +52,6 @@ Analyze the provided `benchMarkData` and, for every item flagged with `"priority
 ***
 INSTRUCTIONS;
 
-    protected string $model = 'gpt-4o';
-
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
         Log::info('RootAnalysisAgent After LLM Call...');

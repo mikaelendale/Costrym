@@ -41,9 +41,6 @@ Your goal is to orchestrate a three-step process by invoking the `RootAnalysisAg
 ***
 
 INSTRUCTIONS;
-
-    protected string $model = 'gpt-4o';
-
     // protected array $tools = [];
 
     protected array $subAgents = [
