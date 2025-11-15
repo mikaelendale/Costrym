@@ -48,37 +48,43 @@ You will receive an array of tasks. Process them one by one. For each individual
 
 After you have created a complete workflow plan for **every task** in the input array, combine all of them into a single JSON object. The root of this object should be a key called `execution_plans` which contains an array of the individual plans you generated.
 
-**Your final output must ONLY be this JSON object.**
+**Strict Output Constraints:**
+* Return only a single, valid JSON object. Do not include prose or markdown.
+* Your entire response must start with `{` and end with `}`.
+* If there are no high-priority items, return `{"automation_planning_agent_response":{} }`.
 
-**Final Output Schema:**
+**Output Schema (Follow Exactly):**
 ```json
 {
-  "execution_plans": [
-    {
-      "task_name": "string",
-      "summary": "string",
-      "overall_autonomy": "string",
-      "workflow_plans": [
+  "automation_planning_agent_response": {
+    "execution_plans": [
+      {
+        "task_name": "string",
+        "summary": "string",
+        "overall_autonomy": "string",
+        "workflow_plans": [
           {
-          "step": "number",
-          "what_to_do": "string",
-          "why_recommended": "string",
-          "expected_impact": "string",
-          "dependencies": "string",
-          "risk": "string",
-          "execution_steps": [
-            {
-              "tool_call": "string",
-              "parameters": {
-                "key": "value"
+            "step": "number",
+            "what_to_do": "string",
+            "why_recommended": "string",
+            "expected_impact": "string",
+            "dependencies": "string",
+            "risk": "string",
+            "execution_steps": [
+              {
+                "tool_call": "string",
+                "parameters": {
+                  "key": "value"
+                }
               }
-            }
-          ]
-        }
-      ]
-    }
-  ]
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }
+```
 
 
 **5. WORKFLOW EXAMPLES & STRATEGIC GUIDANCE**

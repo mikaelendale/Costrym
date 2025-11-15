@@ -20,20 +20,22 @@ Tool: GetTotalCostByCategory - Purpose: Returns aggregated spend for a major cos
 
 ```json
 {
-    "summary": "string",
-    "product_decompositions": [
-        {
-            "product_name": "string",
-            "associated_direct_costs": [
-                {
-                    "name": "string",
-                    "category": "string",
-                    "quantity_required_per_product": "number",
-                    "tags": ["Direct", "Variable"]
-                }
-            ]
-        }
-    ]
+    "cost_decomposition_response": {
+        "summary": "string",
+        "product_decompositions": [
+            {
+                "product_name": "string",
+                "associated_direct_costs": [
+                    {
+                        "name": "string",
+                        "category": "string",
+                        "quantity_required_per_product": 0,
+                        "tags": ["Direct", "Variable"]
+                    }
+                ]
+            }
+        ]
+    }
 }
 ```
 

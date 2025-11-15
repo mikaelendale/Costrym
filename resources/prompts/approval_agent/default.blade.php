@@ -50,29 +50,35 @@ Now, iterate through the `workflow_plan` array (the steps) within the current pl
 
 After you have processed all plans and all their steps, assemble the complete response. The final output must be a single JSON object with a root key `approval_requests`. This key will contain an array of the comprehensive plans you built.
 
-**Your final output must ONLY be this JSON object.**
+**Strict Output Constraints:**
+* Return only a single, valid JSON object. Do not include prose or markdown.
+* Your entire response must start with `{` and end with `}`.
+* If there are no high-priority items, return `{"approval_agent_response":{} }`.
 
-**Final Output Schema:**
+**Output Schema (Follow Exactly):**
 ```json
 {
-  "approval_requests": [
-    {
-      "task_name": "string",
-      "notification_payload": {
-        "notification_title": "string",
-        "notification_body": "string",
-        "notification_update_summary": "string"
-      },
-      "step_details": [
-        {
-          "step": "number",
-          "what_to_do": "string",
-          "why_recommended": "string",
-          "expected_impact": "string",
-          "tool_dependencies": "string",
-          "risk": "string"
-        }
-      ]
-    }
-  ]
+"approval_agent_response":{
+    "approval_requests": [
+      {
+        "task_name": "string",
+        "notification_payload": {
+          "notification_title": "string",
+          "notification_body": "string",
+          "notification_update_summary": "string"
+        },
+        "step_details": [
+          {
+            "step": "number",
+            "what_to_do": "string",
+            "why_recommended": "string",
+            "expected_impact": "string",
+            "tool_dependencies": "string",
+            "risk": "string"
+          }
+        ]
+      }
+    ]
+  }
 }
+```

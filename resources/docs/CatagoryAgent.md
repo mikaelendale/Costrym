@@ -27,12 +27,22 @@
 
 ## Output
 
+```json
 {
-"summary": "string",
-"expense": {
-"name": "string",
-"tags": ["string", ...],
-"confidence": 0.92,
-"category": "string"
+    "categorized_response": {
+        "summary": "string",
+        "expenses": [
+            {
+                "name": "string",
+                "tags": ["string"],
+                "category": "string"
+            },
+            {
+                "name": "string",
+                "tags": ["string"],
+                "category": "string"
+            }
+        ]
+    }
 }
-}
+```

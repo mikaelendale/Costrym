@@ -28,31 +28,33 @@
 
 ```json
 {
-    "execution_plans": [
-        {
-            "task_name": "string",
-            "summary": "string",
-            "overall_autonomy": "string",
-            "workflow_plans": [
-                {
-                    "step": "number",
-                    "what_to_do": "string",
-                    "why_recommended": "string",
-                    "expected_impact": "string",
-                    "dependencies": "string",
-                    "risk": "string",
-                    "execution_steps": [
-                        {
-                            "tool_call": "string",
-                            "parameters": {
-                                "key": "value"
+    "automation_planning_agent_response": {
+        "execution_plans": [
+            {
+                "task_name": "string",
+                "summary": "string",
+                "overall_autonomy": "string",
+                "workflow_plans": [
+                    {
+                        "step": "number",
+                        "what_to_do": "string",
+                        "why_recommended": "string",
+                        "expected_impact": "string",
+                        "dependencies": "string",
+                        "risk": "string",
+                        "execution_steps": [
+                            {
+                                "tool_call": "string",
+                                "parameters": {
+                                    "key": "value"
+                                }
                             }
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
 }
 ```
 

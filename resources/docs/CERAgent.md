@@ -17,3 +17,5 @@
 Tool: c_e_r_calculator — Purpose: Looks up actual OPEX% per category (mock DB for now) and returns a normalized ratio actual%/benchmark% for requested categories. If a category is unknown or the benchmark is 0, the normalized value is 0.
 
 ## Output
+
+Honestly doesnt have any use main purpose is to use the tool to calculat the cet amd making sure its the right catagories

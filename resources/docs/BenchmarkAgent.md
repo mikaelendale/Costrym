@@ -20,14 +20,16 @@ Tool: FireCrawler — Purpose: Perform required web research to source benchmark
 
 ```json
 {
-    "summary": "string",
-    "should_cost_model": [
-        {
-            "cost_area": "string",
-            "should_cost_percent_of_opex": "string",
-            "justification": "string"
-        }
-    ]
+    "benchmarking_agent_response": {
+        "summary": "string",
+        "should_cost_model": [
+            {
+                "cost_area": "string",
+                "should_cost_percent_of_opex": "string",
+                "justification": "string"
+            }
+        ]
+    }
 }
 ```
 

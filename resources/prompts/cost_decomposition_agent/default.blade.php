@@ -41,6 +41,7 @@ STEP 3 — SUMMARY
 * If there are no high-priority items, return `{"cost_decomposition_response": {} }`.
 
 **Output Schema (Follow Exactly):**
+```json
 {
   "cost_decomposition_response": {
     "summary": "string",
@@ -59,3 +60,4 @@ STEP 3 — SUMMARY
     ]
   }
 }
+```
