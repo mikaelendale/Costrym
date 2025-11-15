@@ -1,9 +1,11 @@
+# CostOptomizerAgent Documentation
+
 ## 1. Overview
 
 - **Name:** `CostOptomizerAgent`
 - **Location:** `app/Agents/CostOptomizerAgent/CostOptomizerAgent.php`
-- **Purpose:** Orchestrates a team of specialized agents to analyze costs, generate solutions, and simulate financial impacts for optimal cost reduction strategies.
-- **Persona:** Master AI Cost Engineer. Acts as a conductor, not an analyst—manages workflow and data flow between sub-agents to produce actionable cost-cutting strategies.
+- **Purpose:** Orchestrates a team of specialized agents to analyze costs, generate solutions, and simulate financial impacts for optimal cost reduction strategies. Ensures data flows correctly between sub-agents and returns only the final, actionable output.
+- **Persona (if LLM agent):** Master AI Cost Engineer. Acts as a conductor, not an analyst—manages workflow and data flow between sub-agents to produce actionable cost-cutting strategies.
 
 ## 2. Behavior Summary
 
@@ -52,12 +54,17 @@ Returns only the final JSON output from the simulator, with no modification or c
 ## 6. Sub-agents / Tools / Dependencies
 
 - **Sub-agents:**
-    - `RootAnalysisAgent` (class: `App\Agents\CostOptomizerAgent\RootAnalysisAgent`): Diagnoses root causes of high-priority cost anomalies by analyzing benchmark data against raw financial records and categorized spending patterns. Invoked first.
-    - `SolutionGeneratorAgent` (class: `App\Agents\CostOptomizerAgent\SolutionGeneratorAgent`): Generates actionable cost-cutting solutions based on diagnosed root causes. Invoked second.
-    - `SearchAgent` (class: `App\Agents\CostOptomizerAgent\SearchAgent`): Runs targeted web searches using `SearchTool` based on solution outputs to gather alternatives, pricing, and implementation insights. Used as needed by other agents.
-    - `CostImpactSimulatorAgent` (class: `App\Agents\CostOptomizerAgent\CostImpactSimulatorAgent`): Simulates and quantifies the impact of each solution, filtering for the most effective strategies. Invoked last.
+    - `RootAnalysisAgent` (class: `App\Agents\CostOptomizerAgent\RootAnalysisAgent`):
+        - **Purpose:** Diagnoses root causes of high-priority cost anomalies by analyzing benchmark data against raw financial records and categorized spending patterns. Invoked first.
+    - `SolutionGeneratorAgent` (class: `App\Agents\CostOptomizerAgent\SolutionGeneratorAgent`):
+        - **Purpose:** Generates actionable cost-cutting solutions based on diagnosed root causes. Invoked second.
+    - `SearchAgent` (class: `App\Agents\CostOptomizerAgent\SearchAgent`):
+        - **Purpose:** Runs targeted web searches using `SearchTool` based on solution outputs to gather alternatives, pricing, and implementation insights. Used as needed by other agents.
+    - `CostImpactSimulatorAgent` (class: `App\Agents\CostOptomizerAgent\CostImpactSimulatorAgent`):
+        - **Purpose:** Simulates and quantifies the impact of each solution, filtering for the most effective strategies. Invoked last.
 
 - **Tools:**
-    - `SearchTool` (class: `App\Tools\SearchTool`): Used by `SearchAgent` and `CostImpactSimulatorAgent` to perform targeted searches for alternatives, pricing, and implementation data.
+    - `SearchTool` (class: `App\Tools\SearchTool`):
+        - **Purpose:** Used by `SearchAgent` and `CostImpactSimulatorAgent` to perform targeted searches for alternatives, pricing, and implementation data.
 
 - **External Services:** None. All dependencies are internal sub-agents or tools.
