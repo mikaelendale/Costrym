@@ -7,13 +7,21 @@ use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PipedreamConnectController;
 use App\Http\Controllers\Socialite\ProviderCallbackController;
 use App\Http\Controllers\Socialite\ProviderRedirectController;
+use App\Http\Controllers\WorkflowController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia; 
+use Inertia\Inertia;
+
+// use Spatie\Permission\Models\Role;
+// $role = Role::create(['name' => 'admin']);
+// $role = Role::create(['name' => 'user']);
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
 })->name('home');
-
+// Changelog
+Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
+Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
+Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
 
 Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('dashboard', function () {
@@ -33,6 +41,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('onboarding', function () {
         return Inertia::render('onboarding');
     })->name('onboarding');
+
+    Route::post('onboarding/process', [OnboardingController::class, 'processCompanyInfo'])->name('onboarding.process');
+
     
     Route::post('onboarding/chat', [OnboardingController::class, 'chat'])->name('onboarding.chat');
     Route::post('onboarding/estimation', [OnboardingController::class, 'estimation'])->name('onboarding.estimation');
@@ -58,7 +69,7 @@ if (config('features.rbac')) {
         Route::get('/admin', function () {
             return redirect()->route('admin.dashboard');
         })->name('admin.home');
-        Route::get('admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard'); 
+        Route::get('admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
         Route::get('admin/users', [AdminDashboardController::class, 'users'])->name('admin.users.index');
         Route::get('admin/users/{user}', [AdminDashboardController::class, 'showUser'])->name('admin.users.show');
         Route::put('admin/users/{user}', [AdminDashboardController::class, 'updateUser'])->name('admin.users.update');
@@ -74,11 +85,13 @@ if (config('features.rbac')) {
         Route::put('admin/permissions/{permission}', [RBACController::class, 'updatePermission'])->name('admin.permissions.update');
         Route::delete('admin/permissions/{permission}', [RBACController::class, 'destroyPermission'])->name('admin.permissions.destroy');
     });
-} 
+}
+
+Route::get('/ai/test', [WorkflowController::class, 'index'])->name('ai.workflow');
 // OAuth routes
 Route::get('/auth/{provider}/redirect', ProviderRedirectController::class)->name('auth.redirect')->middleware(['throttle:5,1']);
 Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name('auth.callback')->middleware(['throttle:5,1']);
-
+ 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/paymentRoute.php';

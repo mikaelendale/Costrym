@@ -40,32 +40,34 @@ Your sole task is to process the provided input data and generate a **single, fi
 **Output Schema (Follow Exactly):**
 ```json
 {
-	"rolling_aggregates": {
-		"7_days": 0.0,
-		"30_days": 0.0,
-		"90_days": 0.0,
-		"365_days": 0.0
-	},
-	"financial_metrics": {
-		"burn_rate": 0.0,
-		"runway": 0.0
-	},
-	"patterns": "A descriptive, multi-sentence analysis of spending trends, key drivers, and incorporating business context. Basically write a pattern that u noticed form the spending habbits",
-	"recurring_costs": [
-		{
-			"vendor": "Name of the vendor or service.",
-			"recurrence_type": "monthly | weekly | yearly | quarterly | biannually | biweekly",
-			"category": "The canonical cost category for this expense.",
-			"recurring_amount": 0.0,
-			"next_bill_date": "YYYY-MM-DD"
-		}
-	],
-	"major_expense_drivers": [
-		{
-			"vendor": "Name of the vendor or service with high costs.",
-			"amount": 0.0,
-			"reason": "A quantitative explanation of why this is a major driver (e.g., percentage of total spend)."
-		}
-	]
+	"base_line_response": {
+		"rolling_aggregates": {
+			"7_days": 0.0,
+			"30_days": 0.0,
+			"90_days": 0.0,
+			"365_days": 0.0
+		},
+		"financial_metrics": {
+			"burn_rate": 0.0,
+			"runway": 0.0
+		},
+		"patterns": "A descriptive, multi-sentence analysis of spending trends, key drivers, and incorporating business context. Basically write a pattern that u noticed form the spending habbits",
+		"recurring_costs": [
+			{
+				"vendor": "Name of the vendor or service.",
+				"recurrence_type": "monthly | weekly | yearly | quarterly | biannually | biweekly",
+				"category": "The canonical cost category for this expense.",
+				"recurring_amount": 0.0,
+				"next_bill_date": "YYYY-MM-DD"
+			}
+		],
+		"major_expense_drivers": [
+			{
+				"vendor": "Name of the vendor or service with high costs.",
+				"amount": 0.0,
+				"reason": "A quantitative explanation of why this is a major driver (e.g., percentage of total spend)."
+			}
+		]
+	}
 }
 ```
