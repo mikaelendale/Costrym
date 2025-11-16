@@ -24,11 +24,11 @@ export default function AuthCardLayout({
                             </Link>
                         </div>
                         <div className="px-10 py-4 text-center">
-                            <h1 className="text-2xl">{title}</h1>
-                            <p className="text-sm text-primary/90">{description}</p>
+                            <h1 className="text-3xl font-sans">{title}</h1>
+                            <p className="text-sm text-muted-foreground">{description}</p>
                         </div>
-                    <Card className="rounded-4xl ring-4 ring-primary-foreground/30 dark:ring-accent/30 ">
-                        <CardContent className="bg-transparent border-none pb-10">{children}</CardContent>
+                    <Card className="rounded-4xl border-none shadow-none bg-background ">
+                        <CardContent className="bg-transparent  pb-10">{children}</CardContent>
                     </Card>
                 </div>
             </div>

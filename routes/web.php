@@ -2,27 +2,17 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\admin\RBACController;
-use App\Http\Controllers\ChangelogController;
-use App\Http\Controllers\LegalController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PipedreamConnectController;
 use App\Http\Controllers\Socialite\ProviderCallbackController;
 use App\Http\Controllers\Socialite\ProviderRedirectController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-
-// use Spatie\Permission\Models\Role;
-// $role = Role::create(['name' => 'admin']);
-// $role = Role::create(['name' => 'user']); 
+use Inertia\Inertia; 
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return redirect()->route('dashboard');
 })->name('home');
-// // Changelog 
-Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
-Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
-Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
 
 
 Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
@@ -44,11 +34,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('onboarding');
     })->name('onboarding');
     
-    Route::post('onboarding/process', [OnboardingController::class, 'processCompanyInfo'])->name('onboarding.process');
+    Route::post('onboarding/chat', [OnboardingController::class, 'chat'])->name('onboarding.chat');
+    Route::post('onboarding/estimation', [OnboardingController::class, 'estimation'])->name('onboarding.estimation');
+    Route::get('onboarding/select-plan', function () {
+        return redirect()->route('onboarding');
+    })->name('onboarding.select-plan.get');
+    Route::post('onboarding/select-plan', [OnboardingController::class, 'selectPlan'])->name('onboarding.select-plan');
+    Route::get('onboarding/check-subscription', [OnboardingController::class, 'checkSubscriptionStatus'])->name('onboarding.check-subscription');
+    Route::post('onboarding/upload-financial-data', [OnboardingController::class, 'uploadFinancialData'])->name('onboarding.upload-financial-data');
+    Route::get('onboarding/upload-financial-data/status/{sessionId}', [OnboardingController::class, 'getUploadStatus'])->name('onboarding.upload-financial-data.status');
+    Route::post('onboarding/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
     
     // Pipedream Connect routes
     Route::post('connect/token', [PipedreamConnectController::class, 'getToken'])->name('pipedream.token');
     Route::post('connect/{app}/save', [PipedreamConnectController::class, 'saveConnection'])->name('pipedream.save');
+    Route::get('connect/accounts', [PipedreamConnectController::class, 'listAccounts'])->name('pipedream.accounts.list');
+    Route::post('connect/{app}/request', [PipedreamConnectController::class, 'makeRequest'])->name('pipedream.request');
     Route::get('connect/{app}/callback', [PipedreamConnectController::class, 'callback'])->name('pipedream.callback');
 });
 
@@ -80,3 +81,4 @@ Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
+require __DIR__ . '/paymentRoute.php';

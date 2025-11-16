@@ -4,6 +4,18 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
+import { configureEcho } from '@laravel/echo-react';
+import Echo from 'laravel-echo';
+
+// Configure and initialize Echo for Ably broadcasting
+const echo = configureEcho({
+    broadcaster: 'ably',
+});
+
+// Make Echo available globally for components
+if (typeof window !== 'undefined') {
+    (window as any).Echo = echo;
+}
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

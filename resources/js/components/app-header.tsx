@@ -127,7 +127,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
                     <div className="ml-auto flex items-center space-x-1">
                         <div className="relative flex items-center space-x-1">
-                            <CommandMenu />
+                            {/* <CommandMenu /> */}
                             <NotificationsDropdown />
                         </div>
                         <DropdownMenu>

@@ -18,7 +18,11 @@ class PipedreamConnectController extends Controller
     ) {}
 
     /**
-     * Generate Connect token for frontend SDK
+     * Generates a Connect token for the frontend Pipedream SDK
+     * Uses PipedreamService to create Connect token
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
     public function getToken(Request $request): JsonResponse
     {
@@ -29,91 +33,23 @@ class PipedreamConnectController extends Controller
         }
 
         try {
-            $config = config('services.pipedream');
+            $result = $this->pipedreamService->createConnectToken((string) $user->id);
             
-            if (!$config || !isset($config['client_id']) || !isset($config['client_secret']) || !isset($config['project_id'])) {
-                Log::error('Pipedream config missing', ['config' => $config]);
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Pipedream configuration is incomplete',
-                ], 500);
-            }
-            
-            $allowedOrigins = [config('app.url'), 'http://localhost:8000', 'http://127.0.0.1:8000'];
-            $baseUrl = !empty($config['base_url']) ? $config['base_url'] : 'https://api.pipedream.com/v1';
-            
-            // Pipedream Connect token endpoint
-            $tokenUrl = rtrim($baseUrl, '/') . '/connect/tokens';
-            
-            // Use Basic Auth with client_id:client_secret
-            // Make sure credentials don't have extra whitespace
-            $clientId = trim($config['client_id']);
-            $clientSecret = trim($config['client_secret']);
-            
-            // Verify credentials are not empty
-            if (empty($clientId) || empty($clientSecret)) {
-                Log::error('Pipedream credentials are empty');
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Pipedream credentials are not configured',
-                ], 500);
-            }
-            
-            $auth = base64_encode($clientId . ':' . $clientSecret);
-            
-            Log::info('Creating Pipedream token', [
-                'url' => $tokenUrl,
-                'external_user_id' => (string) $user->id,
-                'project_id' => $config['project_id'],
-                'client_id_length' => strlen($clientId),
-                'client_secret_length' => strlen($clientSecret),
-            ]);
-            
-            // According to Pipedream docs, use Basic Auth and JSON body
-            // Laravel Http will JSON-encode the body, so use array for allowed_origins
-            $requestBody = [
-                'external_user_id' => (string) $user->id,
-                'project_id' => $config['project_id'],
-                'project_environment' => $config['project_environment'] ?? 'development',
-                'allowed_origins' => $allowedOrigins, // Array - Laravel will JSON-encode it
-            ];
-            
-            Log::debug('Pipedream token request', [
-                'url' => $tokenUrl,
-                'body' => $requestBody,
-                'client_id_prefix' => substr($config['client_id'], 0, 10) . '...',
-            ]);
-            
-            $response = Http::withHeaders([
-                'Authorization' => 'Basic ' . $auth,
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ])->post($tokenUrl, $requestBody);
-
-            if ($response->successful()) {
-                $data = $response->json();
+            if ($result['success']) {
                 return response()->json([
                     'success' => true,
-                    'token' => $data['token'] ?? null,
+                    'token' => $result['token'],
+                    'expires_at' => $result['expires_at'],
                 ]);
             }
-
-            Log::error('Pipedream token API error', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-                'json' => $response->json(),
-                'headers' => $response->headers(),
-            ]);
-
+            
             return response()->json([
                 'success' => false,
-                'error' => $response->json()['error'] ?? 'Failed to generate token',
-                'details' => config('app.debug') ? $response->body() : null,
+                'error' => $result['error'],
             ], 500);
         } catch (\Exception $e) {
             Log::error('Pipedream token generation error', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
             return response()->json([
                 'success' => false,
@@ -123,7 +59,12 @@ class PipedreamConnectController extends Controller
     }
 
     /**
-     * Save connection after frontend SDK completes auth
+     * Saves a connected account after OAuth flow completes
+     * Uses PipedreamService to store account in database
+     *
+     * @param Request $request
+     * @param string $appName
+     * @return JsonResponse
      */
     public function saveConnection(Request $request, string $appName): JsonResponse
     {
@@ -140,22 +81,40 @@ class PipedreamConnectController extends Controller
         ]);
 
         try {
-            ConnectedAccount::updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'app_name' => $appName,
-                ],
-                [
-                    'pipedream_account_id' => $request->input('connection_id'),
-                    'external_user_id' => $request->input('external_user_id') ?? (string) $user->id,
-                    'metadata' => $request->input('metadata', []),
-                    'is_active' => true,
-                ]
+            $accountId = $request->input('connection_id');
+            $externalUserId = $request->input('external_user_id') ?? (string) $user->id;
+            $metadata = $request->input('metadata', []);
+            
+            // Parse token expiration if provided
+            $tokenExpiresAt = null;
+            if (isset($metadata['expires_at']) || isset($metadata['token_expires_at'])) {
+                $expiresAt = $metadata['expires_at'] ?? $metadata['token_expires_at'];
+                try {
+                    $tokenExpiresAt = new \DateTime($expiresAt);
+                } catch (\Exception $e) {
+                    // Invalid date, will be null
+                }
+            }
+            
+            $account = $this->pipedreamService->storeAccount(
+                userId: $user->id,
+                appName: $appName,
+                accountId: $accountId,
+                externalUserId: $externalUserId,
+                metadata: $metadata,
+                tokenExpiresAt: $tokenExpiresAt
             );
 
             return response()->json([
                 'success' => true,
                 'message' => ucfirst($appName) . ' connected successfully!',
+                'account' => [
+                    'id' => $account->id,
+                    'app_name' => $account->app_name,
+                    'pipedream_account_id' => $account->pipedream_account_id,
+                    'metadata' => $account->metadata,
+                    'connected_at' => $account->created_at,
+                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Pipedream save connection error', [
@@ -171,7 +130,126 @@ class PipedreamConnectController extends Controller
     }
 
     /**
-     * Handle OAuth callback from Pipedream
+     * Lists all connected accounts for the authenticated user
+     * Uses PipedreamService to retrieve stored accounts
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function listAccounts(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        try {
+            $accounts = $this->pipedreamService->listStoredAccounts($user->id)
+                ->map(function ($account) {
+                    return [
+                        'id' => $account->id,
+                        'pipedream_account_id' => $account->pipedream_account_id,
+                        'app' => $account->app_name,
+                        'external_user_id' => $account->external_user_id,
+                        'metadata' => $account->metadata,
+                        'is_active' => $account->is_active,
+                        'connected_at' => $account->created_at,
+                        'updated_at' => $account->updated_at,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'accounts' => $accounts,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Pipedream list accounts error', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to list accounts',
+            ], 500);
+        }
+    }
+
+    /**
+     * Makes an API request to an external service using a connected account
+     * Uses PipedreamService to make authenticated requests via API proxy
+     *
+     * @param Request $request
+     * @param string $appName
+     * @return JsonResponse
+     */
+    public function makeRequest(Request $request, string $appName): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $request->validate([
+            'method' => 'required|string|in:GET,POST,PUT,PATCH,DELETE',
+            'endpoint' => 'required|string',
+            'body' => 'nullable|array',
+            'headers' => 'nullable|array',
+        ]);
+
+        try {
+            $account = $this->pipedreamService->getStoredAccount($user->id, $appName);
+            
+            if (!$account) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'No connected account found for ' . $appName,
+                ], 404);
+            }
+            
+            $result = $this->pipedreamService->makeApiRequest(
+                accountId: $account->pipedream_account_id,
+                method: $request->input('method'),
+                endpoint: $request->input('endpoint'),
+                body: $request->input('body', []),
+                headers: $request->input('headers', [])
+            );
+            
+            if ($result['success']) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $result['data'],
+                    'status' => $result['status'],
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'error' => $result['error'],
+                'status' => $result['status'] ?? 500,
+            ], $result['status'] ?? 500);
+            
+        } catch (\Exception $e) {
+            Log::error('Pipedream API request error', [
+                'error' => $e->getMessage(),
+                'app' => $appName,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to make API request: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+    /**
+     * Handles OAuth callback from Pipedream (optional, not used by SDK)
+     *
+     * @param Request $request
+     * @param string $appName
+     * @return RedirectResponse
      */
     public function callback(Request $request, string $appName): RedirectResponse
     {
@@ -181,9 +259,7 @@ class PipedreamConnectController extends Controller
             return redirect()->route('onboarding')->with('error', 'Please log in first');
         }
 
-        // Get connection_id from query params or session
         $connectionId = $request->query('connection_id') ?? session('pipedream_connection_id');
-        $code = $request->query('code');
         $error = $request->query('error');
 
         if ($error) {
@@ -191,36 +267,24 @@ class PipedreamConnectController extends Controller
         }
 
         if (!$connectionId) {
-            Log::warning('Pipedream callback missing connection_id', [
-                'query' => $request->query(),
-                'session' => session()->all(),
-            ]);
             return redirect()->route('onboarding')->with('error', 'Invalid callback - missing connection ID');
         }
 
         try {
-            // Get connected account details from Pipedream
-            $account = $this->pipedreamService->getConnectedAccount($connectionId);
+            $accountDetails = $this->pipedreamService->getAccountDetails($connectionId);
 
-            if (!$account) {
+            if (!$accountDetails) {
                 return redirect()->route('onboarding')->with('error', 'Failed to verify connection');
             }
 
-            // Save to database
-            ConnectedAccount::updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'app_name' => $appName,
-                ],
-                [
-                    'pipedream_account_id' => $connectionId,
-                    'external_user_id' => $account['external_user_id'] ?? (string) $user->id,
-                    'metadata' => $account,
-                    'is_active' => true,
-                ]
+            $this->pipedreamService->storeAccount(
+                userId: $user->id,
+                appName: $appName,
+                accountId: $connectionId,
+                externalUserId: $accountDetails['external_user_id'] ?? (string) $user->id,
+                metadata: $accountDetails
             );
 
-            // Clear session
             session()->forget(['pipedream_connection_id', 'pipedream_app_name']);
 
             return redirect()->route('onboarding')->with('success', ucfirst($appName) . ' connected successfully!');
@@ -228,11 +292,9 @@ class PipedreamConnectController extends Controller
             Log::error('Pipedream callback error', [
                 'error' => $e->getMessage(),
                 'app' => $appName,
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return redirect()->route('onboarding')->with('error', 'Failed to complete connection: ' . $e->getMessage());
         }
     }
 }
-
