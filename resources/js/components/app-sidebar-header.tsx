@@ -14,7 +14,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                     <Breadcrumbs breadcrumbs={breadcrumbs} />
                 </div>
                 <div className="flex items-center gap-2 px-2 py-1">
-                    <CommandMenu />
+                    {/* <CommandMenu /> */}
                     <NotificationsDropdown />
                     <ModeToggle className="" />
                 </div>

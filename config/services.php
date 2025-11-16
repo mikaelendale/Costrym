@@ -74,5 +74,24 @@ return [
         'project_environment' => env('PIPEDREAM_PROJECT_ENVIRONMENT', 'development'),
         'base_url' => env('PIPEDREAM_BASE_URL', 'https://api.pipedream.com/v1'),
     ],
-
+    /*
+    |------------------------------------------------------------------------|
+    | Paddle Connect
+    |------------------------------------------------------------------------|
+    */
+    'paddle' => [
+        'client_side_token' => env('PADDLE_CLIENT_SIDE_TOKEN'),
+        // Price IDs        
+        'startup_monthly_price_id' => env('PADDLE_STARTUP_MONTHLY_PRICE_ID'),
+        'startup_annual_price_id' => env('PADDLE_STARTUP_ANNUAL_PRICE_ID'),
+        'enterprise_annual_price_id' => env('PADDLE_ENTERPRISE_ANNUAL_PRICE_ID'),
+        // Price amounts
+        'startup_monthly_amount' => env('STARTUP_MONTHLY_SUBSCRIPTION_AMOUNT'),
+        'startup_annual_amount' => env('STARTUP_ANNUAL_SUBSCRIPTION_AMOUNT'),
+        'enterprise_annual_amount' => env('ENTERPRISE_ANNUAL_SUBSCRIPTION_AMOUNT'), 
+        // Discounts
+        'startup_monthly_discount' => env('STARTUP_MONTHLY_DISCOUNT'),
+        'startup_annual_discount' => env('STARTUP_ANNUAL_DISCOUNT'),
+        'enterprise_annual_discount' => env('ENTERPRISE_ANNUAL_DISCOUNT'),
+    ],
 ];

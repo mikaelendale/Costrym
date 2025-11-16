@@ -29,6 +29,31 @@ export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    paddle?: {
+        client_side_token: string;
+    };
+    subscription?: {
+        hasSubscription: boolean;
+        states: {
+            subscribed: boolean;
+            subscribedToDefault: boolean;
+            valid?: boolean;
+            active?: boolean;
+            onTrial?: boolean;
+            recurring?: boolean;
+            pastDue?: boolean;
+            paused?: boolean;
+            canceled?: boolean;
+            onGracePeriod?: boolean;
+            [key: string]: any;
+        };
+        defaultSubscription?: any;
+        subscriptions?: any[];
+    };
+    customer?: {
+        plan: string;
+        subscriptionAmount: string;
+    };
     ziggy: Config & { location: string };
     sidebarOpen: boolean;
     [key: string]: unknown;
