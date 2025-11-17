@@ -1,19 +1,30 @@
-import FooterSection from '@/components/footer-one';
-import HeroSection from '@/components/hero-section-five';
-import { type SharedData } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
+import Hero from '@/components/Hero';
+import IntegrateWith from '@/components/IntegrateWith';
+import { CTASection } from '@/components/Landing/CTASection';
+import { EnterpriseContent } from '@/components/Landing/EnterpriseContent';
+import { FeaturesSection } from '@/components/Landing/FeaturesSection';
+import { Footer } from '@/components/Landing/Footer';
+import { PromiseSection } from '@/components/Landing/PromiseSection';
+import { RequirementsSection } from '@/components/Landing/RequirementsSection';
+import { WhyCostrymSection } from '@/components/Landing/WhyCostrymSection';
+import StatsSection from '@/components/stats';
+import MainLandingLayout from '@/layouts/MainLandingLayout';
 
 export default function Welcome() {
-    const { auth } = usePage<SharedData>().props;
-
     return (
-        <>
-            <Head title="Welcome">
-                <link rel="preconnect" href="https://fonts.bunny.net" />
-                <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
-            </Head>
-            <HeroSection />
-            <FooterSection />
-        </>
+        <MainLandingLayout>
+            <Hero />
+            <IntegrateWith />
+            <StatsSection />
+            {/* <WhatWeDo /> */}
+            {/* <SelectSector /> */}
+            <WhyCostrymSection />
+            <PromiseSection />
+            <EnterpriseContent />
+            <FeaturesSection />
+            <RequirementsSection />
+            <CTASection />
+            <Footer />
+        </MainLandingLayout>
     );
 }

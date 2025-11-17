@@ -1,9 +1,7 @@
 import FooterSection from '@/components/footer-one';
-import { ModeToggle } from '@/components/mode-toggle';
-import AuthLayoutTemplate from '@/layouts/auth/auth-card-layout';
-import { SharedData, type BreadcrumbItem } from '@/types';
+import { SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { useEffect, type PropsWithChildren } from 'react';
+import { useEffect } from 'react';
 import { toast, Toaster } from 'sonner';
 
 export default function LandingLayout({ children, title, description, ...props }: { children: React.ReactNode; title: string; description: string }) {
@@ -16,7 +14,8 @@ export default function LandingLayout({ children, title, description, ...props }
     return (
         <>
             {children}
-            <Toaster expand
+            <Toaster
+                expand
                 toastOptions={{
                     style: {
                         background: 'var(--primary-foreground)',
@@ -24,8 +23,7 @@ export default function LandingLayout({ children, title, description, ...props }
                         color: 'var(--primary)',
                         borderRadius: '20px', // Modern, moderately rounded corners
                     },
-                }
-                }
+                }}
                 theme="system"
             />
             <FooterSection />
