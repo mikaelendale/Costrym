@@ -68,7 +68,7 @@ Also provide a brief `justification` for each `should_cost` value, linking it ba
 **Strict Output Constraints:**
 * Return only a single, valid JSON object. Do not include prose or markdown.
 * Your entire response must start with `{` and end with `}`.
-* If there are no high-priority items, return `{"categorized_response":{} }`.
+*   If a value cannot be calculated due to insufficient data, use `null` for scalar fields and an empty array `[]` for list fields.
 
 **Output Schema (Follow Exactly):**
 

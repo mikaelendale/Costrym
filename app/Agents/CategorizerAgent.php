@@ -6,7 +6,6 @@ use App\Services\CleanUpResponse;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
-use Prism\Prism\ValueObjects\Messages\SystemMessage;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
 
@@ -24,16 +23,7 @@ class CategorizerAgent extends BaseLlmAgent
 
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
-        $company_financials = $context->getState('company_financials');
-        $company_profile = $context->getState('company_profile');
-
-        $company_financials = json_encode($company_financials, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-        $company_profile = json_encode($company_profile, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-        $contextBlock = "Company Financials:\n{$company_financials}\n\nCompany Profile:\n{$company_profile}";
-        Log::info("Category Context: {$contextBlock}");
-        $inputMessages[] = new SystemMessage($contextBlock);
+        Log::info('Before CategorizerAgent LLM call ...', ['input_message' => $inputMessages]);
 
         return parent::beforeLlmCall($inputMessages, $context);
     }
@@ -47,6 +37,7 @@ class CategorizerAgent extends BaseLlmAgent
         $context->setState('categorized_data', $parsedResponse);
 
         Log::info('Finished setting categorized_data state.');
+        Log::info('After CategorizerAgent LLM response ...', ['category_output' => $parsedResponse]);
 
         return parent::afterLlmResponse($response, $context, $request);
 
