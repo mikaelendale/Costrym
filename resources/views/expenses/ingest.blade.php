@@ -17,8 +17,8 @@
         <h1>Upload Expense CSV</h1>
         <form action="{{ route('expenses.ingest.upload') }}" method="POST" enctype="multipart/form-data">
             @csrf
-            <label for="csv">CSV file</label>
-            <input id="csv" type="file" name="csv" accept=".csv,text/csv" required>
+            <label for="file">CSV file</label>
+            <input id="file" type="file" name="file">
 
             <button type="submit">Upload & Ingest</button>
         </form>

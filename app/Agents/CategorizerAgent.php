@@ -3,6 +3,8 @@
 namespace App\Agents;
 
 use App\Services\CleanUpResponse;
+use App\Tools\CreateCategory;
+use App\Tools\GetCategory;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
@@ -19,6 +21,11 @@ class CategorizerAgent extends BaseLlmAgent
 
     protected string $instructions = 'Normalize and map incoming category/name variants to the master category list and return a clean JSON mapping. Keep it precise; see prompt file for full details.';
 
+    protected array $tools = [
+        GetCategory::class,
+        CreateCategory::class,
+    ];
+
     // // protected ?string $provider = Provider::Groq->value;
 
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
@@ -33,11 +40,6 @@ class CategorizerAgent extends BaseLlmAgent
         Log::info('After CategorizerAgent LLM response ...');
         $parsedResponse = CleanUpResponse::extractJsonPayload($response);
         Log::info('Parsed CategorizerAgent response payload.', ['response' => $parsedResponse]);
-
-        $context->setState('categorized_data', $parsedResponse);
-
-        Log::info('Finished setting categorized_data state.');
-        Log::info('After CategorizerAgent LLM response ...', ['category_output' => $parsedResponse]);
 
         return parent::afterLlmResponse($response, $context, $request);
 

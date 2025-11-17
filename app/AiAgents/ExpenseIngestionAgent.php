@@ -32,6 +32,7 @@ class ExpenseIngestionAgent extends Agent
                         'additionalProperties' => false,
                         'properties' => [
                             // All fields explicitly allow null so agent can output null instead of hallucinating
+                            'expense_name' => ['type' => ['string', 'null']],
                             'provider' => ['type' => ['string', 'null']],
                             'account_id' => ['type' => ['string', 'null']],
                             'txn_id' => ['type' => ['string', 'null']],
@@ -64,9 +65,10 @@ You are an ingestion and normalization agent for financial data. CRITICAL RULES:
 3. Do not fabricate merchant names, IDs, timestamps, currencies, or amounts.
 4. Only use values that appear directly in the source rows or a clearly labeled alias (e.g. "merchant_name" -> merchant). If similarity/confidence is low, set the field to null.
 5. If a field is missing or unparsable, set it explicitly to null (NOT an educated guess). Only include an error message if the entire row is malformed.
-6. Metadata must only contain keys actually present in the source; do not create new analytics fields.
-7. Prefer explicit null over omission so downstream systems can distinguish "unknown" from "not provided".
+
+6. Prefer explicit null over omission so downstream systems can distinguish "unknown" from "not provided".
 Your job:
+
 - Read arbitrary, messy input rows (JSON objects/arrays, or textually serialized tables) that may represent transactions, ledger lines, invoices, statements, or CSV-like sheets.
 - Extract and map each row into our normalized Expense shape (all fields optional) using best-effort parsing.
 

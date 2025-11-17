@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
             $table->string('provider')->nullable();
             $table->string('account_id')->nullable()->index();
             $table->string('txn_id')->nullable()->index();
@@ -23,6 +24,8 @@ return new class extends Migration
             $table->text('raw_description')->nullable();
             $table->json('metadata')->nullable();
             $table->string('type', 32)->nullable();
+            $table->json('tags')->nullable();
+            $table->foreignId('category_model_id')->nullable()->constrained()->onDelete('set null');
             $table->timestamps();
         });
     }
