@@ -12,7 +12,7 @@ class CompanyProfileService
 
     public function createCompanyProfile(array $data)
     {
-        $this->companyProfileRepository->createCompanyProfile($data);
+        // $this->companyProfileRepository->createCompanyProfile($data);
         $input = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         Log::info('ingesting expenses for company profile', ['input' => $input]);
 

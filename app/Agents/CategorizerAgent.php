@@ -34,7 +34,7 @@ class CategorizerAgent extends BaseLlmAgent
 
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
-        Log::info('Before CategorizerAgent LLM call ...', ['input_message' => $inputMessages]);
+        // Log::info('Before CategorizerAgent LLM call ...', ['input_message' => $inputMessages]);
 
         return parent::beforeLlmCall($inputMessages, $context);
     }
