@@ -1,5 +1,5 @@
 import { WORKFLOW_STEPS, WORKFLOWS } from '@/data/workflow';
-import { GRADIENTS_1 } from '@/utils/gradient';
+import { GRADIENTS_2 } from '@/utils/gradient';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useMemo, useRef } from 'react';
 import { Card } from '../ui/card';
@@ -14,7 +14,7 @@ const WorkflowCards: React.FC<Props> = ({ onSelect }) => {
     const scrollRef = useRef<HTMLDivElement>(null);
 
     // Gradient variations inspired by the provided base gradient
-    const GRADIENTS = useMemo(() => GRADIENTS_1(), []);
+    const GRADIENTS = useMemo(() => GRADIENTS_2(), []);
 
     const scrollByAmount = (dir: 'left' | 'right') => {
         const el = scrollRef.current;
@@ -27,7 +27,7 @@ const WorkflowCards: React.FC<Props> = ({ onSelect }) => {
     };
 
     return (
-        <div className="mx-auto flex max-w-6xl flex-col gap-8">
+        <div className="mx-auto flex w-full flex-col gap-8">
             <div className="w-full text-center text-4xl font-bold">Recent Activities</div>
 
             <div className="relative">
