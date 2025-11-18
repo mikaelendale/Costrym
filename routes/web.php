@@ -2,12 +2,15 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\admin\RBACController;
+use App\Http\Controllers\IntegrationIngestorController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotionAgentController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PipedreamConnectController;
 use App\Http\Controllers\Socialite\ProviderCallbackController;
 use App\Http\Controllers\Socialite\ProviderRedirectController;
 use App\Http\Controllers\WorkflowController;
+use App\Jobs\TaskDesignerJob;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -34,6 +37,17 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->middleware('auth');
     // Mark specific notification as unread
     Route::post('/notifications/{id}/mark-unread', [NotificationController::class, 'markAsUnread'])->middleware('auth');
+
+    // Notion Agent routes
+    Route::get('notion-agent', [NotionAgentController::class, 'index'])->name('notion.agent');
+    Route::post('notion-agent/chat', [NotionAgentController::class, 'chat'])->name('notion.agent.chat');
+    Route::get('notion-agent/actions', [NotionAgentController::class, 'getAvailableActions'])->name('notion.agent.actions');
+
+    // Integration Ingestor routes
+    Route::get('integration-ingestor', [IntegrationIngestorController::class, 'index'])->name('integration.ingestor');
+    Route::post('integration-ingestor/chat', [IntegrationIngestorController::class, 'chat'])->name('integration.ingestor.chat');
+    Route::get('integration-ingestor/integrations', [IntegrationIngestorController::class, 'getAvailableIntegrations'])->name('integration.ingestor.integrations');
+    Route::get('integration-ingestor/tools', [IntegrationIngestorController::class, 'getAvailableTools'])->name('integration.ingestor.tools');
 });
 
 // Onboarding route (accessible without onboarding middleware to avoid redirect loops)
@@ -44,7 +58,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('onboarding/process', [OnboardingController::class, 'processCompanyInfo'])->name('onboarding.process');
 
-    
     Route::post('onboarding/chat', [OnboardingController::class, 'chat'])->name('onboarding.chat');
     Route::post('onboarding/estimation', [OnboardingController::class, 'estimation'])->name('onboarding.estimation');
     Route::get('onboarding/select-plan', function () {
@@ -55,13 +68,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('onboarding/upload-financial-data', [OnboardingController::class, 'uploadFinancialData'])->name('onboarding.upload-financial-data');
     Route::get('onboarding/upload-financial-data/status/{sessionId}', [OnboardingController::class, 'getUploadStatus'])->name('onboarding.upload-financial-data.status');
     Route::post('onboarding/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
-    
+
     // Pipedream Connect routes
     Route::post('connect/token', [PipedreamConnectController::class, 'getToken'])->name('pipedream.token');
     Route::post('connect/{app}/save', [PipedreamConnectController::class, 'saveConnection'])->name('pipedream.save');
     Route::get('connect/accounts', [PipedreamConnectController::class, 'listAccounts'])->name('pipedream.accounts.list');
     Route::post('connect/{app}/request', [PipedreamConnectController::class, 'makeRequest'])->name('pipedream.request');
     Route::get('connect/{app}/callback', [PipedreamConnectController::class, 'callback'])->name('pipedream.callback');
+
+    // Pipedream Components routes
+    Route::get('connect/apps/search', [PipedreamConnectController::class, 'searchApps'])->name('pipedream.apps.search');
+    Route::get('connect/integrations', [PipedreamConnectController::class, 'getAvailableIntegrations'])->name('pipedream.integrations.list');
+    Route::get('connect/{app}/actions', [PipedreamConnectController::class, 'listActions'])->name('pipedream.actions.list');
+    Route::get('connect/{app}/triggers', [PipedreamConnectController::class, 'listTriggers'])->name('pipedream.triggers.list');
+    Route::get('connect/components/{componentKey}', [PipedreamConnectController::class, 'getComponentDetails'])->name('pipedream.component.details');
+    Route::post('connect/actions/run', [PipedreamConnectController::class, 'runAction'])->name('pipedream.action.run');
+    Route::post('connect/{app}/components/sync', [PipedreamConnectController::class, 'syncComponents'])->name('pipedream.components.sync');
+    Route::post('connect/components/sync-all', [PipedreamConnectController::class, 'syncAllIntegrations'])->name('pipedream.components.sync-all');
+    Route::get('connect/components', [PipedreamConnectController::class, 'listStoredComponents'])->name('pipedream.components.list');
+    Route::post('connect/{app}/disconnect', [PipedreamConnectController::class, 'disconnect'])->name('pipedream.disconnect');
+
+    // Notion Agent routes
+    Route::get('notion-agent', [NotionAgentController::class, 'index'])->name('notion.agent');
+    Route::post('notion-agent/chat', [NotionAgentController::class, 'chat'])->name('notion.agent.chat');
+    Route::get('notion-agent/actions', [NotionAgentController::class, 'getAvailableActions'])->name('notion.agent.actions');
+
 });
 
 if (config('features.rbac')) {
@@ -91,7 +122,16 @@ Route::get('/ai/test', [WorkflowController::class, 'index'])->name('ai.workflow'
 // OAuth routes
 Route::get('/auth/{provider}/redirect', ProviderRedirectController::class)->name('auth.redirect')->middleware(['throttle:5,1']);
 Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name('auth.callback')->middleware(['throttle:5,1']);
- 
-require __DIR__ . '/settings.php';
-require __DIR__ . '/auth.php';
-require __DIR__ . '/paymentRoute.php';
+
+Route::middleware(['auth', 'verified', 'onboarding'])->get('/dispatch', function () {
+    $user = auth()->user();
+    if (! $user) {
+        abort(403);
+    }
+    TaskDesignerJob::dispatch($user->id);
+
+    return redirect()->route('dashboard')->with('success', 'Task designer job dispatched');
+})->name('task.designer');
+require __DIR__.'/settings.php';
+require __DIR__.'/auth.php';
+require __DIR__.'/paymentRoute.php';
