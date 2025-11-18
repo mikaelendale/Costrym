@@ -3,22 +3,10 @@ import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
-import { usePage } from '@inertiajs/react';
-import {
-    ChatTeardropTextIcon,
-    CheckSquareOffsetIcon,
-    CreditCard,
-    GiftIcon,
-    Headset,
-    HouseIcon,
-    NetworkIcon,
-    RobotIcon,
-    TrendUpIcon,
-} from '@phosphor-icons/react';
-import { StrategyIcon } from '@phosphor-icons/react/dist/ssr';
+import { Link, usePage } from '@inertiajs/react';
+import { ChatTeardropTextIcon, CreditCard, GiftIcon, HouseIcon, NetworkIcon, TrendUpIcon } from '@phosphor-icons/react';
 import { BrickWall, GitPullRequestDraft, UserCheck } from 'lucide-react';
 import AppLogo from './app-logo';
-import { Link } from '@inertiajs/react';
 const NavFooterBudNetCardItems: NavItem[] = [
     {
         title: 'BudNet',
@@ -32,7 +20,7 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: '/dashboard',
         icon: HouseIcon,
-        roles: ['user', 'admin'],
+        // roles: ['user', 'admin'],
     },
     {
         title: 'Strategy',
@@ -118,12 +106,12 @@ export function AppSidebar() {
         return item.roles.some((role) => auth.roles?.includes(role));
     });
     return (
-        <Sidebar collapsible="icon" variant="sidebar">  
+        <Sidebar collapsible="icon" variant="sidebar">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard" >
+                            <Link href="/dashboard">
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

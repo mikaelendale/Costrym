@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\admin\RBACController;
+use App\Http\Controllers\ChangelogController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PipedreamConnectController;
@@ -18,6 +20,7 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return redirect()->route('dashboard');
 })->name('home');
+
 // Changelog
 Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
 Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
@@ -44,7 +47,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('onboarding/process', [OnboardingController::class, 'processCompanyInfo'])->name('onboarding.process');
 
-    
     Route::post('onboarding/chat', [OnboardingController::class, 'chat'])->name('onboarding.chat');
     Route::post('onboarding/estimation', [OnboardingController::class, 'estimation'])->name('onboarding.estimation');
     Route::get('onboarding/select-plan', function () {
@@ -55,7 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('onboarding/upload-financial-data', [OnboardingController::class, 'uploadFinancialData'])->name('onboarding.upload-financial-data');
     Route::get('onboarding/upload-financial-data/status/{sessionId}', [OnboardingController::class, 'getUploadStatus'])->name('onboarding.upload-financial-data.status');
     Route::post('onboarding/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
-    
+
     // Pipedream Connect routes
     Route::post('connect/token', [PipedreamConnectController::class, 'getToken'])->name('pipedream.token');
     Route::post('connect/{app}/save', [PipedreamConnectController::class, 'saveConnection'])->name('pipedream.save');
@@ -91,7 +93,7 @@ Route::get('/ai/test', [WorkflowController::class, 'index'])->name('ai.workflow'
 // OAuth routes
 Route::get('/auth/{provider}/redirect', ProviderRedirectController::class)->name('auth.redirect')->middleware(['throttle:5,1']);
 Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name('auth.callback')->middleware(['throttle:5,1']);
- 
-require __DIR__ . '/settings.php';
-require __DIR__ . '/auth.php';
-require __DIR__ . '/paymentRoute.php';
+
+require __DIR__.'/settings.php';
+require __DIR__.'/auth.php';
+require __DIR__.'/paymentRoute.php';

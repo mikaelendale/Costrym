@@ -1,66 +1,61 @@
-import { Breadcrumbs } from "@/components/breadcrumbs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import {
-    NavigationMenu,
-    NavigationMenuItem,
-    NavigationMenuList,
-    navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { UserMenuContent } from "@/components/user-menu-content"
-import { useInitials } from "@/hooks/use-initials"
-import { cn } from "@/lib/utils"
-import type { BreadcrumbItem, NavItem, SharedData } from "@/types"
-import { Link, usePage } from "@inertiajs/react"
-import { BrickWall, GitPullRequestDraft, LayoutGrid, Menu, Settings, Shield, ShieldClose, UserCheck } from "lucide-react"
-import AppLogo from "./app-logo"
-import AppLogoIcon from "./app-logo-icon"
-import { CommandMenu } from "./command"
-import { NotificationsDropdown } from "./notification-dropdown"
-import { ModeToggle } from "./mode-toggle"
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { NavigationMenu, NavigationMenuItem, NavigationMenuList, navigationMenuTriggerStyle } from '@/components/ui/navigation-menu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { UserMenuContent } from '@/components/user-menu-content';
+import { useInitials } from '@/hooks/use-initials';
+import { cn } from '@/lib/utils';
+import type { BreadcrumbItem, NavItem, SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
+import { BrickWall, GitPullRequestDraft, LayoutGrid, Menu, UserCheck } from 'lucide-react';
+import AppLogo from './app-logo';
+import AppLogoIcon from './app-logo-icon';
+import { ModeToggle } from './mode-toggle';
+import { NotificationsDropdown } from './notification-dropdown';
+import HeaderStatsMini from '@/components/header-stats-mini';
 
 const mainNavItems: NavItem[] = [
     {
-        title: "Dashboard",
-        href: "/dashboard",
+        title: 'Dashboard',
+        href: '/dashboard',
         icon: LayoutGrid,
-        roles: ["user", "admin"],
+        roles: ['user', 'admin'],
     },
     {
-        title: "Admin Panel",
-        href: "/admin/dashboard",
+        title: 'Admin Panel',
+        href: '/admin/dashboard',
         icon: BrickWall,
-        roles: ["admin"], // Define required roles for this item
+        roles: ['admin'], // Define required roles for this item
     },
     {
-        title: "Users",
-        href: "/admin/users",
+        title: 'Users',
+        href: '/admin/users',
         icon: UserCheck,
-        roles: ["admin"], // Define required roles for this item
+        roles: ['admin'], // Define required roles for this item
     },
     {
-        title: "Roles and Permissions",
-        href: "/admin/roles-permissions",
+        title: 'Roles and Permissions',
+        href: '/admin/roles-permissions',
         icon: GitPullRequestDraft,
-        roles: ["admin"], // Define required roles for this item
+        roles: ['admin'], // Define required roles for this item
     },
-]
+];
 
 interface AppHeaderProps {
-    breadcrumbs?: BreadcrumbItem[]
+    breadcrumbs?: BreadcrumbItem[];
 }
 
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
-    const page = usePage<SharedData>()
-    const { auth } = page.props
-    const getInitials = useInitials()
+    const page = usePage<SharedData>();
+    const { auth } = page.props;
+    const getInitials = useInitials();
 
     const visibleNavItems = mainNavItems.filter((item) => {
-        if (!item.roles) return true // Show items without role restrictions
-        return item.roles.some((role) => auth.roles?.includes(role))
-    })
+        if (!item.roles) return true; // Show items without role restrictions
+        return item.roles.some((role) => auth.roles?.includes(role));
+    });
 
     return (
         <>
@@ -109,8 +104,8 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             href={item.href}
                                             className={cn(
                                                 navigationMenuTriggerStyle(),
-                                                page.url === item.href && "text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100",
-                                                "h-9 cursor-pointer px-3",
+                                                page.url === item.href && 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100',
+                                                'h-9 cursor-pointer px-3',
                                             )}
                                         >
                                             {item.icon && <item.icon className="mr-2 h-4 w-4" />}
@@ -126,6 +121,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     </div>
 
                     <div className="ml-auto flex items-center space-x-1">
+                        <div className="hidden md:flex items-center pr-2">
+                            <HeaderStatsMini />
+                        </div>
                         <div className="relative flex items-center space-x-1">
                             {/* <CommandMenu /> */}
                             <NotificationsDropdown />
@@ -134,7 +132,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="size-10 rounded-full p-1">
                                     <Avatar className="size-8 overflow-hidden rounded-full">
-                                        <AvatarImage src={auth.user.profile_url || "/placeholder.svg"} alt={auth.user.name} />
+                                        <AvatarImage src={auth.user.profile_url || '/placeholder.svg'} alt={auth.user.name} />
                                         <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
                                             {getInitials(auth.user.name)}
                                         </AvatarFallback>
@@ -155,7 +153,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     </div>
                 </div>
             )}
-            <ModeToggle className="fixed bottom-4 bg-background rounded-full ring-4 ring-accent/80 right-4 z-20" />
+            <ModeToggle className="fixed right-4 bottom-4 z-20 rounded-full bg-background ring-4 ring-accent/80" />
         </>
-    )
+    );
 }
