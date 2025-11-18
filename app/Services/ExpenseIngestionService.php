@@ -57,8 +57,16 @@ JSON;
 
         // $parsedResponse = CleanUpResponse::extractJsonPayload($categorizer_response);
 
+        // Normalize CategorizerAgent output to compact JSON
+        try {
+            $categorizerArray = CleanUpResponse::extractJsonPayload($categorizer_response);
+            $categorizerCompact = json_encode($categorizerArray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            $categorizerCompact = is_string($categorizer_response) ? str_replace("\t", '', (string) $categorizer_response) : $categorizer_response;
+        }
+
         Log::info('categorized_response', [
-            'response' => $categorizer_response,
+            'response' => $categorizerCompact,
         ]);
 
         $baseline = BaseLineAgent::run('use company context for more category response'.$categorizer_response)->go();
@@ -76,8 +84,15 @@ JSON;
         ]);
 
         $costdecomposition = CostDecompositionAgent::run('use categorized expense to decompose costs '.$categorizer_response)->go();
+        // Normalize CostDecompositionAgent output
+        try {
+            $costDecompositionArray = CleanUpResponse::extractJsonPayload($costdecomposition);
+            $costDecompositionCompact = json_encode($costDecompositionArray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            $costDecompositionCompact = is_string($costdecomposition) ? str_replace("\t", '', (string) $costdecomposition) : $costdecomposition;
+        }
         Log::info('costdecomposition response', [
-            'response' => $costdecomposition,
+            'response' => $costDecompositionCompact,
         ]);
 
         $parsed_categorizer_response = CleanUpResponse::extractJsonPayload($categorizer_response);
@@ -105,31 +120,66 @@ JSON;
         $cerPayload = json_encode($cerInput, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         $cerResponse = CERAgent::run($cerPayload)->go();
+        // Normalize CERAgent output
+        try {
+            $cerArray = CleanUpResponse::extractJsonPayload($cerResponse);
+            $cerCompact = json_encode($cerArray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            $cerCompact = is_string($cerResponse) ? str_replace("\t", '', (string) $cerResponse) : $cerResponse;
+        }
         Log::info('cer response', [
-            'response' => $cerResponse,
+            'response' => $cerCompact,
         ]);
 
         $cutcostoptimizer = CostOptomizerAgent::run(' categoryAgentResponse: '.$categorizer_response.'benchMarkData'.$cerResponse)->go();
 
+        // Normalize CostOptomizerAgent output
+        try {
+            $cutCostArray = CleanUpResponse::extractJsonPayload($cutcostoptimizer);
+            $cutCostCompact = json_encode($cutCostArray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            $cutCostCompact = is_string($cutcostoptimizer) ? str_replace("\t", '', (string) $cutcostoptimizer) : $cutcostoptimizer;
+        }
         Log::info('cutcostoptimizer response', [
-            'response' => $cutcostoptimizer,
+            'response' => $cutCostCompact,
         ]);
 
         sleep(60);
         $costAllignmantresponse = CostValueAlignerAgent::run('cutcostoptimizer: '.$cutcostoptimizer)->go();
 
+        // Normalize CostValueAlignerAgent output
+        try {
+            $costAlignArray = CleanUpResponse::extractJsonPayload($costAllignmantresponse);
+            $costAlignCompact = json_encode($costAlignArray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            $costAlignCompact = is_string($costAllignmantresponse) ? str_replace("\t", '', (string) $costAllignmantresponse) : $costAllignmantresponse;
+        }
         Log::info('cutcostaligner response', [
-            'response' => $costAllignmantresponse,
+            'response' => $costAlignCompact,
         ]);
 
         $automations = AutomationPlanningAgent::run($costAllignmantresponse)->go();
+        // Normalize AutomationPlanningAgent output
+        try {
+            $automationsArray = CleanUpResponse::extractJsonPayload($automations);
+            $automationsCompact = json_encode($automationsArray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            $automationsCompact = is_string($automations) ? str_replace("\t", '', (string) $automations) : $automations;
+        }
         Log::info('automation planning response', [
-            'response' => $automations,
+            'response' => $automationsCompact,
         ]);
 
         $approvalLayer = ApprovalAgent::run(input: $automations)->go();
+        // Normalize ApprovalAgent output
+        try {
+            $approvalArray = CleanUpResponse::extractJsonPayload($approvalLayer);
+            $approvalCompact = json_encode($approvalArray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            $approvalCompact = is_string($approvalLayer) ? str_replace("\t", '', (string) $approvalLayer) : $approvalLayer;
+        }
         Log::info('approval layer response', [
-            'response' => $approvalLayer,
+            'response' => $approvalCompact,
         ]);
 
         return $byCategory;
