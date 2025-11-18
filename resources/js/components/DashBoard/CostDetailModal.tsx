@@ -1,21 +1,11 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { OptCostItem } from '@/data/optimizedCosts';
 import { BadgeCheck } from 'lucide-react';
-
-export type OptomizedCostItem = {
-    id: number;
-    name: string;
-    status: string;
-    savings: string; // e.g., "$1,200"
-    previousExpense: string; // e.g., "$3,500 / mo"
-    savedPerMonth: string; // e.g., "$1,200 / mo"
-    costDescription: string; // what exactly the cost was
-    method: string; // how it was saved
-};
 
 type CostDetailModalProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    item: OptomizedCostItem | null;
+    item: OptCostItem | null;
 };
 
 export default function CostDetailModal({ open, onOpenChange, item }: CostDetailModalProps) {

@@ -1,12 +1,12 @@
-import { OptomizedCostList } from '@/data/data';
+import { OptCostItem, optimizedCosts } from '@/data/optimizedCosts';
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 import { Card } from '../ui/card';
-import CostDetailModal, { type OptomizedCostItem } from './CostDetailModal';
+import CostDetailModal from './CostDetailModal';
 
 const OptomizedCost = () => {
     const [openModal, setOpenModal] = useState(false);
-    const [selectedCost, setSelectedCost] = useState<OptomizedCostItem | null>(null);
+    const [selectedCost, setSelectedCost] = useState<OptCostItem | null>(null);
 
     // const handleOpen = (item: OptomizedCostItem) => {
     //     setSelected(item);
@@ -17,10 +17,10 @@ const OptomizedCost = () => {
         <div className="flex flex-col gap-6">
             <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-4xl">Optimized Costs</h2>
             <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {OptomizedCostList.slice(0, 6).map((item) => (
+                {optimizedCosts.slice(0, 6).map((item) => (
                     <Card
                         key={item.id}
-                        className="group glass-card relative h-full overflow-hidden rounded-2xl p-1 pb-3 text-foreground transition-all duration-300 hover:-translate-y-0.5"
+                        className="group glass-card relative h-full cursor-pointer overflow-hidden rounded-2xl p-1 pb-3 text-foreground transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     >
                         <div className="glass-sheen" />
                         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[var(--glass-border)]" />
@@ -68,7 +68,7 @@ const OptomizedCost = () => {
             </div>
             <div className="mt-2 flex w-full justify-center">
                 <Link
-                    href="/dashboar"
+                    href="/optimization-costs"
                     className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:opacity-95"
                 >
                     See more

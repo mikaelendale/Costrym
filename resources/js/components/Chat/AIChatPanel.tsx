@@ -95,7 +95,7 @@ export default function AIChatPanel({ userName }: { userName?: string }) {
             style={{
                 transform: mounted ? 'scaleY(1)' : 'scaleY(0)',
                 transformOrigin: 'bottom',
-                transition: 'transform 1800ms cubic-bezier(.2,.8,.2,1), opacity 600ms ease',
+                transition: 'transform 1000ms cubic-bezier(.2,.8,.2,1), opacity 10ms ease',
                 opacity: mounted ? 1 : 0,
             }}
             className="mx-auto flex h-[40vh] w-full max-w-4xl flex-col items-center justify-center py-8"

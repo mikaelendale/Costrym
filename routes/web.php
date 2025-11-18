@@ -30,6 +30,17 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+
+    // Integrations
+    Route::get('integrations', function () {
+        return Inertia::render('Integrations/Index');
+    })->name('integrations.index');
+
+    // Optimized Cost
+    Route::get('optimization-costs', function () {
+        return Inertia::render('OptomizationCost/Index');
+    })->name('optimization-costs.index');
+
     // Notification routes
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->middleware('auth');

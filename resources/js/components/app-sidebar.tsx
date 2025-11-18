@@ -20,7 +20,21 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: '/dashboard',
         icon: HouseIcon,
-        // roles: ['user', 'admin'],
+        // roles: ['user'],
+    },
+
+    {
+        title: 'Integrations',
+        href: '/integrations',
+        icon: GiftIcon,
+        // roles: ['user'],
+    },
+
+    {
+        title: 'Optimization Cost',
+        href: '/optimization-costs',
+        icon: CreditCard,
+        // roles: ['user'],
     },
     {
         title: 'Strategy',
