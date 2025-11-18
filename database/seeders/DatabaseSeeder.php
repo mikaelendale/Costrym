@@ -21,5 +21,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call(CategoryModelSeeder::class);
+        $this->call(CompanyDataSeeder::class);
     }
 }

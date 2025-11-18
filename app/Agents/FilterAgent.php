@@ -2,15 +2,17 @@
 
 namespace App\Agents;
 
+use App\Tools\GetCompanyTitle;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
-use Vizra\VizraADK\Contracts\ToolInterface;
 use Vizra\VizraADK\System\AgentContext;
+
 // use App\Tools\YourTool; // Example: Import your tool
 
 class FilterAgent extends BaseLlmAgent
 {
     protected string $name = 'filter_agent';
+
     protected string $description = 'Describe what this agent does.';
 
     /**
@@ -19,15 +21,19 @@ class FilterAgent extends BaseLlmAgent
      * 2. Database: agent_prompt_versions table (if enabled)
      * 3. File: resources/prompts/filter_agent/default.blade.php
      * 4. Fallback: This property
-     * 
+     *
      * The prompt file has been created for you at:
      * resources/prompts/filter_agent/default.blade.php
      */
-    protected string $instructions = 'You are Filter Agent. See resources/prompts/filter_agent/default.blade.php for full instructions.';
-    
+    protected string $instructions = 'You are Filter Agent. your job to get company title using GetCompanyTitle tool. and ur job is to check which title is relevant to a place where expenses and cost is found for example income statement, profit and loss, journal entries. 
+    you must only select one title that is most relevant to expenses and cost but you must always select one even if none is clearly relevant. Only respond with this json format 
+    { "title": "the selected company title" } 
+     ';
+
     protected string $model = '';
 
     protected array $tools = [
+        GetCompanyTitle::class,
         // Example: YourTool::class,
     ];
 

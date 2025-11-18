@@ -59,7 +59,6 @@ class GetCompanyTitle implements ToolInterface
         $result = [
             'status' => 'success',
             'message' => 'Tool get_company_title executed with arguments: '.json_encode($arguments),
-            'data' => $categories,
             // Add relevant data to the result
         ];
 
