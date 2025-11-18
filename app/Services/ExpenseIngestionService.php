@@ -116,7 +116,7 @@ JSON;
         ]);
 
         sleep(60);
-        $costAllignmantresponse = CostValueAlignerAgent::run('$cutcostoptimizer: '.$cutcostoptimizer)->go();
+        $costAllignmantresponse = CostValueAlignerAgent::run('cutcostoptimizer: '.$cutcostoptimizer)->go();
 
         Log::info('cutcostaligner response', [
             'response' => $costAllignmantresponse,
