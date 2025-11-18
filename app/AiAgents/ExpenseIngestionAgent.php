@@ -20,11 +20,12 @@ class ExpenseIngestionAgent extends Agent
      * OpenAI-compatible JSON Schema format.
      */
     protected $responseSchema = [
-        'name' => 'expense_ingestion_result',
+        'name' => 'ledger_ingestion_result',
         'schema' => [
             'type' => 'object',
             'additionalProperties' => false,
             'properties' => [
+                // EXPENSE ENTRIES (money going out)
                 'expenses' => [
                     'type' => 'array',
                     'items' => [
@@ -42,7 +43,55 @@ class ExpenseIngestionAgent extends Agent
                             'merchant' => ['type' => ['string', 'null']],
                             'raw_description' => ['type' => ['string', 'null']],
                             'metadata' => ['type' => ['object', 'null'], 'additionalProperties' => true],
+                            // Classification of expense transaction
                             'type' => ['type' => ['string', 'null'], 'enum' => ['debit', 'credit', 'invoice', 'refund', 'fee']],
+                        ],
+                        'required' => [],
+                    ],
+                ],
+                // REVENUE ENTRIES (money coming in)
+                // Assumptions: similar structure, rename primary label to revenue_name; merchant may represent customer/payer.
+                'revenues' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'additionalProperties' => false,
+                        'properties' => [
+                            'revenue_name' => ['type' => ['string', 'null']],
+                            'provider' => ['type' => ['string', 'null']],
+                            'account_id' => ['type' => ['string', 'null']],
+                            'txn_id' => ['type' => ['string', 'null']],
+                            'timestamp' => ['type' => ['string', 'null'], 'description' => 'ISO8601 datetime with timezone if available'],
+                            'amount' => ['type' => ['number', 'null']], // Positive numeric value preferred; may be negative for adjustments
+                            'currency' => ['type' => ['string', 'null'], 'maxLength' => 8],
+                            'customer' => ['type' => ['string', 'null']], // Payer / counterparty
+                            'raw_description' => ['type' => ['string', 'null']],
+                            'metadata' => ['type' => ['object', 'null'], 'additionalProperties' => true],
+                            // Classification of revenue transaction
+                            'type' => ['type' => ['string', 'null'], 'enum' => ['sale', 'subscription', 'refund', 'credit', 'adjustment']],
+                        ],
+                        'required' => [],
+                    ],
+                ],
+                // OTHER ENTRIES (transfers, balances, notes) not directly expense or revenue
+                // Assumptions: keep flexible naming: other_name; party instead of merchant/customer.
+                'other' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'additionalProperties' => false,
+                        'properties' => [
+                            'other_name' => ['type' => ['string', 'null']],
+                            'provider' => ['type' => ['string', 'null']],
+                            'account_id' => ['type' => ['string', 'null']],
+                            'txn_id' => ['type' => ['string', 'null']],
+                            'timestamp' => ['type' => ['string', 'null'], 'description' => 'ISO8601 datetime with timezone if available'],
+                            'amount' => ['type' => ['number', 'null']],
+                            'currency' => ['type' => ['string', 'null'], 'maxLength' => 8],
+                            'party' => ['type' => ['string', 'null']], // Generic counterparty
+                            'raw_description' => ['type' => ['string', 'null']],
+                            'metadata' => ['type' => ['object', 'null'], 'additionalProperties' => true],
+                            'type' => ['type' => ['string', 'null'], 'enum' => ['transfer', 'balance', 'note', 'opening_balance', 'adjustment']],
                         ],
                         'required' => [],
                     ],
@@ -59,32 +108,47 @@ class ExpenseIngestionAgent extends Agent
     public function instructions()
     {
         return trim(<<<'PROMPT'
-You are an ingestion and normalization agent for financial data. CRITICAL RULES:
-1. NEVER invent or hallucinate expenses or fields.
-2. If input is empty OR you cannot extract any valid transaction-like rows -> return {"expenses":[],"errors":[]}.
-3. Do not fabricate merchant names, IDs, timestamps, currencies, or amounts.
-4. Only use values that appear directly in the source rows or a clearly labeled alias (e.g. "merchant_name" -> merchant). If similarity/confidence is low, set the field to null.
-5. If a field is missing or unparsable, set it explicitly to null (NOT an educated guess). Only include an error message if the entire row is malformed.
+You are a financial ledger ingestion & normalization agent. You MUST categorize parsed rows into three arrays: expenses[], revenues[], other[]. CRITICAL RULES:
+1. NEVER invent or hallucinate rows or field values.
+2. If input is empty OR no parsable rows -> return {"expenses":[],"revenues":[],"other":[],"errors":[]}.
+3. Do not fabricate names, IDs, timestamps, currencies, merchants/customers/parties, or amounts.
+4. Use only values appearing verbatim in source cells or clearly labeled aliases. Low confidence => set field to null.
+5. Unparsable or missing field => explicit null (do NOT guess). Only push an error message if the entire row is structurally unusable.
+6. Prefer explicit null over omission for every property in item objects.
 
-6. Prefer explicit null over omission so downstream systems can distinguish "unknown" from "not provided".
-Your job:
+CATEGORY DECISIONS:
+- expenses: Outflows. Negative amounts, fee/charge keywords, invoice/bill payable lines, refunds issued (money leaving), explicit expense categories.
+- revenues: Inflows. Sales, subscription payments, payouts received, credits/refunds received, positive settlement lines indicating money coming in.
+- other: Neutral/non P&L lines: transfers, balance adjustments, opening balances, notes, internal movements, uncategorized entries not clearly expense or revenue.
 
-- Read arbitrary, messy input rows (JSON objects/arrays, or textually serialized tables) that may represent transactions, ledger lines, invoices, statements, or CSV-like sheets.
-- Extract and map each row into our normalized Expense shape (all fields optional) using best-effort parsing.
+SCHEMA FIELD MAPPING (shared concepts across categories):
+- name fields: expense_name / revenue_name / other_name = best available descriptive title; fallback to cleaned description when safe.
+- timestamp: Convert to ISO8601 UTC if timezone missing; accept common date formats & epoch seconds/millis.
+- amount: Normalize sign; parentheses or leading minus => negative.
+- currency: Prefer explicit 3-letter codes; infer from symbol ($ USD, € EUR, £ GBP, Br ETB) if ONLY symbol provided.
+- merchant/customer/party: Choose counterparty appropriately. For revenue use customer; for expenses use merchant; for other use party.
+- txn_id: Most stable unique identifier present (transaction id, reference, hash).
+- account_id: Source account, IBAN, last4, ledger/statement account identifier.
+- type (per category enumerations):
+    * expenses: debit, credit, invoice, refund, fee
+    * revenues: sale, subscription, refund, credit, adjustment
+    * other: transfer, balance, note, opening_balance, adjustment
+- provider: Short label of origin (e.g., stripe, plaid, qb, xlsx, csv, manual).
+- metadata: Include unmapped columns (category, memo, balance, statement_id, original column headers, sheet/tab). Keys snake_case; values raw when safe.
 
-Normalization rules and heuristics:
-- timestamp: produce ISO 8601 (YYYY-MM-DDTHH:mm:ss±HH:MM). If source is epoch seconds/millis or date like "2025/11/17" or "17-11-2025", parse and convert. If no timezone, assume UTC.
-- amount: parse numbers; handle parentheses or leading minus as negative (e.g., (123.45) => -123.45). Strip currency symbols when present.
-- currency: prefer explicit 3-letter codes (USD, EUR, ETB). If only symbol present, infer ("$" => USD, "€" => EUR, "£" => GBP, "Br" => ETB). Uppercase.
-- merchant: choose best available vendor/counterparty/supplier/payee field; fallback to cleaned description or name column.
-- raw_description: preserve original free-text description if present.
-- txn_id: use the most stable transaction reference/ID/hash in the row when present.
-- account_id: choose source account number/IBAN/last4 or any stable identifier for the account this line belongs to.
-- type: infer one of {debit, credit, invoice, refund, fee} using sign, description, and known keywords (e.g., credit/refund/reversal => credit|refund; fee/charge => fee; invoice/bill => invoice; negative amounts against balance typically => debit).
-- provider: set to a short source label if known (e.g., "stripe", "plaid", "qb", "xlsx", "csv", "manual").
-- metadata: include any extra columns/fields that do not map directly (original headers, category, memo, balance, statement_id, sheet/tab names). Keep keys short, safe, and snake_case.
+PARSING HEURISTICS:
+- Sign-based: If clearly positive and contains sale/payment keywords => revenues; negative with fee/invoice/bill keywords => expenses.
+- Transfer keywords (transfer, move, internal) or balance-only lines -> other.
+- If ambiguous, prefer other and set category-specific name field; DO NOT guess a merchant/customer.
 
-Output strictly conforms to the attached JSON Schema. Never return prose; only the structured JSON. If a field cannot be confidently mapped, output it as null. If NO items parsed return an empty expenses array.
+OUTPUT RULES:
+- DO NOT omit any data eventhough they are null or empty.
+- Strict JSON adhering to the provided schema. No prose or explanations.
+- Always include all four top-level arrays (expenses, revenues, other, errors).
+- If a row can't be assigned confidently to expense or revenue, put it in other.
+- metadata may contain extra key-value pairs; never duplicate main mapped fields inside metadata.
+
+If nothing parsed: return empty arrays for expenses, revenues, other and errors.
 PROMPT);
     }
 

@@ -25,15 +25,15 @@ class CategoryRepository
 
     public function getCategories(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        Log::info('', ['data' => $filters]);
+        Log::info('getCategories called with filters', ['data' => $filters]);
         $query = CategoryModel::query()->orderBy('created_at', 'desc');
 
         if (! empty($filters['name'])) {
             $query->where('name', 'LIKE', '%'.$filters['name'].'%');
         }
 
-        if (! empty($filters['category'])) {
-            $query->where('category', $filters['category']);
+        if (! empty($filters['description'])) {
+            $query->where('description', $filters['description']);
         }
 
         return $query->paginate($perPage);

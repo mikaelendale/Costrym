@@ -54,31 +54,64 @@ After you have classified all the transactions from Step 1, create a single, hig
 
 **STEP 3: ASSEMBLE THE FINAL JSON OUTPUT**
 
-Combine the results into a single JSON object. The `summary` key will hold the text from Step 2, and the `expenses` key will hold an array containing the classification details for every transaction you processed in Step 1.
+Combine the results into a single JSON object under a single top-level key `category`. This object MUST include a `summary` string and ONE grouping object: `expenses`. The `expenses` object is a dictionary (JSON object) whose keys are stable identifiers (prefer `txn_id`; fallback to incrementing string indices like "0", "1" if no id) and whose values are normalized expense item objects.
 
+Expense item objects follow the ingestion schema you worked with earlier, PLUS a `tags` array (context tags like Direct, Indirect, Variable, Fixed) AND a `category` field (selected or newly created category name). All scalar fields may be null. Arrays default to `[]`. Metadata remains an object or null. DO NOT omit fields; explicit nulls required when unknown.
+
+ASSUMPTIONS (due to brief user request):
+1. Using object maps for faster keyed access. If you cannot derive a unique key, use sequential string numbers.
+2. Tags may be empty if no classification; still output `tags":[]`.
 
 **Strict Output Constraints:**
-* Return only a single, valid JSON object. Do not include prose or markdown.
-* Your entire response must start with `{` and end with `}`.
-*   If a value cannot be calculated due to insufficient data, use `null` for scalar fields and an empty array `[]` for list fields.
+* Return only a single, valid JSON object. No prose, no markdown.
+* Response MUST start with `{` and end with `}`.
+* Always include `category.summary`, `category.expenses`, and `category.errors` (errors is an array of human-readable strings; empty if none).
+* If nothing to classify: empty object for `expenses` and empty `errors` array; summary can be a brief null-safe statement.
+
+**Expense Item Schema:**
+```
+expense_name: string|null
+provider: string|null
+account_id: string|null
+txn_id: string|null
+timestamp: string|null   (ISO8601; convert if possible)
+amount: number|null      (negative allowed; normalization not forced here)
+currency: string|null    (<=8 chars)
+merchant: string|null
+raw_description: string|null
+metadata: object|null    (additionalProperties allowed; never duplicate top-level mapped fields)
+type: string|null        (enum: debit, credit, invoice, refund, fee)
+tags: array              (list of cost classification tags; empty array if none)
+category: string|null    (matched or newly created category name)
+```
 
 **Output Schema (Follow Exactly):**
 ```json
 {
-  "categorized_response": {
+  "category": {
     "summary": "string",
-    "expenses": [
-      {
-        "name": "string",
+    "expenses": {
+      "<txn_or_index>": {
+        "expense_name": "string|null",
+        "provider": "string|null",
+        "account_id": "string|null",
+        "txn_id": "string|null",
+        "timestamp": "string|null",
+        "amount": 0,
+        "currency": "string|null",
+        "merchant": "string|null",
+        "raw_description": "string|null",
+        "metadata": {},
+        "type": "debit|credit|invoice|refund|fee|null",
         "tags": ["string"],
-        "category": "string"
-      },
-      {
-        "name": "string",
-        "tags": ["string"],
-        "category": "string"
+        "category": "string|null"
       }
-    ]
+    },
+    "errors": []
   }
 }
 ```
+
+If a field value is unknown: use null (except arrays -> []). If metadata is unknown: use null instead of {}.
+
+Do not produce example text; produce actual classified content per input.

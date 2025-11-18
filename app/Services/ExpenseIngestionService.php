@@ -16,12 +16,13 @@ class ExpenseIngestionService
             ? $payload
             : json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $result = $agent->respond($input);
-        Log::info('ai result', ['result' => $result]);
+        // Log::info('ai result', ['result' => $result]);
 
         $data = is_array($result) ? $result : (json_decode((string) $result, true) ?? []);
 
         Log::info('Expense ingestion agent result', [
             'expenses_count' => is_array($data['expenses'] ?? null) ? count($data['expenses']) : 0,
+            $data ?? null,
             'errors' => $data['errors'] ?? [],
         ]);
 

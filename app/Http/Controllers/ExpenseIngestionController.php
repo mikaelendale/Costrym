@@ -77,8 +77,6 @@ class ExpenseIngestionController extends Controller
                 'data' => $data,
             ]);
 
-            $this->companyProfileService->createCompanyProfile($data);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('ExcelToJsonController: Validation failed', [
                 'errors' => $e->errors(),
@@ -90,8 +88,11 @@ class ExpenseIngestionController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return back()->withErrors(['error' => 'Conversion failed: '.$e->getMessage()]);
         }
+
+        $company_profile = array_merge(['name' => 'raw'], $data);
+
+        $this->companyProfileService->createCompanyProfile($company_profile);
 
         // Optional UX: redirect back with a success message
         return back()->with('status', 'Your file has been processed and queued for AI ingestion in batches.');
