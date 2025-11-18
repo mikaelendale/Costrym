@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('company_profiles', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
+            $table->json('title')->nullable();
             $table->json('company_context')->nullable();
             $table->timestamps();
         });

@@ -2,13 +2,13 @@
 
 namespace App\Tools;
 
-use App\Repositories\CategoryRepository;
+use App\Repositories\CompanyProfileRepository;
 use Illuminate\Support\Facades\Log;
 use Vizra\VizraADK\Contracts\ToolInterface;
 use Vizra\VizraADK\Memory\AgentMemory;
 use Vizra\VizraADK\System\AgentContext;
 
-class GetCategory implements ToolInterface
+class GetCompanyContext implements ToolInterface
 {
     /**
      * Get the tool's definition for the LLM.
@@ -17,17 +17,22 @@ class GetCategory implements ToolInterface
     public function definition(): array
     {
         return [
-            'name' => 'get_category',
-            'description' => 'Get list of Categories name and descriptions.',
+            'name' => 'get_company_context',
+            'description' => 'Get Company Context.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
-                    'use_this' => [
-                        'type' => 'true',
-                        'description' => 'use this tool',
+                    // Define your parameters here
+                    // 'example_param' => [
+                    //     'type' => 'string',
+                    //     'description' => 'An example parameter.'
+                    // ],
+                    'title' => [
+                        'type' => 'string',
+                        'description' => 'The title to filter company context by.',
                     ],
                 ],
-                'required' => ['use_this'],
+                'required' => ['title'],
             ],
         ];
     }
@@ -46,16 +51,19 @@ class GetCategory implements ToolInterface
         // Access state: $previousValue = $context->getState('some_key');
 
         // Implement tool logic here...
-        Log::info('Executing GetCategory tool with arguments', ['arguments' => $arguments]);
-
-        $categoryRepository = new CategoryRepository;
-        $categories = $categoryRepository->getCategoryNamesAndDescriptions();
+        $categoryRepository = new CompanyProfileRepository;
+        try {
+            $categories = $categoryRepository->getCompanyContextByTitle($arguments['title'] ?? null);
+        } catch (\Exception $e) {
+            Log::error('Error fetching company context', ['error' => $e->getMessage()]);
+            $categories = [];
+        }
         $result = [
             'status' => 'success',
-            'message' => 'Tool get_category executed with arguments: '.json_encode($arguments),
+            'message' => 'Tool get_company_context executed with arguments: '.json_encode($arguments),
             'data' => $categories,
         ];
-        Log::info('GetCategory tool result', ['result' => $result]);
+        Log::info('Executing GetCompanyContext tool', ['result' => $result]);
 
         // The result MUST be a JSON encoded string.
         return json_encode($result);

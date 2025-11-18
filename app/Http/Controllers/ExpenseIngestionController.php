@@ -36,10 +36,10 @@ class ExpenseIngestionController extends Controller
             Log::info('ExcelToJsonController: File validation passed');
 
             // Increase execution time for large files
-            set_time_limit(300); // 5 minutes
+            set_time_limit(500); // 5 minutes
             ini_set('memory_limit', '512M');
             Log::info('ExcelToJsonController: Execution limits set', [
-                'time_limit' => 300,
+                'time_limit' => 500,
                 'memory_limit' => '512M',
             ]);
 
@@ -73,9 +73,7 @@ class ExpenseIngestionController extends Controller
             }
 
             $data = $result['data'] ?? [];
-            Log::info('ExcelToJsonController: Conversion succeeded', [
-                'data' => $data,
-            ]);
+            Log::info('ExcelToJsonController: Conversion succeeded');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('ExcelToJsonController: Validation failed', [
@@ -90,7 +88,16 @@ class ExpenseIngestionController extends Controller
 
         }
 
-        $company_profile = array_merge(['name' => 'raw'], $data);
+        // Build the CompanyProfile payload
+        // - name: a simple label for this raw import
+        // - title: sheet names from the uploaded workbook
+        // - company_context: full workbook data keyed by sheet name
+        $titles = is_array($data) ? array_keys($data) : [];
+        $company_profile = [
+            'name' => 'raw',
+            'title' => $titles,
+            'company_context' => $data,
+        ];
 
         $this->companyProfileService->createCompanyProfile($company_profile);
 

@@ -2,13 +2,13 @@
 
 namespace App\Tools;
 
-use App\Repositories\CategoryRepository;
+use App\Repositories\CompanyProfileRepository;
 use Illuminate\Support\Facades\Log;
 use Vizra\VizraADK\Contracts\ToolInterface;
 use Vizra\VizraADK\Memory\AgentMemory;
 use Vizra\VizraADK\System\AgentContext;
 
-class GetCategory implements ToolInterface
+class GetCompanyTitle implements ToolInterface
 {
     /**
      * Get the tool's definition for the LLM.
@@ -17,8 +17,8 @@ class GetCategory implements ToolInterface
     public function definition(): array
     {
         return [
-            'name' => 'get_category',
-            'description' => 'Get list of Categories name and descriptions.',
+            'name' => 'get_company_title',
+            'description' => 'Get Company Title.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -46,16 +46,24 @@ class GetCategory implements ToolInterface
         // Access state: $previousValue = $context->getState('some_key');
 
         // Implement tool logic here...
-        Log::info('Executing GetCategory tool with arguments', ['arguments' => $arguments]);
 
-        $categoryRepository = new CategoryRepository;
-        $categories = $categoryRepository->getCategoryNamesAndDescriptions();
+        $categoryRepository = new CompanyProfileRepository;
+        try {
+            $categories = $categoryRepository->getCompanyProfileTitles();
+        } catch (\Exception $e) {
+            Log::error('Error fetching company titles', ['error' => $e->getMessage()]);
+            $categories = [];
+        }
+        $categories = $categoryRepository->getCompanyProfileTitles();
+
         $result = [
             'status' => 'success',
-            'message' => 'Tool get_category executed with arguments: '.json_encode($arguments),
+            'message' => 'Tool get_company_title executed with arguments: '.json_encode($arguments),
             'data' => $categories,
+            // Add relevant data to the result
         ];
-        Log::info('GetCategory tool result', ['result' => $result]);
+
+        Log::info('Executing GetCompanyTitle tool', ['result' => $result]);
 
         // The result MUST be a JSON encoded string.
         return json_encode($result);

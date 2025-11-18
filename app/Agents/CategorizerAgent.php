@@ -5,6 +5,8 @@ namespace App\Agents;
 use App\Services\CleanUpResponse;
 use App\Tools\CreateCategory;
 use App\Tools\GetCategory;
+use App\Tools\GetCompanyContext;
+use App\Tools\GetCompanyTitle;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
@@ -23,7 +25,9 @@ class CategorizerAgent extends BaseLlmAgent
 
     protected array $tools = [
         GetCategory::class,
-        CreateCategory::class,
+        // CreateCategory::class,
+        GetCompanyTitle::class,
+        GetCompanyContext::class,
     ];
 
     // // protected ?string $provider = Provider::Groq->value;
@@ -38,8 +42,10 @@ class CategorizerAgent extends BaseLlmAgent
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
         Log::info('After CategorizerAgent LLM response ...');
-        $parsedResponse = CleanUpResponse::extractJsonPayload($response);
-        Log::info('Parsed CategorizerAgent response payload.', ['response' => $parsedResponse]);
+        // $parsedResponse = CleanUpResponse::extractJsonPayload($response);
+        // Log::info('Parsed CategorizerAgent response payload.', ['response' => $parsedResponse]);
+
+        // Log::info('categorizer agent response', ['categorizer agent response' => $response]);
 
         return parent::afterLlmResponse($response, $context, $request);
 

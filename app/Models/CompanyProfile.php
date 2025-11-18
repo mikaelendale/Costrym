@@ -8,10 +8,12 @@ class CompanyProfile extends Model
 {
     protected $fillable = [
         'name',
+        'title',
         'company_context',
     ];
 
-    public $casts = [
+    protected $casts = [
+        'title' => 'array',
         'company_context' => 'array',
     ];
     //
