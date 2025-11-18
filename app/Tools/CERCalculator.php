@@ -16,13 +16,18 @@ class CERCalculator implements ToolInterface
     {
         return [
             'name' => 'c_e_r_calculator',
-            'description' => 'Looks up actual OPEX percent per category (mock DB for now) and returns a normalized ratio = actual% / benchmark% for each provided benchmark category. If a category is new/unknown or the benchmark is 0, the normalized value is 0.',
+            'description' => 'Computes CER per category as normalized = actual% / benchmark%. Accepts actual OPEX percent per category via actual_opex; if omitted, falls back to mock DB actuals. If a category is unknown or the benchmark is 0, normalized is 0.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
                     'should_cost_opex' => [
                         'type' => 'object',
                         'description' => 'Map of category name => numeric benchmark (should-cost) as OPEX percent values (0-100). The tool will fetch actual OPEX% and compute actual%/benchmark%. Example: {"Marketing": 10, "Sales": 15}',
+                        'additionalProperties' => ['type' => ['number', 'string']],
+                    ],
+                    'actual_opex' => [
+                        'type' => 'object',
+                        'description' => 'Optional: map of category name => numeric actual OPEX percent values (0-100). If provided, the tool uses these as actuals instead of the mock DB.',
                         'additionalProperties' => ['type' => ['number', 'string']],
                     ],
                     'categories' => [
@@ -74,6 +79,26 @@ class CERCalculator implements ToolInterface
             }
         }
 
+        // Optional actual_opex (accept array or JSON string); normalize to float map
+        $actualInput = $arguments['actual_opex'] ?? null;
+        if (is_string($actualInput)) {
+            $decoded = json_decode($actualInput, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $actualInput = $decoded;
+            }
+        }
+        $normalizedActualsFromArgs = null;
+        if (is_array($actualInput)) {
+            $normalizedActualsFromArgs = [];
+            foreach ($actualInput as $cat => $val) {
+                if ($val === null || $val === '') {
+                    $normalizedActualsFromArgs[(string) $cat] = 0.0;
+                } else {
+                    $normalizedActualsFromArgs[(string) $cat] = is_numeric($val) ? (float) $val : 0.0;
+                }
+            }
+        }
+
         // Determine categories to compute: either provided explicitly or default to benchmark keys
         $categories = [];
         if (isset($arguments['categories']) && is_array($arguments['categories'])) {
@@ -83,8 +108,19 @@ class CERCalculator implements ToolInterface
             $categories = array_keys($normalizedShouldCost);
         }
 
-        // Fetch actual costs per category (mock DB for now)
-        $actuals = $this->getActualCategoryCosts($categories, $context);
+        // Fetch actual costs per category: prefer provided actual_opex; fallback to mock DB
+        if (is_array($normalizedActualsFromArgs)) {
+            // Filter only requested categories
+            $actuals = [];
+            foreach ($categories as $cat) {
+                $key = (string) $cat;
+                if (array_key_exists($key, $normalizedActualsFromArgs)) {
+                    $actuals[$key] = (float) $normalizedActualsFromArgs[$key];
+                }
+            }
+        } else {
+            $actuals = $this->getActualCategoryCosts($categories, $context);
+        }
 
         // Build normalized result: normalized = actual% / benchmark%; if unknown/new or benchmark<=0 -> 0
         $normalized = [];
@@ -123,7 +159,9 @@ class CERCalculator implements ToolInterface
             'normalized' => $normalized,
             'details' => $details,
             'unknown_categories' => $unknown,
-            'note' => 'Normalized values are actual OPEX% / benchmark OPEX% using mock DB actuals. Unknown categories or zero benchmarks result in 0.',
+            'note' => is_array($normalizedActualsFromArgs)
+                ? 'Normalized values are actual OPEX% / benchmark OPEX% using provided actual_opex.'
+                : 'Normalized values are actual OPEX% / benchmark OPEX% using mock DB actuals.',
         ];
 
         $context->setState('cer_calculation_result', $result);

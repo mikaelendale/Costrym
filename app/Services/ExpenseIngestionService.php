@@ -2,10 +2,15 @@
 
 namespace App\Services;
 
+use App\Agents\ApprovalAgent;
+use App\Agents\AutomationPlanningAgent;
 use App\Agents\BaseLineAgent;
 use App\Agents\BenchmarkingAgent;
 use App\Agents\CategorizerAgent;
+use App\Agents\CERAgent;
 use App\Agents\CostDecompositionAgent;
+use App\Agents\CostOptomizerAgent\CostOptomizerAgent;
+use App\Agents\CostValueAlignerAgent;
 use App\AiAgents\ExpenseIngestionAgent;
 use Illuminate\Support\Facades\Log;
 
@@ -89,6 +94,42 @@ JSON;
         $benchmark = BenchmarkingAgent::run($mockcompanyprofile)->go();
         Log::info('benchmarking response', [
             'response' => $benchmark,
+        ]);
+
+        sleep(60);
+        // Build a clean JSON payload for CERAgent: include actual OPEX by category percent and the raw benchmark text
+        $cerInput = [
+            'actual_opex' => $byCategory, // map of Category => percent
+            'benchmark' => $benchmark,    // CER agent will parse into a map
+        ];
+        $cerPayload = json_encode($cerInput, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $cerResponse = CERAgent::run($cerPayload)->go();
+        Log::info('cer response', [
+            'response' => $cerResponse,
+        ]);
+
+        $cutcostoptimizer = CostOptomizerAgent::run(' categoryAgentResponse: '.$categorizer_response.'benchMarkData'.$cerResponse)->go();
+
+        Log::info('cutcostoptimizer response', [
+            'response' => $cutcostoptimizer,
+        ]);
+
+        sleep(60);
+        $costAllignmantresponse = CostValueAlignerAgent::run('$cutcostoptimizer: '.$cutcostoptimizer)->go();
+
+        Log::info('cutcostaligner response', [
+            'response' => $costAllignmantresponse,
+        ]);
+
+        $automations = AutomationPlanningAgent::run($costAllignmantresponse)->go();
+        Log::info('automation planning response', [
+            'response' => $automations,
+        ]);
+
+        $approvalLayer = ApprovalAgent::run(input: $automations)->go();
+        Log::info('approval layer response', [
+            'response' => $approvalLayer,
         ]);
 
         return $byCategory;

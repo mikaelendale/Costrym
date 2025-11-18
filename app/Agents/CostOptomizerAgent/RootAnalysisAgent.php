@@ -54,8 +54,8 @@ INSTRUCTIONS;
 
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
-        Log::info('RootAnalysisAgent After LLM Call...');
-        Log::info('Response: ', ['response' => $response]);
+        // Log::info('RootAnalysisAgent After LLM Call...');
+        // Log::info('Response: ', ['response' => $response]);
 
         return parent::afterLlmResponse($response, $context, $request);
 
