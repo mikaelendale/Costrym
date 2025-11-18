@@ -10,7 +10,9 @@ const Hero = () => {
             <p className="mb-8 text-xl leading-relaxed text-muted-foreground">Cut it and Increase your profitability</p>
             <div className="flex justify-center gap-4">
                 <Button>Get Started</Button>
-                <Button variant="outline">Check if you qualify</Button>
+                <Button variant="outline" onClick={() => document.getElementById('requirements')?.scrollIntoView({ behavior: 'smooth' })}>
+                    Check if you qualify
+                </Button>
             </div>
         </div>
     );

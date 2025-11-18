@@ -1,6 +1,6 @@
 export function RequirementsSection() {
     return (
-        <section className="border-y border-border bg-card px-4 py-20 sm:px-6 lg:px-8">
+        <section id="requirements" className="border-y border-border bg-card px-4 py-20 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl">
                 <div className="mb-12 text-center">
                     <h2 className="mb-4 text-4xl font-bold">See requirements page</h2>
