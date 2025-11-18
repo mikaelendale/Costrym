@@ -3,6 +3,8 @@
 namespace App\Agents;
 
 use App\Tools\FireCrawler;
+use App\Tools\GetCompanyContext;
+use App\Tools\GetCompanyTitle;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
@@ -34,6 +36,8 @@ class BenchmarkingAgent extends BaseLlmAgent
 
     protected array $tools = [
         FireCrawler::class,
+        GetCompanyTitle::class,
+        GetCompanyContext::class,
         // Example: YourTool::class,
     ];
 

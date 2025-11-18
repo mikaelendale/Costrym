@@ -26,7 +26,7 @@ Tool: GetCompanyContext
 TASK: Follow this 4-step pipeline and produce only the final JSON (no extra text).
 
 STEP 1 — REVIEW INPUTS
-- Read `company_context`, `products_list`, and direct costs (`direct_costs_list` or `direct_costs_list_json`).
+- Read `company_context`, `products_list`, and direct costs (`direct_costs_list` or `direct_costs_list_json`). if you can not find any of these inputs use the tools to get the company context first. Call get title first then get company context by chosing the best title for your case.
 - Identify core products and major cost drivers.
 
 If no of these inputs are available use the tool to get the company context first and then proceed to step 2. 

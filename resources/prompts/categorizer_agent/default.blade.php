@@ -22,6 +22,7 @@ GetCompanyTitle to get the title of the company profile
 GetCompanyContext to get the company context by title
 - **
 ---
+Titles: income statement, profit and loss, 
 
 **TASK INSTRUCTIONS: EXECUTE THE FOLLOWING 4-STEP PIPELINE**
 
