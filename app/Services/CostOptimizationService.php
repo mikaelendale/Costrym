@@ -43,7 +43,7 @@ class CostOptimizationService
         $optimizerParsed = [];
         try {
             $optimizerParsed = CleanUpResponse::extractJsonPayload($optimizerRaw);
-            $data = $optimizerParsed['cut_cost_optimizer'] ?? [];
+            $data = $optimizerParsed['cost_cut_portfolio'] ?? [];
         } catch (\Throwable $e) {
             Log::warning('CostOptimization: failed to parse optimizer response, storing empty array', ['error' => $e->getMessage()]);
         }

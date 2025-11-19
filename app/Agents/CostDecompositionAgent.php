@@ -3,7 +3,6 @@
 namespace App\Agents;
 
 use App\Tools\GetCompanyContext;
-use App\Tools\GetCompanyTitle;
 use App\Tools\GetTotalCostByCategory;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
@@ -26,7 +25,6 @@ class CostDecompositionAgent extends BaseLlmAgent
     protected string $model = '';
 
     protected array $tools = [
-        GetCompanyTitle::class,
         GetCompanyContext::class,
         GetTotalCostByCategory::class,
         // Example: YourTool::class,

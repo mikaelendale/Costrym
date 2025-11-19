@@ -20,9 +20,12 @@ class CompanyProfileService
         $this->companyProfileRepository->createCompanyProfile($data);
 
         $input = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
         Log::info('ingesting expenses for company profile');
         // Request relevant sheet title via FilterAgent
+
         $rawFilterResponse = FilterAgent::run('give me the title')->go();
+
         Log::info('FilterAgent raw response', ['response' => $rawFilterResponse]);
 
         $decoded = null;

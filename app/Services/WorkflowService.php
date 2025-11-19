@@ -72,21 +72,21 @@ class WorkflowService
         // Stagger follow-up heavy jobs to reduce concurrent token usage.
         // Start after the last CategorizeChunkJob's scheduled delay + a safety buffer,
         // then space each job by an additional fixed interval.
-        $bufferAfterChunksSeconds = 60; // 1 minute buffer after last chunk is scheduled
-        $spacingBetweenJobsSeconds = 60; // 1 minute between each heavy job
+        $bufferAfterChunksSeconds = 1; // 1 minute buffer after last chunk is scheduled
+        $spacingBetweenJobsSeconds = 1; // 1 minute between each heavy job
 
         // Note: $delaySeconds holds the next delay after the loop finished.
         // The last chunk was scheduled with ($delaySeconds - 20) seconds.
         // Using $delaySeconds here intentionally adds at least 20s extra margin.
         $startAfterSeconds = $delaySeconds + $bufferAfterChunksSeconds;
 
-        BaseLineJob::dispatch()->delay(now()->addSeconds($startAfterSeconds));
+        // BaseLineJob::dispatch()->delay(now()->addSeconds($startAfterSeconds));
 
-        CostDecomposerJob::dispatch()->delay(now()->addSeconds($startAfterSeconds + $spacingBetweenJobsSeconds));
+        // CostDecomposerJob::dispatch()->delay(now()->addSeconds($startAfterSeconds + $spacingBetweenJobsSeconds));
 
-        CostOptimizationJob::dispatch()->delay(now()->addSeconds($startAfterSeconds + 2 * $spacingBetweenJobsSeconds));
+        // CostOptimizationJob::dispatch()->delay(now()->addSeconds($startAfterSeconds + 2 * $spacingBetweenJobsSeconds));
 
-        AutomationJob::dispatch()->delay(now()->addSeconds($startAfterSeconds + 3 * $spacingBetweenJobsSeconds));
+        // AutomationJob::dispatch()->delay(now()->addSeconds($startAfterSeconds + 3 * $spacingBetweenJobsSeconds));
 
         // $this->expenseIngestionService->ingest($input); // Optional future step
 
