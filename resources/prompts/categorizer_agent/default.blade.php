@@ -104,8 +104,8 @@ category: string|null    (matched or newly created category name)
 {
   "category": {
     "summary": "string",
-    "expenses": {
-      "<txn_or_index>": {
+    "expenses": [
+      {
         "expense_name": "string|null",
         "provider": "string|null",
         "account_id": "string|null",
@@ -120,7 +120,7 @@ category: string|null    (matched or newly created category name)
         "tags": ["string"],
         "category": "string|null"
       }
-    },
+    ],
     "errors": []
   }
 }

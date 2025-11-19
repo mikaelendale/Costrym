@@ -21,13 +21,18 @@ class CostOptimizationRepository
             return $record->data;
         }
 
-        $existing = $record->data;
-        $existingArray = is_array($existing) ? $existing : [];
-        $merged = array_merge($existingArray, $data);
-        $record->data = $merged;
+        $record->data = $data;
         $record->save();
 
         return $record->data;
+
+        // $existing = $record->data;
+        // $existingArray = is_array($existing) ? $existing : [];
+        // $merged = array_merge($existingArray, $data);
+        // $record->data = $merged;
+        // $record->save();
+
+        // return $record->data;
     }
 
     public function getCutCostOptimizer(?int $userId = null): array
@@ -52,13 +57,18 @@ class CostOptimizationRepository
             return $record->data;
         }
 
-        $existing = $record->data;
-        $existingArray = is_array($existing) ? $existing : [];
-        $merged = array_merge($existingArray, $data);
-        $record->data = $merged;
+        $record->data = $data;
         $record->save();
 
         return $record->data;
+
+        // $existing = $record->data;
+        // $existingArray = is_array($existing) ? $existing : [];
+        // $merged = array_merge($existingArray, $data);
+        // $record->data = $merged;
+        // $record->save();
+
+        // return $record->data;
     }
 
     public function getCostValueAlignment(?int $userId = null): array

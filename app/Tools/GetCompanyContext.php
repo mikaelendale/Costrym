@@ -18,12 +18,12 @@ class GetCompanyContext implements ToolInterface
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
-                    'title' => [
-                        'type' => 'string',
-                        'description' => 'The title to filter company context by.',
+                    'use_this' => [
+                        'type' => 'true',
+                        'description' => 'use this tool',
                     ],
                 ],
-                'required' => ['title'],
+                'required' => ['use_this'],
             ],
         ];
     }

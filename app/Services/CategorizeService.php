@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Agents\CategorizerAgent;
+use App\Repositories\CategoryRepository;
 use App\Repositories\ExpenseRepository;
 use Illuminate\Support\Facades\Log;
 
@@ -10,7 +11,8 @@ class CategorizeService
 {
     public function __construct(
         private CategorizerAgent $categorizerAgent,
-        private ExpenseRepository $expenseRepository
+        private ExpenseRepository $expenseRepository,
+        private CategoryRepository $categoryRepository
     ) {}
 
     public function categorize(string $input, ?int $userId = null)
@@ -53,9 +55,35 @@ class CategorizeService
             $expenses = [];
         }
 
+        Log::info('CategorizeService expenses normalized', ['count' => count($expenses)]);
+
         // Persist only the expenses and return them
         $this->expenseRepository->update($expenses, $userId);
 
+        // Also persist each expense grouped under its category without overwriting existing JSON.
+
+        $this->addExpenseToCategory($expenses);
+
         return $expenses;
+    }
+
+    public function addExpenseToCategory($expenseData)
+    {
+        foreach ($expenseData as $expense) {
+            if (is_array($expense) && ! empty($expense['category'])) {
+                try {
+
+                    $this->categoryRepository->addExpenseToCategory($expense['category'], $expense);
+                } catch (\Throwable $e) {
+                    Log::warning('Failed adding expense to category', [
+                        'category' => $expense['category'] ?? null,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            } else {
+                Log::info('Skipping expense without category', ['expense' => $expense]);
+            }
+        }
+
     }
 }

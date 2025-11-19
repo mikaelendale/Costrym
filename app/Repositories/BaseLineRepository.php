@@ -25,14 +25,19 @@ class BaseLineRepository
         }
 
         // Merge existing data with new batch (prefer new values on key conflicts)
-        $existing = $baseline->data;
-        $existingArray = is_array($existing) ? $existing : [];
-        $mergedData = array_merge($existingArray, $data);
 
-        $baseline->data = $mergedData;
+        $baseline->data = $data;
         $baseline->save();
 
         return $baseline->data;
+        // $existing = $baseline->data;
+        // $existingArray = is_array($existing) ? $existing : [];
+        // $mergedData = array_merge($existingArray, $data);
+
+        // $baseline->data = $mergedData;
+        // $baseline->save();
+
+        // return $baseline->data;
 
     }
 

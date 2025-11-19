@@ -10,9 +10,11 @@ class CategoryModel extends Model
         'name',
         'meta_data',
         'description',
+        'expenses',
     ];
 
     protected $casts = [
         'meta_data' => 'array',
+        'expenses' => 'array',
     ];
 }

@@ -20,6 +20,7 @@ class CompanyProfileService
         Log::info('ingesting expenses for company profile');
 
         $rawFilterResponse = FilterAgent::run('give me the title')->go();
+
         Log::info('FilterAgent raw response', ['response' => $rawFilterResponse]);
 
         $decoded = null;

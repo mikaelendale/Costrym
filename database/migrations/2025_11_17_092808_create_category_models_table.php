@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->json('meta_data')->nullable();
             $table->text('description')->nullable();
+            $table->json('expenses')->nullable();
             $table->timestamps();
 
         });

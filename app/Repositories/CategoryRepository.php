@@ -48,4 +48,49 @@ class CategoryRepository
 
         return $categories;
     }
+
+    public function addExpenseToCategory($name, $expenseData): ?array
+    {
+        Log::info('addExpenseToCategory invoked', [
+            'category' => $name,
+            'has_expense' => is_array($expenseData),
+            'txn_id' => $expenseData['txn_id'] ?? null,
+        ]);
+
+        if (! $name) {
+            Log::debug('Skipping expense without category name');
+
+            return null;
+        }
+
+        $category = CategoryModel::firstOrCreate(
+            ['name' => $name],
+            [
+                'description' => $name,
+                'meta_data' => [],
+                'expenses' => [],
+            ]
+        );
+
+        $existing = $category->expenses ?? [];
+        $existing = is_array($existing) ? $existing : [];
+
+        // If previous structure was associative, flatten it to a list of values
+        $keys = array_keys($existing);
+        $isList = $keys === range(0, count($keys) - 1);
+        if (! $isList) {
+            $existing = array_values($existing);
+        }
+
+        $existing[] = $expenseData;
+        $category->expenses = $existing;
+        $category->save();
+
+        Log::info('Added expense to category', [
+            'category' => $name,
+            'new_total' => count($existing),
+        ]);
+
+        return $category->expenses;
+    }
 }

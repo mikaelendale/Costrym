@@ -15,13 +15,10 @@ Tool: GetTotalCostByCategory
 - Purpose: Returns aggregated spend for a major cost category (e.g., "Cloud & Infrastructure").
 - Use: Run this tool to get extra context on broad cost areas. You should still focus primarily on the `direct_costs_list`. Always call the tool for context.
 
-Tool: GetCompanyTitle
-- Purpose: Retrieves the canonical company profile title relevant to the dataset.
-- Use: Call this tool first to get a list of appropriate company context titles for context retrieval. 
 
 Tool: GetCompanyContext
 - Purpose: Retrieves detailed company context relevant to the dataset.
-- Use: Call this tool after GetCompanyTitle to get a list of company context titles chose the one appropriate for you and using that get the company context for cost decomposition.
+- Use: Call this tool to get the company context for cost decomposition.
 
 TASK: Follow this 4-step pipeline and produce only the final JSON (no extra text).
 
