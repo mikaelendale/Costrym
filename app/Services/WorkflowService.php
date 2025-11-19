@@ -80,13 +80,12 @@ class WorkflowService
         // Using $delaySeconds here intentionally adds at least 20s extra margin.
         $startAfterSeconds = $delaySeconds + $bufferAfterChunksSeconds;
 
-        // BaseLineJob::dispatch()->delay(now()->addSeconds($startAfterSeconds));
-
-        // CostDecomposerJob::dispatch()->delay(now()->addSeconds($startAfterSeconds + $spacingBetweenJobsSeconds));
-
-        // CostOptimizationJob::dispatch()->delay(now()->addSeconds($startAfterSeconds + 2 * $spacingBetweenJobsSeconds));
-
-        // AutomationJob::dispatch()->delay(now()->addSeconds($startAfterSeconds + 3 * $spacingBetweenJobsSeconds));
+        // Chain the heavy jobs so each runs after the previous completes
+        BaseLineJob::withChain([
+            new CostDecomposerJob,
+            new CostOptimizationJob,
+            new AutomationJob,
+        ])->delay(now()->addSeconds($startAfterSeconds))->dispatch();
 
         // $this->expenseIngestionService->ingest($input); // Optional future step
 
