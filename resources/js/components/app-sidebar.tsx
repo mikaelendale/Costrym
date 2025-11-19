@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ChatTeardropTextIcon, CreditCard, GiftIcon, HouseIcon, NetworkIcon, TrendUpIcon } from '@phosphor-icons/react';
+import { ChatTeardropTextIcon, CreditCard, HouseIcon, NetworkIcon, TrendUpIcon } from '@phosphor-icons/react';
 import { BrickWall, GitPullRequestDraft, UserCheck } from 'lucide-react';
 import AppLogo from './app-logo';
 const NavFooterBudNetCardItems: NavItem[] = [
@@ -69,7 +69,7 @@ const secondNavItems: NavItem[] = [
         icon: ChatTeardropTextIcon,
         roles: ['user', 'admin'],
     },
-]; 
+];
 
 const footerNavItems: NavItem[] = [
     {

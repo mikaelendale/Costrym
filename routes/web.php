@@ -3,8 +3,8 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\admin\RBACController;
 use App\Http\Controllers\ChangelogController;
-use App\Http\Controllers\LegalController;
 use App\Http\Controllers\IntegrationIngestorController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotionAgentController;
 use App\Http\Controllers\OnboardingController;
@@ -12,6 +12,7 @@ use App\Http\Controllers\PipedreamConnectController;
 use App\Http\Controllers\Socialite\ProviderCallbackController;
 use App\Http\Controllers\Socialite\ProviderRedirectController;
 use App\Http\Controllers\WorkflowController;
+use App\Jobs\TaskDesignerJob;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
