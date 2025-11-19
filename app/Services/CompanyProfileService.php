@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Agents\FilterAgent;
+use App\Jobs\BaseLineJob;
 use App\Jobs\CategorizeChunkJob;
 use App\Repositories\CompanyProfileRepository;
 use Illuminate\Support\Facades\Log;
@@ -133,6 +134,7 @@ class CompanyProfileService
             $delaySeconds += 20; // space jobs by 20 seconds
         }
 
+        BaseLineJob::dispatch();
         // $this->expenseIngestionService->ingest($input); // Optional future step
 
     }
