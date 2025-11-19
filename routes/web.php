@@ -2,6 +2,10 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\admin\RBACController;
+use App\Http\Controllers\ChangelogController;
+use App\Http\Controllers\ExpenseIngestionController;
+use App\Http\Controllers\IntegrationIngestorController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotionAgentController;
 use App\Http\Controllers\OnboardingController;
@@ -9,6 +13,7 @@ use App\Http\Controllers\PipedreamConnectController;
 use App\Http\Controllers\Socialite\ProviderCallbackController;
 use App\Http\Controllers\Socialite\ProviderRedirectController;
 use App\Http\Controllers\WorkflowController;
+use App\Jobs\TaskDesignerJob;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -125,6 +130,15 @@ Route::get('/ai/test', [WorkflowController::class, 'index'])->name('ai.workflow'
 Route::get('/auth/{provider}/redirect', ProviderRedirectController::class)->name('auth.redirect')->middleware(['throttle:5,1']);
 Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name('auth.callback')->middleware(['throttle:5,1']);
 
+Route::middleware(['auth', 'verified', 'onboarding'])->get('/dispatch', function () {
+    $user = auth()->user();
+    if (! $user) {
+        abort(403);
+    }
+    TaskDesignerJob::dispatch($user->id);
+
+    return redirect()->route('dashboard')->with('success', 'Task designer job dispatched');
+})->name('task.designer');
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/paymentRoute.php';
