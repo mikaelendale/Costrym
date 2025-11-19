@@ -6,9 +6,9 @@ type Stat = {
 };
 
 const STATS: Stat[] = [
-    { value: '15%', label: 'Cut Costs' },
-    { value: '56%', label: 'Conversion rate' },
-    { value: '1,200,000$', label: 'Saved expense' },
+    { value: '15%-40%', label: 'Reduced Costs' },
+    { value: '56%', label: 'Increased Efficiency' },
+    { value: '$1.2 Bn+', label: 'Saved expense by our experts' },
 ];
 
 export default function StatsSection() {
@@ -27,6 +27,7 @@ export default function StatsSection() {
                         'divide-x',
                         'border-0',
                         'shadow-none',
+                        'bg-transparent',
                     ].join(' ')}
                 >
                     {STATS.map((s, i) => (

@@ -20,7 +20,7 @@ export function FeaturesSection() {
     ];
 
     return (
-        <section className="border-y border-border bg-card px-4 py-20 sm:px-6 lg:px-8">
+        <section className="px-4 py-20 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-6xl">
                 <h2 className="mb-4 text-center text-4xl font-bold">What We Do</h2>
                 <p className="mx-auto mb-16 max-w-2xl text-center text-muted-foreground">

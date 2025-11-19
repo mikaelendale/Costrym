@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 
 export function EnterpriseContent() {
@@ -62,6 +62,10 @@ export function EnterpriseContent() {
                                     <p className="text-foreground">Deliver measurable savings at scale — automatically</p>
                                 </div>
                             </div>
+
+                            <button className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary-foreground px-8 py-3 font-bold text-primary transition hover:bg-primary-foreground/90">
+                                <a href="https://app.costrym.com/register">Continue</a> <ArrowRight className="h-4 w-4" />
+                            </button>
                         </div>
                     </div>
                 ) : (
@@ -87,6 +91,10 @@ export function EnterpriseContent() {
                                     <p className="text-foreground">Only pay when Costrym saves you money</p>
                                 </div>
                             </div>
+
+                            <button className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary-foreground px-8 py-3 font-bold text-primary transition hover:bg-primary-foreground/90">
+                                <a href="https://app.costrym.com/register">Continue</a> <ArrowRight className="h-4 w-4" />
+                            </button>
                         </div>
                     </div>
                 )}

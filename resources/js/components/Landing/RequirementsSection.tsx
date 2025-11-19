@@ -1,9 +1,9 @@
 export function RequirementsSection() {
     return (
-        <section id="requirements" className="border-y border-border bg-card px-4 py-20 sm:px-6 lg:px-8">
+        <section id="requirements" className="px-4 py-20 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl">
                 <div className="mb-12 text-center">
-                    <h2 className="mb-4 text-4xl font-bold">See requirements page</h2>
+                    <h2 className="mb-4 text-4xl font-bold">See requirements</h2>
                     <p className="text-lg text-muted-foreground">Costrym isn't built for everyone — and it doesn't pretend to be.</p>
                 </div>
 
@@ -37,7 +37,7 @@ export function RequirementsSection() {
 
                 <div className="flex flex-col justify-center gap-4 sm:flex-row">
                     <button className="rounded-full bg-primary px-8 py-3 font-medium text-primary-foreground transition hover:bg-primary/90">
-                        Request Access
+                        <a href="https://app.costrym.com/register">Request Access</a>
                     </button>
                     <button className="rounded-full border border-border px-8 py-3 font-medium transition hover:bg-accent/30">
                         Schedule consultation

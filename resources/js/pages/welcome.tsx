@@ -14,17 +14,19 @@ export default function Welcome() {
     return (
         <MainLandingLayout>
             <Hero />
-            <IntegrateWith />
-            <StatsSection />
-            {/* <WhatWeDo /> */}
-            {/* <SelectSector /> */}
+            <div className="mx-auto h-full w-full max-w-6xl bg-[var(--background)] pt-2">
+                <IntegrateWith />
+                <StatsSection />
+            </div>
             <WhyCostrymSection />
-            <PromiseSection />
-            <EnterpriseContent />
-            <FeaturesSection />
-            <RequirementsSection />
-            <CTASection />
-            <Footer />
+            <div className="mx-auto h-full w-full max-w-6xl bg-[var(--background)] pt-2">
+                <PromiseSection />
+                <EnterpriseContent />
+                <FeaturesSection />
+                <RequirementsSection />
+                <CTASection />
+                <Footer />
+            </div>
         </MainLandingLayout>
     );
 }

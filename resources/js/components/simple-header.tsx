@@ -1,7 +1,7 @@
+import CostrymLogo from '@/assets/CostrymLogo.png';
 import { MenuToggle } from '@/components/menu-toggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetFooter } from '@/components/ui/sheet';
-import { Grid2x2PlusIcon } from 'lucide-react';
 import React from 'react';
 
 export function SimpleHeader() {
@@ -23,11 +23,11 @@ export function SimpleHeader() {
     // ];
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80">
-            <nav className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4">
+        <header className="fixed top-2 z-50 w-full">
+            <nav className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between rounded-lg border-b border-border bg-background/95 px-4 py-4 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80">
                 <div className="flex items-center gap-2">
-                    <Grid2x2PlusIcon className="size-6" />
-                    <p className="font-mono text-lg font-bold">Costrym</p>
+                    <img src={CostrymLogo} alt="Costrym Logo" className="h-8 w-8" />
+                    <p className="font-spirax text-4xl">Costrym</p>
                 </div>
                 <div className="hidden items-center gap-2 lg:flex">
                     {/* {links.map((link) => (
@@ -35,8 +35,12 @@ export function SimpleHeader() {
                             {link.label}
                         </a>
                     ))} */}
-                    <Button variant="outline">Sign In</Button>
-                    <Button>Get Started</Button>
+                    <Button variant="outline" asChild>
+                        <a href="https://app.costrym.com/login">Sign In</a>
+                    </Button>
+                    <Button asChild>
+                        <a href="https://app.costrym.com/register">Get Started</a>
+                    </Button>
                 </div>
                 <Sheet open={open} onOpenChange={setOpen}>
                     <Button size="icon" variant="outline" className="lg:hidden">
@@ -61,8 +65,12 @@ export function SimpleHeader() {
                             ))}
                         </div> */}
                         <SheetFooter>
-                            <Button variant="outline">Sign In</Button>
-                            <Button>Get Started</Button>
+                            <Button variant="outline" asChild>
+                                <a href="https://app.costrym.com/login">Sign In</a>
+                            </Button>
+                            <Button asChild>
+                                <a href="https://app.costrym.com/register">Get Started</a>
+                            </Button>
                         </SheetFooter>
                     </SheetContent>
                 </Sheet>

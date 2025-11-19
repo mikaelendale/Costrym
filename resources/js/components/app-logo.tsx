@@ -1,5 +1,3 @@
-import AppLogoIcon from './app-logo-icon';
-
 export default function AppLogo() {
     return (
         <>
@@ -7,7 +5,9 @@ export default function AppLogo() {
                 <AppLogoIcon className="size-6 fill-current text-white dark:text-black" />
             </div>
             <div className="ml-1 grid flex-1 text-left text-2xl"> */}
-                <span className="mb-0.5 text-primary ml-1 text-4xl truncate leading-tight font-spirax">Costrym</span>
+            <span className="mb-0.5 ml-1 truncate font-spirax text-4xl leading-tight text-primary">
+                <p className="font-spirax">Costrym</p>
+            </span>
             {/* </div> */}
         </>
     );

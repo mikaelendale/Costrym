@@ -4,7 +4,7 @@ import { LogoCloud } from './logo-cloud-3';
 
 export default function IntegrateWith() {
     return (
-        <div className="w-full place-content-center">
+        <div className="mt-8 w-full place-content-center">
             <div
                 aria-hidden="true"
                 className={cn(
@@ -16,9 +16,9 @@ export default function IntegrateWith() {
 
             <section className="relative mx-auto">
                 <h2 className="mb-5 text-center text-xl font-medium tracking-tight text-foreground md:text-3xl">
-                    <span className="text-muted-foreground">Trusted by experts.</span>
+                    <span className="text-muted-foreground">We integrate with</span>
                     <br />
-                    <span className="font-semibold">Integrate with</span>
+                    <span className="font-semibold">all your tools</span>
                 </h2>
                 <div className="mx-auto my-5 h-px max-w-sm bg-border [mask-image:linear-gradient(to_right,transparent,black,transparent)]" />
 
