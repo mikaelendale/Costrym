@@ -23,12 +23,12 @@ const mainNavItems: NavItem[] = [
         // roles: ['user'],
     },
 
-    {
-        title: 'Integrations',
-        href: '/integrations',
-        icon: GiftIcon,
-        // roles: ['user'],
-    },
+    // {
+    //     title: 'Integrations',
+    //     href: '/integrations',
+    //     icon: GiftIcon,
+    //     // roles: ['user'],
+    // },
 
     {
         title: 'Optimization Cost',

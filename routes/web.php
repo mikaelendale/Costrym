@@ -32,9 +32,9 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     })->name('dashboard');
 
     // Integrations
-    Route::get('integrations', function () {
-        return Inertia::render('Integrations/Index');
-    })->name('integrations.index');
+    // Route::get('integrations', function () {
+    //     return Inertia::render('Integrations/Index');
+    // })->name('integrations.index');
 
     // Optimized Cost
     Route::get('optimization-costs', function () {
