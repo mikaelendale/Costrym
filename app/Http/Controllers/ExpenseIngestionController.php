@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Services\CompanyProfileService;
 use App\Services\ExcelToJsonService;
-use App\Services\ExpenseIngestionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -12,7 +11,6 @@ class ExpenseIngestionController extends Controller
 {
     public function __construct(
         private ExcelToJsonService $excelService,
-        private ExpenseIngestionService $ingestionService,
         private CompanyProfileService $companyProfileService
     ) {}
 
@@ -94,7 +92,7 @@ class ExpenseIngestionController extends Controller
         // - company_context: full workbook data keyed by sheet name
         $titles = is_array($data) ? array_keys($data) : [];
         $company_profile = [
-            'name' => 'raw',
+            'name' => $originalName,
             'title' => $titles,
             'company_context' => $data,
         ];

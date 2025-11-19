@@ -15,7 +15,7 @@ class CompanyDataSeeder extends Seeder
         // Seed a single CompanyData entry named "expense" with an empty JSON payload
         CompanyData::updateOrCreate(
             ['name' => 'expense'],
-            ['data' => []]
+            ['data' => [], 'user_id' => 1],
         );
     }
 }

@@ -3,18 +3,22 @@
 namespace App\Repositories;
 
 use App\Models\CompanyData;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class BaseLineRepository
 {
-    public function update(array $data)
+    public function update(array $data, ?int $userId)
     {
-        $baseline = CompanyData::where('name', 'baseline')->first();
+        Log::info('BaseLineRepository update called', ['user_id' => $userId]);
+        $baseline = CompanyData::where('name', 'baseline')->where('user_id', $userId)->first();
 
         // If no record exists, create a new one with the incoming data
         if (! $baseline) {
             $baseline = CompanyData::create([
                 'name' => 'baseline',
                 'data' => $data,
+                'user_id' => $userId,
             ]);
 
             return $baseline->data;
@@ -32,12 +36,12 @@ class BaseLineRepository
 
     }
 
-    public function getBaseline()
+    public function getBaseline(?int $userId = null)
     {
+        $resolvedUserId = $userId ?? Auth::id();
+        $baseline = CompanyData::where('name', 'baseline')->where('user_id', $resolvedUserId)->first();
 
-        $baseline = CompanyData::where('name', 'baseline')->first();
-
-        $data = $baseline->data;
+        $data = $baseline?->data;
 
         return $data;
     }

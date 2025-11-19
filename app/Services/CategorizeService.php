@@ -13,28 +13,21 @@ class CategorizeService
         private ExpenseRepository $expenseRepository
     ) {}
 
-    public function categorize(string $input)
+    public function categorize(string $input, ?int $userId = null)
     {
-        // Run categorizer and parse JSON safely
         Log::info('CategorizeService', ['' => $input]);
         $categorizer_response = CategorizerAgent::run($input)->go();
 
         try {
             $parsed = CleanUpResponse::extractJsonPayload($categorizer_response);
         } catch (\Throwable $e) {
-            // If parsing fails, persist empty expenses and exit early
-            $this->expenseRepository->update([]);
+            $this->expenseRepository->update([], $userId);
 
             return [];
         }
 
         Log::info('CategorizeService parsed response', ['parsed' => $parsed]);
 
-        // Extract only the expenses portion from varying response shapes
-        // Supported shapes:
-        // 1) { "response": { "category": { "expenses": [...] } } }
-        // 2) { "category": { "expenses": [...] } }
-        // 3) { "expenses": [...] } (fallback)
         $category = [];
         if (isset($parsed['response']['category']) && is_array($parsed['response']['category'])) {
             $category = $parsed['response']['category'];
@@ -61,7 +54,7 @@ class CategorizeService
         }
 
         // Persist only the expenses and return them
-        $this->expenseRepository->update($expenses);
+        $this->expenseRepository->update($expenses, $userId);
 
         return $expenses;
     }

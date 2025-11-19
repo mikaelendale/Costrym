@@ -3,18 +3,24 @@
 namespace App\Repositories;
 
 use App\Models\CompanyData;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class CostDecompositionRepository
 {
-    public function updateAssociatedCosts(array $data)
+    public function updateAssociatedCosts(array $data, ?int $userId = null)
     {
-        $associatedCosts = CompanyData::where('name', 'associatedCosts')->first();
+        $resolvedUserId = $userId ?? Auth::id();
+        Log::info('CostDecompositionRepository updateAssociatedCosts called', ['user_id' => $resolvedUserId]);
+
+        $associatedCosts = CompanyData::where('name', 'associatedCosts')->where('user_id', $resolvedUserId)->first();
 
         // If no record exists, create a new one with the incoming data
         if (! $associatedCosts) {
             $associatedCosts = CompanyData::create([
                 'name' => 'associatedCosts',
                 'data' => $data,
+                'user_id' => $resolvedUserId,
             ]);
 
             return $associatedCosts->data;
@@ -29,28 +35,29 @@ class CostDecompositionRepository
         $associatedCosts->save();
 
         return $associatedCosts->data;
-
     }
 
-    public function getassociatedCosts()
+    public function getassociatedCosts(?int $userId = null)
     {
+        $resolvedUserId = $userId ?? Auth::id();
+        $associatedCosts = CompanyData::where('name', 'associatedCosts')->where('user_id', $resolvedUserId)->first();
 
-        $associatedCosts = CompanyData::where('name', 'associatedCosts')->first();
-
-        $data = $associatedCosts->data;
+        $data = $associatedCosts ? $associatedCosts->data : null;
 
         return $data;
     }
 
-    public function updateCER(array $data)
+    public function updateCER(array $data, ?int $userId = null)
     {
-        $cer = CompanyData::where('name', 'cer')->first();
+        $resolvedUserId = $userId ?? Auth::id();
+        $cer = CompanyData::where('name', 'cer')->where('user_id', $resolvedUserId)->first();
 
         // If no record exists, create a new one with the incoming data
         if (! $cer) {
             $cer = CompanyData::create([
                 'name' => 'cer',
                 'data' => $data,
+                'user_id' => $resolvedUserId,
             ]);
 
             return $cer->data;
@@ -65,15 +72,14 @@ class CostDecompositionRepository
         $cer->save();
 
         return $cer->data;
-
     }
 
-    public function getCER()
+    public function getCER(?int $userId = null)
     {
+        $resolvedUserId = $userId ?? Auth::id();
+        $cer = CompanyData::where('name', 'cer')->where('user_id', $resolvedUserId)->first();
 
-        $cer = CompanyData::where('name', 'cer')->first();
-
-        $data = $cer->data;
+        $data = $cer ? $cer->data : null;
 
         return $data;
     }

@@ -15,17 +15,18 @@ class CostOptimizationJob implements ShouldQueue
 
     public int $tries = 1;
 
-    public function __construct()
+    public function __construct(public ?int $userId = null)
     {
         //
     }
 
     public function handle(CostOptimizationService $service): void
     {
-        Log::info('CostOptimizationJob: starting');
-        $result = $service->run();
+        Log::info('CostOptimizationJob: starting', ['user_id' => $this->userId]);
+        $result = $service->run($this->userId);
+
         Log::info('CostOptimizationJob: completed', [
-            'cut_cost_optimizer_count' => is_array($result['cut_cost_optimizer'] ?? null) ? count($result['cut_cost_optimizer']) : 0,
+            'cost_cut_portfolio_count' => is_array($result['cost_cut_portfolio'] ?? null) ? count($result['cost_cut_portfolio']) : 0,
             'cost_value_alignment_count' => is_array($result['cost_value_alignment'] ?? null) ? count($result['cost_value_alignment']) : 0,
         ]);
     }

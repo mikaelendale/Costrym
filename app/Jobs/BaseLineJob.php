@@ -11,14 +11,11 @@ class BaseLineJob implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(public ?int $userId) {}
 
     public function handle(BaseLineService $baseLineService): void
     {
-        Log::info('baseline Job');
-        $baseLineService->run();
+        Log::info('baseline Job', ['user_id' => $this->userId]);
+        $baseLineService->run($this->userId);
     }
 }

@@ -14,15 +14,18 @@ class CategorizeChunkJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Create a new job instance.
-     */
+    // TODO: Add tries and exponential backoff
+    public $tries = 1;
+
+    public $backoff = 1;
+
     public function __construct(
         public string $title,
         public array $rows,
         public int $chunkIndex,
         public int $startRowNumber,
         public int $endRowNumber,
+        public ?int $userId = null,
     ) {}
 
     /**
@@ -30,7 +33,6 @@ class CategorizeChunkJob implements ShouldQueue
      */
     public function handle(CategorizeService $categorizeService): void
     {
-        // Prepare a compact payload for the Categorizer
         $payload = [
             'title' => $this->title,
             'chunk' => [
@@ -52,6 +54,9 @@ class CategorizeChunkJob implements ShouldQueue
         ]);
 
         // CategorizeService expects a JSON string input
-        $categorizeService->categorize(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $categorizeService->categorize(
+            json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            $this->userId
+        );
     }
 }

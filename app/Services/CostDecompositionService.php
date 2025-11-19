@@ -26,9 +26,9 @@ class CostDecompositionService
      *
      * Returns a concise array of persisted results for observability.
      */
-    public function run(): array
+    public function run(?int $userId = null): array
     {
-        $rawExpenses = $this->expenseRepository->getExpense() ?? [];
+        $rawExpenses = $this->expenseRepository->getExpense($userId) ?? [];
 
         // Compact JSON for agent prompts
         if (is_array($rawExpenses) || $rawExpenses instanceof \JsonSerializable || $rawExpenses instanceof \Illuminate\Support\Collection) {
@@ -66,7 +66,7 @@ class CostDecompositionService
         }
 
         // Persist associated costs
-        $persistedAssociated = $this->costDecompositionRepository->updateAssociatedCosts($data);
+        $persistedAssociated = $this->costDecompositionRepository->updateAssociatedCosts($data, $userId);
 
         Log::info('CostDecomposition: associated costs persisted', [
             'items' => is_array($persistedAssociated) ? count($persistedAssociated) : 0,
@@ -101,7 +101,7 @@ class CostDecompositionService
             ]);
         }
 
-        $persistedCer = $this->costDecompositionRepository->updateCER($cerParsed);
+        $persistedCer = $this->costDecompositionRepository->updateCER($cerParsed, $userId);
         Log::info('CostDecomposition: CER data persisted', [
             'items' => is_array($persistedCer) ? count($persistedCer) : 0,
         ]);

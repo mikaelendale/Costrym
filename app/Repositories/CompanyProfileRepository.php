@@ -31,7 +31,7 @@ class CompanyProfileRepository
     {
         Log::info('Fetching company context for title: '.$title);
 
-        return CompanyProfile::whereJsonContains('title', $title)->pluck('company_context');
+        return CompanyProfile::whereJsonContains('title', $title)->pluck('company_context')->first();
     }
 
     public function getCompanyContextByName($name)

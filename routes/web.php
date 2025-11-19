@@ -29,10 +29,6 @@ Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog
 Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
 Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
 
-// Simple CSV upload for expense ingestion (public routes; protect if needed)
-Route::get('/ingest/expenses/csv', [ExpenseIngestionController::class, 'create'])->name('expenses.ingest.form');
-Route::post('/ingest/expenses/csv', [ExpenseIngestionController::class, 'store'])->name('expenses.ingest.upload');
-
 Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
@@ -55,8 +51,10 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::post('integration-ingestor/chat', [IntegrationIngestorController::class, 'chat'])->name('integration.ingestor.chat');
     Route::get('integration-ingestor/integrations', [IntegrationIngestorController::class, 'getAvailableIntegrations'])->name('integration.ingestor.integrations');
     Route::get('integration-ingestor/tools', [IntegrationIngestorController::class, 'getAvailableTools'])->name('integration.ingestor.tools');
-});
 
+    // text
+
+});
 // Onboarding route (accessible without onboarding middleware to avoid redirect loops)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('onboarding', function () {
@@ -99,6 +97,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('notion-agent', [NotionAgentController::class, 'index'])->name('notion.agent');
     Route::post('notion-agent/chat', [NotionAgentController::class, 'chat'])->name('notion.agent.chat');
     Route::get('notion-agent/actions', [NotionAgentController::class, 'getAvailableActions'])->name('notion.agent.actions');
+
+    Route::get('/ingest/expenses/csv', [ExpenseIngestionController::class, 'create'])->name('expenses.ingest.form');
+    Route::post('/ingest/expenses/csv', [ExpenseIngestionController::class, 'store'])->name('expenses.ingest.upload');
 
 });
 

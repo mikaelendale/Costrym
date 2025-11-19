@@ -4,24 +4,21 @@ namespace App\Services;
 
 use App\Agents\FilterAgent;
 use App\Repositories\CompanyProfileRepository;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class CompanyProfileService
 {
     public function __construct(
         private CompanyProfileRepository $companyProfileRepository,
-        private WorkflowService $workflowService,
-        private ExpenseIngestionService $expenseIngestionService,
-        private CategorizeService $categorizeService,
-    ) {}
+        private WorkflowService $workflowService, ) {}
 
     public function createCompanyProfile(array $data)
     {
         $this->companyProfileRepository->createCompanyProfile($data);
 
-        $input = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         Log::info('ingesting expenses for company profile');
-        // Request relevant sheet title via FilterAgent
+
         $rawFilterResponse = FilterAgent::run('give me the title')->go();
         Log::info('FilterAgent raw response', ['response' => $rawFilterResponse]);
 
@@ -60,9 +57,9 @@ class CompanyProfileService
             return; // Cannot proceed
         }
 
-        // Fetch full context array for the selected company profile and sheet title
-        $contextCollection = $this->companyProfileRepository->getCompanyContextByTitle($selectedTitle);
-        $contextArray = $contextCollection->first(); // first matching company_context (array keyed by sheet title)
+        // // Fetch full context array for the selected company profile and sheet title
+        // $contextCollection = $this->companyProfileRepository->getCompanyContextByTitle($selectedTitle);
+        $contextArray = $data['company_context'] ?? null;
 
         if (! is_array($contextArray)) {
             Log::warning('Company context not found or invalid; skipping categorize.', ['title' => $selectedTitle]);
@@ -83,7 +80,7 @@ class CompanyProfileService
             return;
         }
 
-        $this->workflowService->runWorkflow($rows, $selectedTitle);
+        $this->workflowService->runWorkflow($rows, $selectedTitle, Auth::id());
 
     }
 }
