@@ -69,33 +69,19 @@ const secondNavItems: NavItem[] = [
         icon: ChatTeardropTextIcon,
         roles: ['user', 'admin'],
     },
-];
-const automationNavItems: NavItem[] = [
-    // {
-    //     title: 'Agents',
-    //     href: '/agents',
-    //     icon: RobotIcon,
-    //     roles: ['user', 'admin'],
-    // },
-    {
-        title: 'Automations',
-        href: '/automation',
-        icon: NetworkIcon,
-        roles: ['user', 'admin'],
-    },
-];
+]; 
 
 const footerNavItems: NavItem[] = [
     {
         title: 'Billing',
-        href: '/billing',
+        href: '/settings/billing',
         icon: CreditCard,
     },
-    {
-        title: 'Referral',
-        href: '/referral',
-        icon: GiftIcon,
-    },
+    // {
+    //     title: 'Referral',
+    //     href: '/settings/referral',
+    //     icon: GiftIcon,
+    // },
     // {
     //     title: 'Customer Support',
     //     href: '/customer-support',
@@ -108,14 +94,6 @@ export function AppSidebar() {
     const { auth } = page.props;
 
     const visibleNavItems = mainNavItems.filter((item) => {
-        if (!item.roles) return true; // Show items without role restrictions
-        return item.roles.some((role) => auth.roles?.includes(role));
-    });
-    const visibleSecondNavItems = secondNavItems.filter((item) => {
-        if (!item.roles) return true; // Show items without role restrictions
-        return item.roles.some((role) => auth.roles?.includes(role));
-    });
-    const visibleAutomationNavItems = automationNavItems.filter((item) => {
         if (!item.roles) return true; // Show items without role restrictions
         return item.roles.some((role) => auth.roles?.includes(role));
     });
