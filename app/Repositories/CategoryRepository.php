@@ -44,7 +44,7 @@ class CategoryRepository
     {
         Log::info('Fetching category names and descriptions', ['data' => []]);
         $categories = CategoryModel::select('name', 'description')->get();
-        Log::info('', ['category' => $categories]);
+        Log::info('Categories Repository fetched', ['categories' => $categories->count()]);
 
         return $categories;
     }

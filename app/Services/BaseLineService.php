@@ -41,19 +41,20 @@ class BaseLineService
 
         try {
             $parsed = CleanUpResponse::extractJsonPayload($baselineResponse);
+            $data = $parsed['base_line_response'] ?? [];
         } catch (\Throwable $e) {
             Log::warning('BaseLineJob: failed to parse baseline response, storing empty array', [
                 'error' => $e->getMessage(),
             ]);
-            $this->baseline->update([]);
+            $data = [];
 
             return [];
         }
 
-        $this->baseline->update($parsed['base_line_response']);
+        $this->baseline->update($data);
 
         Log::info('BaseLineJob: baseline data persisted', [
-            'items' => is_array($parsed) ? count($parsed) : 0,
+            'items' => is_array($data) ? count($data) : 0,
         ]);
 
         return $parsed;

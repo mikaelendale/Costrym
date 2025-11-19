@@ -43,10 +43,11 @@ class CostOptimizationService
         $optimizerParsed = [];
         try {
             $optimizerParsed = CleanUpResponse::extractJsonPayload($optimizerRaw);
+            $data = $optimizerParsed['cut_cost_optimizer'] ?? [];
         } catch (\Throwable $e) {
             Log::warning('CostOptimization: failed to parse optimizer response, storing empty array', ['error' => $e->getMessage()]);
         }
-        $persistedOptimizer = $this->costOptimizationRepository->updateCutCostOptimizer($optimizerParsed);
+        $persistedOptimizer = $this->costOptimizationRepository->updateCutCostOptimizer($data);
         Log::info('CostOptimization: cut cost optimizer data persisted', [
             'items' => is_array($persistedOptimizer) ? count($persistedOptimizer) : 0,
         ]);

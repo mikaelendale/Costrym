@@ -63,7 +63,9 @@ class GetCompanyContext implements ToolInterface
             'message' => 'Tool get_company_context executed with arguments: '.json_encode($arguments),
             'data' => $categories,
         ];
-        Log::info('Executing GetCompanyContext tool', ['result' => $result]);
+        Log::info('Executing GetCompanyContext tool', [
+            'data_length' => is_countable($result['data']) ? count($result['data']) : strlen(json_encode($result['data'])),
+        ]);
 
         // The result MUST be a JSON encoded string.
         return json_encode($result);

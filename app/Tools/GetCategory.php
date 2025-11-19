@@ -55,7 +55,7 @@ class GetCategory implements ToolInterface
             'message' => 'Tool get_category executed with arguments: '.json_encode($arguments),
             'data' => $categories,
         ];
-        Log::info('GetCategory tool result', ['result' => $result]);
+        Log::info('Category count', ['count' => count($categories)]);
 
         // The result MUST be a JSON encoded string.
         return json_encode($result);

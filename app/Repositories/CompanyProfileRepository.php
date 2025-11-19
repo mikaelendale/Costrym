@@ -33,4 +33,36 @@ class CompanyProfileRepository
 
         return CompanyProfile::whereJsonContains('title', $title)->pluck('company_context');
     }
+
+    public function getCompanyContextByName($name)
+    {
+        Log::info('Fetching company context for company: '.$name);
+
+        return CompanyProfile::where('name', $name)->pluck('company_context');
+    }
+
+    public function StorePipedream($from, $data)
+    {
+        $pipedreamstore = CompanyProfile::where('name', $from)->first();
+
+        // If no record exists, create a new one with the incoming data
+        if (! $pipedreamstore) {
+            $pipedreamstore = CompanyProfile::create([
+                'name' => $from,
+                'data' => $data,
+            ]);
+
+            return $pipedreamstore->data;
+        }
+
+        // Merge existing data with new batch (prefer new values on key conflicts)
+        $existing = $pipedreamstore->data;
+        $existingArray = is_array($existing) ? $existing : [];
+        $mergedData = array_merge($existingArray, $data);
+
+        $pipedreamstore->data = $mergedData;
+        $pipedreamstore->save();
+
+        return $pipedreamstore->data;
+    }
 }

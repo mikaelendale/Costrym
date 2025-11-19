@@ -56,14 +56,17 @@ class CostDecompositionService
         $associatedCosts = [];
         try {
             $associatedCosts = CleanUpResponse::extractJsonPayload($decompositionResponse);
+            $data = $associatedCosts['cost_decomposition_response']['product_decompositions'] ?? [];
         } catch (\Throwable $e) {
             Log::warning('CostDecomposition: failed to parse decomposition response, storing empty array', [
                 'error' => $e->getMessage(),
             ]);
+
+            $data = [];
         }
 
         // Persist associated costs
-        $persistedAssociated = $this->costDecompositionRepository->updateAssociatedCosts($associatedCosts['cost_decomposition_response']['product_decompositions']);
+        $persistedAssociated = $this->costDecompositionRepository->updateAssociatedCosts($data);
 
         Log::info('CostDecomposition: associated costs persisted', [
             'items' => is_array($persistedAssociated) ? count($persistedAssociated) : 0,

@@ -54,10 +54,11 @@ class AutomationService
         $approvalParsed = [];
         try {
             $approvalParsed = CleanUpResponse::extractJsonPayload($approvalRaw);
+            $data = $approvalParsed['approval_requests'] ?? [];
         } catch (\Throwable $e) {
             Log::warning('AutomationService: failed to parse approval layer; storing empty array', ['error' => $e->getMessage()]);
         }
-        $persistedApproval = $this->automationRepository->updateApprovalLayer($approvalParsed['approval_agent_response']);
+        $persistedApproval = $this->automationRepository->updateApprovalLayer($data);
         Log::info('AutomationService: approval layer persisted', [
             'items' => is_array($persistedApproval) ? count($persistedApproval) : 0,
         ]);
