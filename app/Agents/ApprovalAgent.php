@@ -45,10 +45,10 @@ class ApprovalAgent extends BaseLlmAgent
     {
         // $context->setState('custom_data_for_llm', 'some_value');
         // $inputMessages[] = ['role' => 'system', 'content' => 'Additional system note for this call.'];
-        Log::info('ApprovalAgent.beforeLlmCall:start', [
-            'context' => $context,
-            'inputMessages' => $inputMessages,
-        ]);
+        // Log::info('ApprovalAgent.beforeLlmCall:start', [
+        //     'context' => $context,
+        //     'inputMessages' => $inputMessages,
+        // ]);
 
         return parent::beforeLlmCall($inputMessages, $context);
     }

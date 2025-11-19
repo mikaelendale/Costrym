@@ -14,9 +14,8 @@ return new class extends Migration
         Schema::create('category_models', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->json('tags')->nullable();
-            $table->string('category');
             $table->json('meta_data')->nullable();
+            $table->text('description')->nullable();
             $table->timestamps();
 
         });

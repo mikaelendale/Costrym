@@ -4,10 +4,11 @@ namespace App\Agents;
 
 use App\Services\CleanUpResponse;
 use App\Tools\BaseLineAnalysis\RollingAggregateTool;
+use App\Tools\GetCompanyContext;
+use App\Tools\GetCompanyTitle;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
-use Prism\Prism\ValueObjects\Messages\SystemMessage;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
 
@@ -23,6 +24,8 @@ class BaseLineAgent extends BaseLlmAgent
 
     protected array $tools = [
         RollingAggregateTool::class,
+        GetCompanyTitle::class,
+        GetCompanyContext::class,
     ];
 
     /*
@@ -60,15 +63,6 @@ class BaseLineAgent extends BaseLlmAgent
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
         Log::info('BaseLineAgent before LLM call...');
-        Log::info('inputmessages: ', ['inputMessages' => $inputMessages]);
-        Log::info('context value: ', ['context' => $context->getAllState()]);
-
-        Log::info('----------------------------------------');
-
-        $company_financials = $context->getState('company_financials');
-        $category_mapping = $context->getState('categorized_data');
-
-        $inputMessages[] = new SystemMessage("Company Financials:\n".json_encode($company_financials, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\nCategory Mapping:\n".json_encode($category_mapping, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
         return parent::beforeLlmCall($inputMessages, $context);
     }
@@ -76,10 +70,8 @@ class BaseLineAgent extends BaseLlmAgent
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
         Log::info('After BaseLineAgent LLM response ...');
-        $parsedResponse = CleanUpResponse::extractJsonPayload($response);
-        Log::info('Parsed BaseLineAgent response payload.', ['response' => $parsedResponse]);
-
-        $context->setState('baseline_data', $parsedResponse);
+        // $parsedResponse = CleanUpResponse::extractJsonPayload($response);
+        // Log::info('Parsed BaseLineAgent response payload.', ['response' => $parsedResponse]);
 
         Log::info('Finished setting baseline_data state.');
 

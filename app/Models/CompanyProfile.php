@@ -4,15 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CategoryModel extends Model
+class CompanyProfile extends Model
 {
     protected $fillable = [
         'name',
-        'meta_data',
-        'description',
+        'title',
+        'company_context',
     ];
 
     protected $casts = [
-        'meta_data' => 'array',
+        'title' => 'array',
+        'company_context' => 'array',
     ];
+    //
 }

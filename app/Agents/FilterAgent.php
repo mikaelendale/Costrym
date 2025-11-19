@@ -2,42 +2,38 @@
 
 namespace App\Agents;
 
-use App\Tools\FireCrawler;
-use App\Tools\GetCompanyContext;
 use App\Tools\GetCompanyTitle;
-use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
 
 // use App\Tools\YourTool; // Example: Import your tool
 
-class BenchmarkingAgent extends BaseLlmAgent
+class FilterAgent extends BaseLlmAgent
 {
-    protected string $name = 'benchmarking_agent';
+    protected string $name = 'filter_agent';
 
-    protected string $description = 'Builds a research-backed should-cost OPEX model using FireCrawler.';
+    protected string $description = 'Describe what this agent does.';
 
     /**
      * Agent instructions hierarchy (first found wins):
      * 1. Runtime: $agent->setPromptOverride('...')
      * 2. Database: agent_prompt_versions table (if enabled)
-     * 3. File: resources/prompts/benchmarking_agent/default.blade.php
+     * 3. File: resources/prompts/filter_agent/default.blade.php
      * 4. Fallback: This property
      *
      * The prompt file has been created for you at:
-     * resources/prompts/benchmarking_agent/default.blade.php
+     * resources/prompts/filter_agent/default.blade.php
      */
-    protected string $instructions = 'Research company context with FireCrawler and output should_cost_model JSON: cost_area, optimized should_cost_percent_of_opex, justification.';
-
-    // protected ?string $provider = Provider::Groq->value;
+    protected string $instructions = 'You are Filter Agent. your job to get company title using GetCompanyTitle tool. and ur job is to check which title is relevant to a place where expenses and cost is found for example income statement, profit and loss, journal entries. 
+    you must only select one title that is most relevant to expenses and cost but you must always select one even if none is clearly relevant. Only respond with this json format 
+    { "title": "the selected company title" } 
+     ';
 
     protected string $model = '';
 
     protected array $tools = [
-        FireCrawler::class,
         GetCompanyTitle::class,
-        GetCompanyContext::class,
         // Example: YourTool::class,
     ];
 
