@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Services\CompanyProfileService;
 use App\Services\ExcelToJsonService;
-use App\Services\ExpenseIngestionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -12,7 +11,6 @@ class ExpenseIngestionController extends Controller
 {
     public function __construct(
         private ExcelToJsonService $excelService,
-        private ExpenseIngestionService $ingestionService,
         private CompanyProfileService $companyProfileService
     ) {}
 

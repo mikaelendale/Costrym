@@ -11,8 +11,6 @@ class PipedreamIngestionService
     public function __construct(
         private CompanyProfileRepository $companyProfileRepository,
         private WorkflowService $workflowService,
-        private ExpenseIngestionService $expenseIngestionService,
-        private CategorizeService $categorizeService,
     ) {}
 
     public function createCompanyProfilePipedream($from, $data)

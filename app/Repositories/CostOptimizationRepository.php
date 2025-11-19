@@ -3,16 +3,19 @@
 namespace App\Repositories;
 
 use App\Models\CompanyData;
+use Illuminate\Support\Facades\Auth;
 
 class CostOptimizationRepository
 {
-    public function updateCutCostOptimizer(array $data)
+    public function updateCutCostOptimizer(array $data, ?int $userId = null)
     {
-        $record = CompanyData::where('name', 'cutCostOptimizer')->first();
+        $resolvedUserId = $userId ?? Auth::id();
+        $record = CompanyData::where('name', 'cutCostOptimizer')->where('user_id', $resolvedUserId)->first();
         if (! $record) {
             $record = CompanyData::create([
                 'name' => 'cutCostOptimizer',
                 'data' => $data,
+                'user_id' => $resolvedUserId,
             ]);
 
             return $record->data;
@@ -32,20 +35,23 @@ class CostOptimizationRepository
         // return $record->data;
     }
 
-    public function getCutCostOptimizer(): array
+    public function getCutCostOptimizer(?int $userId = null): array
     {
-        $record = CompanyData::where('name', 'cutCostOptimizer')->first();
+        $resolvedUserId = $userId ?? Auth::id();
+        $record = CompanyData::where('name', 'cutCostOptimizer')->where('user_id', $resolvedUserId)->first();
 
         return is_array($record?->data) ? $record->data : [];
     }
 
-    public function updateCostValueAlignment(array $data)
+    public function updateCostValueAlignment(array $data, ?int $userId = null)
     {
-        $record = CompanyData::where('name', 'costValueAlignment')->first();
+        $resolvedUserId = $userId ?? Auth::id();
+        $record = CompanyData::where('name', 'costValueAlignment')->where('user_id', $resolvedUserId)->first();
         if (! $record) {
             $record = CompanyData::create([
                 'name' => 'costValueAlignment',
                 'data' => $data,
+                'user_id' => $resolvedUserId,
             ]);
 
             return $record->data;
@@ -65,9 +71,10 @@ class CostOptimizationRepository
         // return $record->data;
     }
 
-    public function getCostValueAlignment(): array
+    public function getCostValueAlignment(?int $userId = null): array
     {
-        $record = CompanyData::where('name', 'costValueAlignment')->first();
+        $resolvedUserId = $userId ?? Auth::id();
+        $record = CompanyData::where('name', 'costValueAlignment')->where('user_id', $resolvedUserId)->first();
 
         return is_array($record?->data) ? $record->data : [];
     }

@@ -15,17 +15,15 @@ class CategorizeService
         private CategoryRepository $categoryRepository
     ) {}
 
-    public function categorize(string $input)
+    public function categorize(string $input, ?int $userId = null)
     {
-        // Run categorizer and parse JSON safely
         Log::info('CategorizeService', ['' => $input]);
         $categorizer_response = CategorizerAgent::run($input)->go();
 
         try {
             $parsed = CleanUpResponse::extractJsonPayload($categorizer_response);
         } catch (\Throwable $e) {
-            // If parsing fails, persist empty expenses and exit early
-            $this->expenseRepository->update([]);
+            $this->expenseRepository->update([], $userId);
 
             return [];
         }
@@ -60,7 +58,7 @@ class CategorizeService
         Log::info('CategorizeService expenses normalized', ['count' => count($expenses)]);
 
         // Persist only the expenses and return them
-        $this->expenseRepository->update($expenses);
+        $this->expenseRepository->update($expenses, $userId);
 
         // Also persist each expense grouped under its category without overwriting existing JSON.
 

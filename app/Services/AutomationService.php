@@ -21,10 +21,10 @@ class AutomationService
      * Run automation planning then approval layer.
      * Uses the Cost Value Alignment output as the input for automation.
      */
-    public function run(): array
+    public function run(?int $userId = null): array
     {
         // Fetch prior aligned portfolio (from CostOptimizationService)
-        $aligned = $this->costOptimizationRepository->getCostValueAlignment();
+        $aligned = $this->costOptimizationRepository->getCostValueAlignment($userId);
         $alignedJson = json_encode($aligned, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         // Plan automations
@@ -37,7 +37,8 @@ class AutomationService
         } catch (\Throwable $e) {
             Log::warning('AutomationService: failed to parse automations; storing empty array', ['error' => $e->getMessage()]);
         }
-        $persistedAutomations = $this->automationRepository->updateAutomations($automationParsed['automation_planning_agent_response']);
+
+        $persistedAutomations = $this->automationRepository->updateAutomations($automationParsed['automation_planning_agent_response'] ?? [], $userId);
         Log::info('AutomationService: automations persisted', [
             'items' => is_array($persistedAutomations) ? count($persistedAutomations) : 0,
         ]);
@@ -58,7 +59,7 @@ class AutomationService
         } catch (\Throwable $e) {
             Log::warning('AutomationService: failed to parse approval layer; storing empty array', ['error' => $e->getMessage()]);
         }
-        $persistedApproval = $this->automationRepository->updateApprovalLayer($data);
+        $persistedApproval = $this->automationRepository->updateApprovalLayer($data, $userId);
         Log::info('AutomationService: approval layer persisted', [
             'items' => is_array($persistedApproval) ? count($persistedApproval) : 0,
         ]);

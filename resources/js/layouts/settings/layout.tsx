@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { SharedData, type NavItem } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
+import { CreditCardIcon, LinkIcon } from '@phosphor-icons/react';
 import { Key, Link2, SunMoonIcon, UserCog } from 'lucide-react';
 import { type PropsWithChildren } from 'react';
 
@@ -17,6 +18,21 @@ const sidebarNavItems: NavItem[] = [
         title: 'Password',
         href: '/settings/password',
         icon: Key,
+    },
+    {
+        title: 'Integrations',
+        href: '/settings/integrations',
+        icon: LinkIcon,
+    },
+    // {
+    //     title: 'Referral',
+    //     href: '/settings/referral',
+    //     icon: GiftIcon,
+    // },
+    {
+        title: 'Billing',
+        href: '/settings/billing',
+        icon: CreditCardIcon,
     },
     {
         title: 'Appearance',
@@ -63,13 +79,13 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                     size="sm"
                                     variant="ghost"
                                     asChild
-                                    className={cn('w-full text-muted-foreground justify-start', {
+                                    className={cn('w-full justify-start text-muted-foreground', {
                                         'bg-muted': currentPath === item.href,
                                         'text-primary': isActive,
                                     })}
                                 >
                                     <Link href={item.href} prefetch>
-                                        {item.icon && <item.icon className="h-4 w-4 mr-2" />}
+                                        {item.icon && <item.icon className="mr-2 h-4 w-4" />}
                                         {item.title}
                                     </Link>
                                 </Button>

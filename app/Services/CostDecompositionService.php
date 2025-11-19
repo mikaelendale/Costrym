@@ -20,9 +20,17 @@ class CostDecompositionService
         //
     }
 
-    public function run(): array
+    /**
+     * Run the full cost decomposition flow:
+     * - Use categorized expenses to generate associated/direct cost breakdowns
+     * - Build a benchmark (should-cost OPEX model)
+     * - Compute CER (Cost Efficiency Ratios) comparing actual vs benchmark
+     *
+     * Returns a concise array of persisted results for observability.
+     */
+    public function run(?int $userId = null): array
     {
-        $this->expenses = $this->expenseRepository->getExpense() ?? [];
+        $rawExpenses = $this->expenseRepository->getExpense($userId) ?? [];
 
         // Chunk expenses into groups of 10
         $chunks = array_chunk(is_array($this->expenses) ? $this->expenses : [], 10);
@@ -65,7 +73,7 @@ class CostDecompositionService
                 $allDecompositions = array_merge($allDecompositions, $data);
 
                 // Persist associated costs immediately for this chunk
-                $persistedThisChunk = $this->costDecompositionRepository->updateAssociatedCosts($data);
+                $persistedThisChunk = $this->costDecompositionRepository->updateAssociatedCosts($data, $userId);
 
                 Log::info('CostDecomposition: persisted associated costs for chunk', [
                     'chunk_size' => count($data),
@@ -78,8 +86,6 @@ class CostDecompositionService
             }
             sleep(15);
         }
-
-        // persistedAssociated now holds all persisted items across chunks
 
         Log::info('CostDecomposition: associated costs persisted', [
             'items' => is_array($persistedAssociated) ? count($persistedAssociated) : 0,
@@ -118,7 +124,7 @@ class CostDecompositionService
             ]);
         }
 
-        $persistedCer = $this->costDecompositionRepository->updateCER($cerParsed);
+        $persistedCer = $this->costDecompositionRepository->updateCER($cerParsed, $userId);
         Log::info('CostDecomposition: CER data persisted', [
             'items' => is_array($persistedCer) ? count($persistedCer) : 0,
         ]);

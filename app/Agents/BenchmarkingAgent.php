@@ -38,7 +38,6 @@ class BenchmarkingAgent extends BaseLlmAgent
         FireCrawler::class,
         GetCompanyTitle::class,
         GetCompanyContext::class,
-        // Example: YourTool::class,
     ];
 
     /*

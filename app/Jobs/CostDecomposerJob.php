@@ -22,10 +22,7 @@ class CostDecomposerJob implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(public ?int $userId = null) {}
 
     /**
      * Execute the job.
@@ -33,7 +30,7 @@ class CostDecomposerJob implements ShouldQueue
     public function handle(CostDecompositionService $service): void
     {
         Log::info('CostDecomposerJob: starting');
-        $result = $service->run();
+        $result = $service->run($this->userId);
         Log::info('CostDecomposerJob: completed', [
             'associated_costs_count' => is_array($result['associated_costs'] ?? null) ? count($result['associated_costs']) : 0,
             'cer_items' => is_array($result['cer'] ?? null) ? count($result['cer']) : 0,

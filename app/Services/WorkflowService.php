@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Agents\FilterAgent;
 use App\Jobs\AutomationJob;
 use App\Jobs\BaseLineJob;
 use App\Jobs\CategorizeChunkJob;
@@ -15,26 +14,17 @@ class WorkflowService
     public function __construct(
     ) {}
 
-    public function runWorkflow($data, $title = '')
+    public function runWorkflow($data, $title = '', ?int $userId = null)
     {
 
-        // Request relevant sheet title via FilterAgent
-
-        // Fetch full context array for the selected company profile and sheet title
-
-        // Extract the rows for the selected sheet title.
-        $rows = $data; // [sheetTitle => rows]
-
-        // Always include the first (header) row in every chunk.
-        // Data window: 11 data rows per chunk with step of 10 (overlap of last data row), header duplicated each chunk.
-        // Yields: header + data 1-11, header + data 11-21, header + data 21-31, ...
-        $windowData = 11; // number of data rows (excluding header) per chunk
-        $stepData = 10;   // overlap of one data row
-        $header = $rows[0];
-        $dataRows = array_slice($rows, 1);
+        $windowData = 20;
+        $stepData = 10;
+        $header = $data[0];
+        $dataRows = array_slice($data, 1);
         $totalData = count($dataRows);
         $chunkIndex = 0;
         $delaySeconds = 0;
+        Log::info('Total data rows', ['totalData' => $totalData, 'dataRowsCount' => $dataRows]);
 
         for ($start = 0; $start < $totalData; $start += $stepData) {
             $sliceData = array_slice($dataRows, $start, $windowData);
@@ -55,6 +45,7 @@ class WorkflowService
                 chunkIndex: $chunkIndex,
                 startRowNumber: $rangeStart,
                 endRowNumber: $rangeEnd,
+                userId: $userId,
             )->delay(now()->addSeconds($delaySeconds));
 
             Log::info('Queued CategorizeChunkJob', [
@@ -73,12 +64,13 @@ class WorkflowService
         $spacingBetweenJobsSeconds = 60; // 1 minute between each heavy job
         $startAfterSeconds = $delaySeconds + $bufferAfterChunksSeconds;
 
-        // Chain the heavy jobs so each runs after the previous completes
-        BaseLineJob::withChain([
-            new CostDecomposerJob,
-            new CostOptimizationJob,
-            new AutomationJob,
-        ])->delay(now()->addSeconds($startAfterSeconds))->dispatch();
+        BaseLineJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds));
+
+        CostDecomposerJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds + $spacingBetweenJobsSeconds));
+
+        CostOptimizationJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds + 2 * $spacingBetweenJobsSeconds));
+
+        AutomationJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds + 3 * $spacingBetweenJobsSeconds));
 
         // $this->expenseIngestionService->ingest($input); // Optional future step
 

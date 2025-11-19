@@ -23,10 +23,10 @@ class CostOptimizationService
      * Orchestrate cost optimization (cut cost portfolio) followed by cost-to-value alignment.
      * Returns array with both persisted structures.
      */
-    public function run(): array
+    public function run(?int $userId = null): array
     {
-        $expenses = $this->expenseRepository->getExpense() ?? [];
-        $cer = $this->costDecompositionRepository->getCER() ?? [];
+        $expenses = $this->expenseRepository->getExpense($userId) ?? [];
+        $cer = $this->costDecompositionRepository->getCER($userId) ?? [];
 
         $expensesJson = json_encode($expenses, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $cerJson = json_encode($cer, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -47,7 +47,7 @@ class CostOptimizationService
         } catch (\Throwable $e) {
             Log::warning('CostOptimization: failed to parse optimizer response, storing empty array', ['error' => $e->getMessage()]);
         }
-        $persistedOptimizer = $this->costOptimizationRepository->updateCutCostOptimizer($data);
+        $persistedOptimizer = $this->costOptimizationRepository->updateCutCostOptimizer($data, $userId);
         Log::info('CostOptimization: cut cost optimizer data persisted', [
             'items' => is_array($persistedOptimizer) ? count($persistedOptimizer) : 0,
         ]);
@@ -66,13 +66,13 @@ class CostOptimizationService
         } catch (\Throwable $e) {
             Log::warning('CostOptimization: failed to parse value alignment response, storing empty array', ['error' => $e->getMessage()]);
         }
-        $persistedAlignment = $this->costOptimizationRepository->updateCostValueAlignment($alignmentParsed);
+        $persistedAlignment = $this->costOptimizationRepository->updateCostValueAlignment($alignmentParsed, $userId);
         Log::info('CostOptimization: cost value alignment data persisted', [
             'items' => is_array($persistedAlignment) ? count($persistedAlignment) : 0,
         ]);
 
         return [
-            'cut_cost_optimizer' => $persistedOptimizer,
+            'cost_cut_portfolio' => $persistedOptimizer,
             'cost_value_alignment' => $persistedAlignment,
         ];
     }

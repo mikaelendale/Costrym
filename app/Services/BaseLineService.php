@@ -16,9 +16,9 @@ class BaseLineService
         //
     }
 
-    public function run()
+    public function run(?int $userId)
     {
-        $rawExpense = $this->expense->getExpense() ?? [];
+        $rawExpense = $this->expense->getExpense($userId) ?? [];
 
         // Safely encode expense data for prompt (avoid array to string conversion)
         if (is_array($rawExpense) || $rawExpense instanceof \JsonSerializable || $rawExpense instanceof \Illuminate\Support\Collection) {
@@ -27,7 +27,7 @@ class BaseLineService
             $expenseForPrompt = (string) $rawExpense;
         }
 
-        $prompt = 'use company context for more category response: '.$expenseForPrompt;
+        $prompt = "use company context for more category response: $expenseForPrompt";
 
         Log::info('BaseLineJob: prepared baseline prompt', [
             'prompt_length' => strlen($prompt),
@@ -51,7 +51,7 @@ class BaseLineService
             return [];
         }
 
-        $this->baseline->update($data);
+        $this->baseline->update($data, $userId);
 
         Log::info('BaseLineJob: baseline data persisted', [
             'items' => is_array($data) ? count($data) : 0,

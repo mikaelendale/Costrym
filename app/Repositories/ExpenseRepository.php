@@ -3,18 +3,30 @@
 namespace App\Repositories;
 
 use App\Models\CompanyData;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ExpenseRepository
 {
-    public function update(array $data)
+    public function update(array $data, ?int $userId = null)
     {
-        $expense = CompanyData::where('name', 'expense')->first();
+        $resolvedUserId = $userId ?? Auth::id();
+        Log::info('ExpenseRepository update called', ['user_id' => $resolvedUserId, 'data' => $data]);
+
+        if (! $resolvedUserId) {
+            Log::warning('ExpenseRepository: Missing user_id; aborting update to avoid orphan records.');
+
+            return [];
+        }
+
+        $expense = CompanyData::where('name', 'expense')->where('user_id', $resolvedUserId)->first();
 
         // If no record exists, create a new one with the incoming data
         if (! $expense) {
             $expense = CompanyData::create([
                 'name' => 'expense',
                 'data' => $data,
+                'user_id' => $resolvedUserId,
             ]);
 
             return $expense->data;
@@ -32,13 +44,20 @@ class ExpenseRepository
 
     }
 
-    public function getExpense()
+    public function getExpense(?int $userId = null)
     {
+        $resolvedUserId = $userId ?? Auth::id();
 
-        $expense = CompanyData::where('name', 'expense')->first();
+        if (! $resolvedUserId) {
+            Log::warning('ExpenseRepository: Missing user_id in getExpense; returning empty.');
 
-        $data = $expense->data;
+            return [];
+        }
 
-        return $data;
+        $expense = CompanyData::where('name', 'expense')
+            ->where('user_id', $resolvedUserId)
+            ->first();
+
+        return $expense?->data ?? [];
     }
 }
