@@ -49,16 +49,16 @@ class GetCompanyTitle implements ToolInterface
 
         $categoryRepository = new CompanyProfileRepository;
         try {
-            $categories = $categoryRepository->getCompanyProfileTitles();
+            $titles = $categoryRepository->getCompanyProfileTitles();
         } catch (\Exception $e) {
             Log::error('Error fetching company titles', ['error' => $e->getMessage()]);
-            $categories = [];
+            $titles = [];
         }
-        $categories = $categoryRepository->getCompanyProfileTitles();
 
         $result = [
             'status' => 'success',
             'message' => 'Tool get_company_title executed with arguments: '.json_encode($arguments),
+            'categories' => $titles,
             // Add relevant data to the result
         ];
 
