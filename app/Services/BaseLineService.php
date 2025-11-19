@@ -35,7 +35,9 @@ class BaseLineService
 
         $baselineResponse = BaseLineAgent::run($prompt)->go();
 
-        Log::info('BaseLineJob: raw baseline agent response received');
+        Log::info('BaseLineJob: raw baseline agent response received', [
+            'response_length' => is_string($baselineResponse) ? strlen($baselineResponse) : 0,
+        ]);
 
         try {
             $parsed = CleanUpResponse::extractJsonPayload($baselineResponse);
@@ -48,7 +50,7 @@ class BaseLineService
             return [];
         }
 
-        $this->baseline->update($parsed);
+        $this->baseline->update($parsed['base_line_response']);
 
         Log::info('BaseLineJob: baseline data persisted', [
             'items' => is_array($parsed) ? count($parsed) : 0,

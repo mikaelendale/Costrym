@@ -37,6 +37,10 @@ class CostDecompositionService
             $expensesJson = (string) $rawExpenses;
         }
 
+        Log::info('CostDecomposition: starting decomposition run', [
+            'expense_count' => is_array($rawExpenses) ? count($rawExpenses) : 0,
+        ]);
+
         // 1) Cost decomposition based on categorized expenses
         $decompPrompt = 'use categorized expense to decompose costs '.$expensesJson;
         Log::info('CostDecomposition: prepared decomposition prompt', [
@@ -44,7 +48,10 @@ class CostDecompositionService
         ]);
 
         $decompositionResponse = CostDecompositionAgent::run($decompPrompt)->go();
-        Log::info('CostDecomposition: raw cost decomposition agent response received');
+
+        Log::info('CostDecomposition: raw decomposition response', [
+            'response' => $decompositionResponse,
+        ]);
 
         $associatedCosts = [];
         try {
@@ -56,7 +63,8 @@ class CostDecompositionService
         }
 
         // Persist associated costs
-        $persistedAssociated = $this->costDecompositionRepository->updateAssociatedCosts($associatedCosts);
+        $persistedAssociated = $this->costDecompositionRepository->updateAssociatedCosts($associatedCosts['cost_decomposition_response']['product_decompositions']);
+
         Log::info('CostDecomposition: associated costs persisted', [
             'items' => is_array($persistedAssociated) ? count($persistedAssociated) : 0,
         ]);

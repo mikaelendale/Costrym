@@ -36,7 +36,9 @@ class CostOptimizationService
         Log::info('CostOptimization: prepared optimizer prompt', ['length' => strlen($optPrompt)]);
 
         $optimizerRaw = CostOptomizerAgent::run($optPrompt)->go();
-        Log::info('CostOptimization: optimizer agent raw response received');
+        Log::info('CostOptimization: optimizer agent raw response received', [
+            'response_length' => is_string($optimizerRaw) ? strlen($optimizerRaw) : 0,
+        ]);
 
         $optimizerParsed = [];
         try {
@@ -51,8 +53,11 @@ class CostOptimizationService
 
         // Alignment step uses raw optimizer output (mirrors previous prompt style)
         $alignmentPrompt = 'cutcostoptimizer: '.(is_string($optimizerRaw) ? $optimizerRaw : json_encode($optimizerRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
         $alignmentRaw = CostValueAlignerAgent::run($alignmentPrompt)->go();
-        Log::info('CostOptimization: value aligner agent raw response received');
+        Log::info('CostOptimization: value aligner agent raw response received', [
+            'response_length' => is_string($alignmentRaw) ? strlen($alignmentRaw) : 0,
+        ]);
 
         $alignmentParsed = [];
         try {
