@@ -16,12 +16,11 @@ class WorkflowService
 
     public function runWorkflow($data, $title = '', ?int $userId = null)
     {
-        // Data window: 11 data rows per chunk with step of 10 (overlap of last data row), header duplicated each chunk.
-        // Yields: header + data 1-11, header + data 11-21, header + data 21-31, ...
-        $windowData = 20; // number of data rows (excluding header) per chunk
-        $stepData = 10;   // overlap of one data row
-        $header = $rows[0];
-        $dataRows = array_slice($rows, 1);
+
+        $windowData = 20;
+        $stepData = 10;
+        $header = $data[0];
+        $dataRows = array_slice($data, 1);
         $totalData = count($dataRows);
         $chunkIndex = 0;
         $delaySeconds = 0;
