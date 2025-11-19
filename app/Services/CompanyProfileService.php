@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Agents\FilterAgent;
 use App\Jobs\BaseLineJob;
 use App\Jobs\CategorizeChunkJob;
+use App\Jobs\CostDecomposerJob;
+use App\Jobs\CostOptimizationJob;
 use App\Repositories\CompanyProfileRepository;
 use Illuminate\Support\Facades\Log;
 
@@ -135,6 +137,8 @@ class CompanyProfileService
         }
 
         BaseLineJob::dispatch();
+        CostDecomposerJob::dispatch();
+        CostOptimizationJob::dispatch();
         // $this->expenseIngestionService->ingest($input); // Optional future step
 
     }
