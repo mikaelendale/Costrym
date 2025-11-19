@@ -28,7 +28,7 @@ class WorkflowService
         // Always include the first (header) row in every chunk.
         // Data window: 11 data rows per chunk with step of 10 (overlap of last data row), header duplicated each chunk.
         // Yields: header + data 1-11, header + data 11-21, header + data 21-31, ...
-        $windowData = 11; // number of data rows (excluding header) per chunk
+        $windowData = 20; // number of data rows (excluding header) per chunk
         $stepData = 10;   // overlap of one data row
         $header = $rows[0];
         $dataRows = array_slice($rows, 1);
@@ -69,15 +69,8 @@ class WorkflowService
             $delaySeconds += 20; // space jobs by 20 seconds
         }
 
-        // Stagger follow-up heavy jobs to reduce concurrent token usage.
-        // Start after the last CategorizeChunkJob's scheduled delay + a safety buffer,
-        // then space each job by an additional fixed interval.
-        $bufferAfterChunksSeconds = 1; // 1 minute buffer after last chunk is scheduled
-        $spacingBetweenJobsSeconds = 1; // 1 minute between each heavy job
-
-        // Note: $delaySeconds holds the next delay after the loop finished.
-        // The last chunk was scheduled with ($delaySeconds - 20) seconds.
-        // Using $delaySeconds here intentionally adds at least 20s extra margin.
+        $bufferAfterChunksSeconds = 60; // 1 minute buffer after last chunk is scheduled
+        $spacingBetweenJobsSeconds = 60; // 1 minute between each heavy job
         $startAfterSeconds = $delaySeconds + $bufferAfterChunksSeconds;
 
         // Chain the heavy jobs so each runs after the previous completes

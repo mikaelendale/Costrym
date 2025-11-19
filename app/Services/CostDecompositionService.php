@@ -76,6 +76,7 @@ class CostDecompositionService
                     $persistedAssociated = array_merge($persistedAssociated, $persistedThisChunk);
                 }
             }
+            sleep(15);
         }
 
         // persistedAssociated now holds all persisted items across chunks
@@ -89,14 +90,13 @@ class CostDecompositionService
 
     public function benchmarking()
     {
-        $expenses = $this->expenseRepository->getExpense() ?? [];
 
         $benchmarkInput = 'Build should-cost OPEX model for the current company context.';
         $benchmarkResponse = BenchmarkingAgent::run($benchmarkInput)->go();
         Log::info('CostDecomposition: benchmarking agent response captured');
 
         // 3) Compute actual OPEX by category percent from categorized expenses
-        $byCategoryPercent = $this->computeOpexByCategoryPercent($expenses);
+        $byCategoryPercent = $this->computeOpexByCategoryPercent();
         Log::info('CostDecomposition: computed actual OPEX by category percent', [
             'by_category_percent' => $byCategoryPercent,
         ]);
@@ -129,12 +129,15 @@ class CostDecompositionService
         ];
     }
 
-    protected function computeOpexByCategoryPercent(array $expenses): array
+    protected function computeOpexByCategoryPercent(): array
     {
+
+        $this->expenses = $this->expenseRepository->getExpense() ?? [];
+
         $sumByCategory = [];
         $total = 0.0;
 
-        foreach ($expenses as $row) {
+        foreach ($this->expenses as $row) {
             if (! is_array($row)) {
                 continue;
             }

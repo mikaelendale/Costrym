@@ -18,13 +18,17 @@ class AutomationRepository
             return $record->data;
         }
 
-        $existing = $record->data;
-        $existingArray = is_array($existing) ? $existing : [];
-        $merged = array_merge($existingArray, $data);
-        $record->data = $merged;
+        $record->data = $data;
         $record->save();
 
         return $record->data;
+        // $existing = $record->data;
+        // $existingArray = is_array($existing) ? $existing : [];
+        // $merged = array_merge($existingArray, $data);
+        // $record->data = $merged;
+        // $record->save();
+
+        // return $record->data;
     }
 
     public function getAutomations(): array
@@ -46,13 +50,15 @@ class AutomationRepository
             return $record->data;
         }
 
-        $existing = $record->data;
-        $existingArray = is_array($existing) ? $existing : [];
-        $merged = array_merge($existingArray, $data);
-        $record->data = $merged;
+        $record->data = $data;
         $record->save();
 
         return $record->data;
+
+        // $existing = $record->data;
+        // $existingArray = is_array($existing) ? $existing : [];
+        // $merged = array_merge($existingArray, $data);
+        // $record->data = $merged;
     }
 
     public function getApprovalLayer(): array

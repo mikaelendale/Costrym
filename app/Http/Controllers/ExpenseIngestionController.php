@@ -94,7 +94,7 @@ class ExpenseIngestionController extends Controller
         // - company_context: full workbook data keyed by sheet name
         $titles = is_array($data) ? array_keys($data) : [];
         $company_profile = [
-            'name' => 'raw',
+            'name' => $originalName,
             'title' => $titles,
             'company_context' => $data,
         ];
