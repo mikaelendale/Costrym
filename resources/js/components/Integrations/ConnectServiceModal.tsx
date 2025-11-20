@@ -1,4 +1,4 @@
-import Modal from '@/Components/ui/modal';
+import Modal from '@/components/ui/modal';
 // import { buildAuthHeaders } from '@/utils/authHeaders';
 import { useMemo, useState } from 'react';
 
