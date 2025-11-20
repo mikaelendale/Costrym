@@ -1,10 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { PageProps } from '@/types';
-import { Card, CardContent } from '@/Components/ui/card';
-import { Button } from '@/Components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ArrowLeft, Download, Archive, Calendar, Tag } from 'lucide-react';
-import { Badge } from '@/Components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -35,11 +34,7 @@ interface Automation {
     } | null;
 }
 
-interface ShowProps extends PageProps {
-    automation: Automation;
-}
-
-export default function Show({ auth, automation }: ShowProps) {
+export default function Show({ automation }: Automation) {
     const getTypeIcon = (type: string) => {
         switch (type) {
             case 'task_generation':
