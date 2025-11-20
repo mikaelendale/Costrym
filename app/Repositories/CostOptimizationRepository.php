@@ -3,13 +3,12 @@
 namespace App\Repositories;
 
 use App\Models\CompanyData;
-use Illuminate\Support\Facades\Auth;
 
 class CostOptimizationRepository
 {
-    public function updateCutCostOptimizer(array $data, ?int $userId = null)
+    public function updateCutCostOptimizer(array $data, int $userId)
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         $record = CompanyData::where('name', 'cutCostOptimizer')->where('user_id', $resolvedUserId)->first();
         if (! $record) {
             $record = CompanyData::create([
@@ -35,17 +34,17 @@ class CostOptimizationRepository
         // return $record->data;
     }
 
-    public function getCutCostOptimizer(?int $userId = null): array
+    public function getCutCostOptimizer(int $userId): array
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         $record = CompanyData::where('name', 'cutCostOptimizer')->where('user_id', $resolvedUserId)->first();
 
         return is_array($record?->data) ? $record->data : [];
     }
 
-    public function updateCostValueAlignment(array $data, ?int $userId = null)
+    public function updateCostValueAlignment(array $data, int $userId)
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         $record = CompanyData::where('name', 'costValueAlignment')->where('user_id', $resolvedUserId)->first();
         if (! $record) {
             $record = CompanyData::create([
@@ -71,9 +70,9 @@ class CostOptimizationRepository
         // return $record->data;
     }
 
-    public function getCostValueAlignment(?int $userId = null): array
+    public function getCostValueAlignment(int $userId): array
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         $record = CompanyData::where('name', 'costValueAlignment')->where('user_id', $resolvedUserId)->first();
 
         return is_array($record?->data) ? $record->data : [];

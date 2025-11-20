@@ -63,6 +63,7 @@ class BaseLineAgent extends BaseLlmAgent
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
         Log::info('BaseLineAgent before LLM call...');
+        Log::info('Input messages:', ['messages' => $inputMessages]);
 
         return parent::beforeLlmCall($inputMessages, $context);
     }
@@ -73,7 +74,7 @@ class BaseLineAgent extends BaseLlmAgent
         // $parsedResponse = CleanUpResponse::extractJsonPayload($response);
         // Log::info('Parsed BaseLineAgent response payload.', ['response' => $parsedResponse]);
 
-        Log::info('Finished setting baseline_data state.');
+        Log::info('Finished setting baseline_data state.', ['response' => $response]);
 
         return parent::afterLlmResponse($response, $context, $request);
     }

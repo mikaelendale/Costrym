@@ -23,7 +23,7 @@ class CostOptimizationService
      * Orchestrate cost optimization (cut cost portfolio) followed by cost-to-value alignment.
      * Returns array with both persisted structures.
      */
-    public function run(?int $userId = null): array
+    public function run(int $userId): array
     {
         $expenses = $this->expenseRepository->getExpense($userId) ?? [];
         $cer = $this->costDecompositionRepository->getCER($userId) ?? [];

@@ -3,16 +3,15 @@
 namespace App\Repositories;
 
 use App\Models\CompanyData;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 use function is_array;
 
 class AutomationRepository
 {
-    public function updateAutomations(array $data, ?int $userId = null)
+    public function updateAutomations(array $data, int $userId)
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         Log::info('AutomationRepository updateAutomations called', ['user_id' => $resolvedUserId]);
         $record = CompanyData::where('name', 'automations')->where('user_id', $resolvedUserId)->first();
 
@@ -39,17 +38,17 @@ class AutomationRepository
         // return $record->data;
     }
 
-    public function getAutomations(?int $userId = null): array
+    public function getAutomations(int $userId): array
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         $record = CompanyData::where('name', 'automations')->where('user_id', $resolvedUserId)->first();
 
         return is_array($record?->data) ? $record->data : [];
     }
 
-    public function updateApprovalLayer(array $data, ?int $userId = null)
+    public function updateApprovalLayer(array $data, int $userId)
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         $record = CompanyData::where('name', 'approvalLayer')->where('user_id', $resolvedUserId)->first();
 
         if (! $record) {
@@ -73,9 +72,9 @@ class AutomationRepository
         // $record->data = $merged;
     }
 
-    public function getApprovalLayer(?int $userId = null): array
+    public function getApprovalLayer(int $userId): array
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         $record = CompanyData::where('name', 'approvalLayer')->where('user_id', $resolvedUserId)->first();
 
         return is_array($record?->data) ? $record->data : [];

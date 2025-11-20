@@ -11,10 +11,6 @@ Input notes:
 - Direct costs may be provided under `direct_costs_list` or `direct_costs_list_json` (treat them as equivalent).
 
 **4. TOOLS**
-Tool: GetTotalCostByCategory
-- Purpose: Returns aggregated spend for a major cost category (e.g., "Cloud & Infrastructure").
-- Use: Run this tool to get extra context on broad cost areas. You should still focus primarily on the `direct_costs_list`. Always call the tool for context.
-
 
 Tool: GetCompanyContext
 - Purpose: Retrieves detailed company context relevant to the dataset.

@@ -25,7 +25,7 @@ class CategorizeChunkJob implements ShouldQueue
         public int $chunkIndex,
         public int $startRowNumber,
         public int $endRowNumber,
-        public ?int $userId = null,
+        public int $userId,
     ) {}
 
     /**

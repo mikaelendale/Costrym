@@ -16,7 +16,7 @@ class BaseLineService
         //
     }
 
-    public function run(?int $userId)
+    public function run(int $userId)
     {
         $rawExpense = $this->expense->getExpense($userId) ?? [];
 
@@ -36,8 +36,15 @@ class BaseLineService
         $baselineResponse = BaseLineAgent::run($prompt)->go();
 
         Log::info('BaseLineJob: raw baseline agent response received', [
-            'response_length' => is_string($baselineResponse) ? strlen($baselineResponse) : 0,
+            'response' => $baselineResponse,
         ]);
+
+        // Defensive: if the LLM returned an empty string, bail early to avoid parsing errors.
+        if (! is_string($baselineResponse) || trim($baselineResponse) === '') {
+            Log::warning('BaseLineJob: LLM returned empty response, aborting baseline parsing');
+
+            return [];
+        }
 
         try {
             $parsed = CleanUpResponse::extractJsonPayload($baselineResponse);

@@ -14,7 +14,7 @@ class WorkflowService
     public function __construct(
     ) {}
 
-    public function runWorkflow($data, $title = '', ?int $userId = null)
+    public function runWorkflow($data, $title, int $userId)
     {
 
         $windowData = 20;
@@ -60,8 +60,8 @@ class WorkflowService
             $delaySeconds += 20; // space jobs by 20 seconds
         }
 
-        $bufferAfterChunksSeconds = 60; // 1 minute buffer after last chunk is scheduled
-        $spacingBetweenJobsSeconds = 60; // 1 minute between each heavy job
+        $bufferAfterChunksSeconds = 10;
+        $spacingBetweenJobsSeconds = 10;
         $startAfterSeconds = $delaySeconds + $bufferAfterChunksSeconds;
 
         BaseLineJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds));

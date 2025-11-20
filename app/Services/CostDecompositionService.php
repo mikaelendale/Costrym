@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\Log;
 
 class CostDecompositionService
 {
-    private $expenses;
-
     public function __construct(
         private ExpenseRepository $expenseRepository,
         private CostDecompositionRepository $costDecompositionRepository,
@@ -32,77 +30,56 @@ class CostDecompositionService
     {
         $rawExpenses = $this->expenseRepository->getExpense($userId) ?? [];
 
-        // Chunk expenses into groups of 10
-        $chunks = array_chunk(is_array($this->expenses) ? $this->expenses : [], 10);
-
-        $allDecompositions = [];
-        $persistedAssociated = [];
-
-        foreach ($chunks as $chunk) {
-            // Compact JSON for agent prompts
-            $expensesJson = json_encode($chunk, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-            Log::info('CostDecomposition: starting decomposition run for chunk', [
-                'chunk_size' => count($chunk),
-            ]);
-
-            // 1) Cost decomposition based on categorized expenses
-            $decompPrompt = 'use categorized expense to decompose costs '.$expensesJson;
-            Log::info('CostDecomposition: prepared decomposition prompt', [
-                'prompt_length' => strlen($decompPrompt),
-            ]);
-
-            $decompositionResponse = CostDecompositionAgent::run($decompPrompt)->go();
-
-            Log::info('CostDecomposition: raw decomposition response', [
-                'response' => $decompositionResponse,
-            ]);
-
-            try {
-                $associatedCosts = CleanUpResponse::extractJsonPayload($decompositionResponse);
-                $data = $associatedCosts['cost_decomposition_response']['product_decompositions'] ?? [];
-            } catch (\Throwable $e) {
-                Log::warning('CostDecomposition: failed to parse decomposition response, storing empty array', [
-                    'error' => $e->getMessage(),
-                ]);
-                $data = [];
-            }
-
-            // Collect decompositions from each chunk
-            if (! empty($data)) {
-                $allDecompositions = array_merge($allDecompositions, $data);
-
-                // Persist associated costs immediately for this chunk
-                $persistedThisChunk = $this->costDecompositionRepository->updateAssociatedCosts($data, $userId);
-
-                Log::info('CostDecomposition: persisted associated costs for chunk', [
-                    'chunk_size' => count($data),
-                    'persisted_items' => is_array($persistedThisChunk) ? count($persistedThisChunk) : 0,
-                ]);
-
-                if (is_array($persistedThisChunk)) {
-                    $persistedAssociated = array_merge($persistedAssociated, $persistedThisChunk);
-                }
-            }
-            sleep(15);
+        // Compact JSON for agent prompts
+        if (is_array($rawExpenses) || $rawExpenses instanceof \JsonSerializable || $rawExpenses instanceof \Illuminate\Support\Collection) {
+            $expensesJson = json_encode($rawExpenses, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } else {
+            $expensesJson = (string) $rawExpenses;
         }
+
+        Log::info('CostDecomposition: starting decomposition run', [
+            'expense_count' => is_array($rawExpenses) ? count($rawExpenses) : 0,
+        ]);
+
+        // 1) Cost decomposition based on categorized expenses
+        $decompPrompt = 'use categorized expense to decompose costs '.$expensesJson;
+        Log::info('CostDecomposition: prepared decomposition prompt', [
+            'prompt_length' => strlen($decompPrompt),
+        ]);
+
+        $decompositionResponse = CostDecompositionAgent::run($decompPrompt)->go();
+
+        Log::info('CostDecomposition: raw decomposition response', [
+            'response' => $decompositionResponse,
+        ]);
+
+        $associatedCosts = [];
+        try {
+            $associatedCosts = CleanUpResponse::extractJsonPayload($decompositionResponse);
+            $data = $associatedCosts['cost_decomposition_response']['product_decompositions'] ?? [];
+        } catch (\Throwable $e) {
+            Log::warning('CostDecomposition: failed to parse decomposition response, storing empty array', [
+                'error' => $e->getMessage(),
+            ]);
+
+            $data = [];
+        }
+
+        // Persist associated costs
+        $persistedAssociated = $this->costDecompositionRepository->updateAssociatedCosts($data, $userId);
 
         Log::info('CostDecomposition: associated costs persisted', [
             'items' => is_array($persistedAssociated) ? count($persistedAssociated) : 0,
         ]);
 
-        return $this->benchmarking();
-    }
-
-    public function benchmarking()
-    {
-
+        // 2) Benchmarking (should-cost model). The agent can gather context via tools.
+        // We pass a short nudge string; the agent will fetch context using FireCrawler + GetCompanyContext.
         $benchmarkInput = 'Build should-cost OPEX model for the current company context.';
         $benchmarkResponse = BenchmarkingAgent::run($benchmarkInput)->go();
         Log::info('CostDecomposition: benchmarking agent response captured');
 
         // 3) Compute actual OPEX by category percent from categorized expenses
-        $byCategoryPercent = $this->computeOpexByCategoryPercent();
+        $byCategoryPercent = $this->computeOpexByCategoryPercent($rawExpenses);
         Log::info('CostDecomposition: computed actual OPEX by category percent', [
             'by_category_percent' => $byCategoryPercent,
         ]);
@@ -130,20 +107,24 @@ class CostDecompositionService
         ]);
 
         return [
+            'associated_costs' => $persistedAssociated,
             'benchmark' => $benchmarkResponse,
             'cer' => $persistedCer,
         ];
     }
 
-    protected function computeOpexByCategoryPercent(): array
+    /**
+     * Compute OPEX by category percent from an expenses list.
+     * Accepts a flat array of expense rows. Each row may contain:
+     * - amount (numeric)
+     * - category (string) optional; defaults to expense_name if absent
+     */
+    protected function computeOpexByCategoryPercent(array $expenses): array
     {
-
-        $this->expenses = $this->expenseRepository->getExpense() ?? [];
-
         $sumByCategory = [];
         $total = 0.0;
 
-        foreach ($this->expenses as $row) {
+        foreach ($expenses as $row) {
             if (! is_array($row)) {
                 continue;
             }

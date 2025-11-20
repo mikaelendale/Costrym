@@ -8,25 +8,25 @@ use Illuminate\Support\Facades\Log;
 
 class ExpenseRepository
 {
-    public function update(array $data, ?int $userId = null)
+    public function update(array $data, int $userId)
     {
-        $resolvedUserId = $userId ?? Auth::id();
-        Log::info('ExpenseRepository update called', ['user_id' => $resolvedUserId, 'data' => $data]);
+        $responseUserId = $userId ?? Auth::id();
+        Log::info('ExpenseRepository update called', ['user_id' => $responseUserId, 'data' => $data]);
 
-        if (! $resolvedUserId) {
+        if (! $responseUserId) {
             Log::warning('ExpenseRepository: Missing user_id; aborting update to avoid orphan records.');
 
             return [];
         }
 
-        $expense = CompanyData::where('name', 'expense')->where('user_id', $resolvedUserId)->first();
+        $expense = CompanyData::where('name', 'expense')->where('user_id', $responseUserId)->first();
 
         // If no record exists, create a new one with the incoming data
         if (! $expense) {
             $expense = CompanyData::create([
                 'name' => 'expense',
                 'data' => $data,
-                'user_id' => $resolvedUserId,
+                'user_id' => $responseUserId,
             ]);
 
             return $expense->data;
@@ -44,20 +44,36 @@ class ExpenseRepository
 
     }
 
-    public function getExpense(?int $userId = null)
+    public function getExpense(int $userId)
     {
-        $resolvedUserId = $userId ?? Auth::id();
-
-        if (! $resolvedUserId) {
+        $responseUserId = $userId ?? Auth::id();
+        Log::info('ExpenseRepository getExpense called', ['user_id' => $responseUserId, 'trace' => $this->shortTrace()]);
+        if (! $responseUserId) {
             Log::warning('ExpenseRepository: Missing user_id in getExpense; returning empty.');
 
             return [];
         }
 
         $expense = CompanyData::where('name', 'expense')
-            ->where('user_id', $resolvedUserId)
+            ->where('user_id', $responseUserId)
             ->first();
 
         return $expense?->data ?? [];
+    }
+
+    /**
+     * Produce a short (first 5 frames) trace string for logging context.
+     */
+    protected function shortTrace(): string
+    {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 6);
+        // Drop the current frame (this method) to avoid noise
+        array_shift($trace);
+        $out = [];
+        foreach ($trace as $frame) {
+            $out[] = ($frame['class'] ?? '').($frame['type'] ?? '').($frame['function'] ?? '').':'.($frame['line'] ?? '');
+        }
+
+        return implode(' | ', $out);
     }
 }
