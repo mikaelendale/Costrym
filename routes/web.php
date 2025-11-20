@@ -43,6 +43,18 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('optimization-costs', function () {
         return Inertia::render('OptomizationCost/Index');
     })->name('optimization-costs.index');
+<<<<<<< Updated upstream
+=======
+    // Task Approval routes
+    Route::post('tasks/{task}/approve', [\App\Http\Controllers\TaskApprovalController::class, 'approve'])->name('tasks.approve');
+    Route::post('tasks/{task}/reject', [\App\Http\Controllers\TaskApprovalController::class, 'reject'])->name('tasks.reject');
+
+    // Automation routes
+    Route::get('automations', [\App\Http\Controllers\AutomationController::class, 'index'])->name('automations.index');
+    Route::get('automations/{automation}', [\App\Http\Controllers\AutomationController::class, 'show'])->name('automations.show');
+    Route::post('automations/{automation}/archive', [\App\Http\Controllers\AutomationController::class, 'archive'])->name('automations.archive');
+    Route::get('automations/{automation}/download', [\App\Http\Controllers\AutomationController::class, 'download'])->name('automations.download');
+>>>>>>> Stashed changes
 
     // Notification routes
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications');
