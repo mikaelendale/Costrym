@@ -6,12 +6,12 @@ use LarAgent\Agent;
 
 /**
  * Finance File Analyst Agent
- * 
+ *
  * Analyzes financial data files (Excel/CSV) to determine:
  * - Monthly transaction volume
  * - Whether user meets minimum requirements ($1000+ monthly transactions)
  * - Key financial metrics and patterns
- * 
+ *
  * Uses structured output for consistent analysis results.
  */
 class FinanceFileAnalystAgent extends Agent

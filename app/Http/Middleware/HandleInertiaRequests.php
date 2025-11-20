@@ -31,7 +31,7 @@ class HandleInertiaRequests extends Middleware
 
     /**
      * Define the props that are shared by default with all Inertia pages.
-     * 
+     *
      * This method provides global data accessible to all React components:
      * - Authentication and authorization data
      * - Subscription status (automatically updated via webhooks)
@@ -54,7 +54,7 @@ class HandleInertiaRequests extends Middleware
         // This is used throughout the app to show plan-specific features and limits
         $plan = 'free';
         $subscriptionAmount = '$0';
-        
+
         if ($user = Auth::user()) {
             if ($user->subscribedToPrice(config('services.paddle.startup_monthly_price_id'), 'default')) {
                 $plan = 'startup-monthly';
@@ -83,7 +83,7 @@ class HandleInertiaRequests extends Middleware
                 'success' => session('success'),
                 'error' => session('error'),
             ],
-            'ziggy' => fn(): array => [
+            'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
@@ -94,36 +94,36 @@ class HandleInertiaRequests extends Middleware
             'paddle' => [
                 'client_side_token' => config('services.paddle.client_side_token'),
             ],
-            
+
             // ============================================================================
             // UI STATE
             // ============================================================================
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            
+
             // ============================================================================
             // NAVIGATION ROUTES
             // ============================================================================
-            'routes' => fn(): array => array_filter([
+            'routes' => fn (): array => array_filter([
                 ['name' => 'Dashboard', 'url' => route('dashboard')],
                 ['name' => 'Profile', 'url' => route('profile.edit')],
                 ['name' => 'Notifications', 'url' => route('notifications')],
                 $request->user()?->hasRole('admin') ? ['name' => 'User Management', 'url' => route('admin.users.index')] : null,
                 $request->user()?->hasRole('admin') ? ['name' => 'Roles and Permissions', 'url' => route('admin.roles-permissions')] : null,
             ]),
-            
+
             // ============================================================================
             // SUBSCRIPTION DATA (Laravel Cashier Paddle)
             // ============================================================================
             // Comprehensive subscription information automatically updated via webhooks
             // Accessible in all React components via usePage().props.subscription
-            'subscription' => fn() => $this->getSubscriptionData($request),
-            
+            'subscription' => fn () => $this->getSubscriptionData($request),
+
             // ============================================================================
             // BILLING DATA
             // ============================================================================
             // Transaction history and billing information
-            'billing' => fn() => $this->getBillingData($request),
-            
+            'billing' => fn () => $this->getBillingData($request),
+
             // ============================================================================
             // CUSTOMER PLAN INFORMATION
             // ============================================================================
@@ -132,7 +132,7 @@ class HandleInertiaRequests extends Middleware
                 'plan' => $plan,
                 'subscriptionAmount' => $subscriptionAmount,
             ],
-            
+
             // ============================================================================
             // PRICING INFORMATION
             // ============================================================================
@@ -147,23 +147,23 @@ class HandleInertiaRequests extends Middleware
 
     /**
      * Get comprehensive subscription data for the authenticated user.
-     * 
+     *
      * Returns detailed subscription information including:
      * - All subscription states (active, trial, grace period, etc.)
      * - Default subscription details
      * - All user subscriptions
      * - User-level subscription checks
-     * 
+     *
      * This data is automatically updated when Paddle webhooks are received,
      * ensuring the frontend always has current subscription status without
      * requiring separate API calls.
-     * 
-     * @param Request $request HTTP request
+     *
+     * @param  Request  $request  HTTP request
      * @return array Subscription data structure
      */
     private function getSubscriptionData(Request $request): array
     {
-        if (!$request->user()) {
+        if (! $request->user()) {
             return [
                 'hasSubscription' => false,
                 'states' => [],
@@ -209,17 +209,17 @@ class HandleInertiaRequests extends Middleware
                 'active' => $defaultSubscription->active(),
                 'onTrial' => $defaultSubscription->onTrial(),
                 'expiredTrial' => $user->hasExpiredTrial(),
-                'notOnTrial' => !$defaultSubscription->onTrial(),
+                'notOnTrial' => ! $defaultSubscription->onTrial(),
                 'recurring' => $defaultSubscription->recurring(),
                 'pastDue' => $defaultSubscription->pastDue(),
                 'paused' => $defaultSubscription->paused(),
-                'notPaused' => !$defaultSubscription->paused(),
+                'notPaused' => ! $defaultSubscription->paused(),
                 'onPausedGracePeriod' => $defaultSubscription->onPausedGracePeriod(),
-                'notOnPausedGracePeriod' => !$defaultSubscription->onPausedGracePeriod(),
+                'notOnPausedGracePeriod' => ! $defaultSubscription->onPausedGracePeriod(),
                 'canceled' => $defaultSubscription->canceled(),
-                'notCanceled' => !$defaultSubscription->canceled(),
+                'notCanceled' => ! $defaultSubscription->canceled(),
                 'onGracePeriod' => $defaultSubscription->onGracePeriod(),
-                'notOnGracePeriod' => !$defaultSubscription->onGracePeriod(),
+                'notOnGracePeriod' => ! $defaultSubscription->onGracePeriod(),
             ];
         }
 
@@ -250,16 +250,16 @@ class HandleInertiaRequests extends Middleware
 
     /**
      * Get billing and transaction data for the authenticated user.
-     * 
+     *
      * Returns recent transactions and billing information from Paddle.
      * Used for displaying payment history and invoices in the UI.
-     * 
-     * @param Request $request HTTP request
+     *
+     * @param  Request  $request  HTTP request
      * @return array Billing data structure with transactions
      */
     private function getBillingData(Request $request): array
     {
-        if (!$request->user()) {
+        if (! $request->user()) {
             return [
                 'transactions' => [],
                 'receipts' => [],

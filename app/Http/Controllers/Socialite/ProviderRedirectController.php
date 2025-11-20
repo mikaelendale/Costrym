@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Socialite;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
-use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Log;
+use Laravel\Socialite\Facades\Socialite;
 
 class ProviderRedirectController extends Controller
 {
@@ -13,10 +13,11 @@ class ProviderRedirectController extends Controller
 
     public function __invoke(string $provider): RedirectResponse
     {
-        if (!in_array($provider, self::SUPPORTED_PROVIDERS, true)) {
+        if (! in_array($provider, self::SUPPORTED_PROVIDERS, true)) {
             Log::warning('Unsupported provider attempted', ['provider' => $provider]);
+
             return redirect()->route('login')->withErrors([
-                'provider' => 'Unsupported authentication provider.'
+                'provider' => 'Unsupported authentication provider.',
             ]);
         }
 
@@ -31,25 +32,27 @@ class ProviderRedirectController extends Controller
 
             Log::info('Initiating social authentication', [
                 'provider' => $provider,
-                'user_ip' => request()->ip()
+                'user_ip' => request()->ip(),
             ]);
 
             return Socialite::driver($provider)->redirect();
         } catch (\InvalidArgumentException $e) {
             Log::error('Invalid socialite configuration', [
                 'provider' => $provider,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
+
             return redirect()->route('login')->withErrors([
-                'provider' => "Authentication service for {$provider} is not properly configured."
+                'provider' => "Authentication service for {$provider} is not properly configured.",
             ]);
         } catch (\Exception $e) {
             Log::error('Socialite redirect error', [
                 'provider' => $provider,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
+
             return redirect()->route('login')->withErrors([
-                'provider' => 'Unable to connect to authentication service. Please try again.'
+                'provider' => 'Unable to connect to authentication service. Please try again.',
             ]);
         }
     }

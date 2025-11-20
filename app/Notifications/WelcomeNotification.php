@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -49,7 +48,7 @@ class WelcomeNotification extends Notification
     {
         return [
             'icon' => '🎉',
-            'message' => 'Welcome to ' . config('app.name') . '.',
+            'message' => 'Welcome to '.config('app.name').'.',
             'description' => 'You have successfully registered an account.',
             'action' => 'Visit your dashboard',
             'url' => url('/dashboard'),

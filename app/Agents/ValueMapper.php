@@ -26,6 +26,8 @@ See resources/prompts/value_mapper/default.blade.php for full instructions.
 ***
 INSTRUCTIONS;
 
+    protected string $model = 'gpt-4o-mini';
+
     /*
 
     Optional hook methods to override:

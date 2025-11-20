@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ChangelogController extends Controller
@@ -59,7 +58,7 @@ class ChangelogController extends Controller
                     $absoluteUrl = url($src);
                 } else {
                     // Relative path - assume it's in public/images/changelog/
-                    $absoluteUrl = asset('images/changelog/' . $src);
+                    $absoluteUrl = asset('images/changelog/'.$src);
                 }
 
                 return "![{$alt}]({$absoluteUrl})";
@@ -80,13 +79,13 @@ class ChangelogController extends Controller
         ]);
 
         if ($request->file('image')) {
-            $imageName = time() . '.' . $request->image->extension();
+            $imageName = time().'.'.$request->image->extension();
             $request->image->move(public_path('images/changelog'), $imageName);
 
             return response()->json([
                 'success' => true,
-                'url' => asset('images/changelog/' . $imageName),
-                'filename' => $imageName
+                'url' => asset('images/changelog/'.$imageName),
+                'filename' => $imageName,
             ]);
         }
 

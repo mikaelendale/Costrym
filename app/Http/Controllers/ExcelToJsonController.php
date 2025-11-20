@@ -16,20 +16,20 @@ class ExcelToJsonController extends Controller
     public function index(Request $request)
     {
         Log::info('ExcelToJsonController: Index page accessed');
-        
+
         // Get data from session (if redirected from convert)
         $json = $request->session()->get('json');
         $data = $request->session()->get('data');
         $filename = $request->session()->get('filename');
-        
+
         if ($json || $data) {
             Log::info('ExcelToJsonController: Found session data', [
-                'has_json' => !empty($json),
-                'has_data' => !empty($data),
+                'has_json' => ! empty($json),
+                'has_data' => ! empty($data),
                 'filename' => $filename,
             ]);
         }
-        
+
         return Inertia::render('excel-to-json', [
             'json' => $json,
             'data' => $data,
@@ -47,7 +47,7 @@ class ExcelToJsonController extends Controller
             $request->validate([
                 'file' => 'required|file|mimes:xlsx,xls,ods,csv|max:10240',
             ]);
-            
+
             Log::info('ExcelToJsonController: File validation passed');
 
             // Increase execution time for large files
@@ -55,7 +55,7 @@ class ExcelToJsonController extends Controller
             ini_set('memory_limit', '512M');
             Log::info('ExcelToJsonController: Execution limits set', [
                 'time_limit' => 300,
-                'memory_limit' => '512M'
+                'memory_limit' => '512M',
             ]);
 
             $file = $request->file('file');
@@ -63,7 +63,7 @@ class ExcelToJsonController extends Controller
             $fileSize = $file->getSize();
             $mimeType = $file->getMimeType();
             $extension = $file->getClientOriginalExtension();
-            
+
             Log::info('ExcelToJsonController: File details', [
                 'name' => $originalName,
                 'size' => $fileSize,
@@ -73,23 +73,24 @@ class ExcelToJsonController extends Controller
 
             $realPath = $file->getRealPath();
             Log::info('ExcelToJsonController: Calling service', ['path' => $realPath]);
-            
+
             $result = $this->excelService->convertToJson($realPath);
-            
+
             Log::info('ExcelToJsonController: Service returned', [
                 'success' => $result['success'] ?? false,
             ]);
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 Log::error('ExcelToJsonController: Conversion failed', [
                     'error' => $result['error'] ?? 'Unknown error',
                 ]);
+
                 return back()->withErrors(['error' => $result['error']]);
             }
 
             $jsonSize = strlen($result['json'] ?? '');
             $sheetCount = count($result['data'] ?? []);
-            
+
             Log::info('ExcelToJsonController: Conversion successful', [
                 'json_size' => $jsonSize,
                 'sheets' => $sheetCount,
@@ -112,8 +113,8 @@ class ExcelToJsonController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return back()->withErrors(['error' => 'Conversion failed: ' . $e->getMessage()]);
+
+            return back()->withErrors(['error' => 'Conversion failed: '.$e->getMessage()]);
         }
     }
 }
-

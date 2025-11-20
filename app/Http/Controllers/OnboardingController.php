@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\AiAgents\FinanceFileAnalystAgent;
 use App\AiAgents\OnboardingAgent;
 use App\AiAgents\OnboardingEstimationAgent;
-use App\Jobs\TaskDesignerJob;
+use App\Jobs\DataIngestionJob;
 use App\Models\KnowledgeBase;
 use App\Services\ExcelToJsonService;
 use Illuminate\Http\JsonResponse;
@@ -600,11 +600,13 @@ class OnboardingController extends Controller
             $user->onboarding_status = true;
             $user->save();
 
-            // Dispatch TaskDesignerJob to create task queue
-            TaskDesignerJob::dispatch($user->id);
+            // Dispatch DataIngestionJob to fetch financial data from connected integrations
+            // MasterOrchestratorJob will be dispatched automatically after ingestion completes
+            DataIngestionJob::dispatch($user->id, isInitialSync: true);
 
-            Log::info('Onboarding completed and TaskDesignerJob dispatched', [
+            Log::info('Onboarding completed, DataIngestionJob dispatched', [
                 'user_id' => $user->id,
+                'note' => 'MasterOrchestratorJob will run after data ingestion completes',
             ]);
 
             return redirect()->route('dashboard')->with('success', 'Onboarding completed successfully');

@@ -67,9 +67,9 @@ return new class extends Migration
             $table->timestamps();
 
             // Composite indexes for common queries
-            $table->index(['app_name', 'component_type', 'is_active'], 'idx_app_type_active');
-            $table->index(['component_type', 'is_active'], 'idx_type_active');
-            $table->index(['app_name', 'is_active'], 'idx_app_active');
+            $table->index(['app_name', 'component_type', 'is_active'], 'idx_pc_app_type_active');
+            $table->index(['component_type', 'is_active'], 'idx_pc_type_active');
+            $table->index(['app_name', 'is_active'], 'idx_pc_app_active');
 
             // Table comment
             $table->comment('Stores Pipedream Connect components (actions and triggers)');

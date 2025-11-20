@@ -31,9 +31,18 @@ Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
 
 Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        $pendingTasks = \App\Models\Task::where('user_id', auth()->id())
+            ->where('status', 'pending')
+            ->orderBy('priority')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('dashboard', [
+            'pendingTasks' => $pendingTasks,
+        ]);
     })->name('dashboard');
 
+<<<<<<< Updated upstream
     // Integrations
     // Route::get('integrations', function () {
     //     return Inertia::render('Integrations/Index');
@@ -43,6 +52,17 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('optimization-costs', function () {
         return Inertia::render('OptomizationCost/Index');
     })->name('optimization-costs.index');
+=======
+    // Task Approval routes
+    Route::post('tasks/{task}/approve', [\App\Http\Controllers\TaskApprovalController::class, 'approve'])->name('tasks.approve');
+    Route::post('tasks/{task}/reject', [\App\Http\Controllers\TaskApprovalController::class, 'reject'])->name('tasks.reject');
+
+    // Automation routes
+    Route::get('automations', [\App\Http\Controllers\AutomationController::class, 'index'])->name('automations.index');
+    Route::get('automations/{automation}', [\App\Http\Controllers\AutomationController::class, 'show'])->name('automations.show');
+    Route::post('automations/{automation}/archive', [\App\Http\Controllers\AutomationController::class, 'archive'])->name('automations.archive');
+    Route::get('automations/{automation}/download', [\App\Http\Controllers\AutomationController::class, 'download'])->name('automations.download');
+>>>>>>> Stashed changes
 
     // Notification routes
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications');
@@ -62,6 +82,7 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::post('integration-ingestor/chat', [IntegrationIngestorController::class, 'chat'])->name('integration.ingestor.chat');
     Route::get('integration-ingestor/integrations', [IntegrationIngestorController::class, 'getAvailableIntegrations'])->name('integration.ingestor.integrations');
     Route::get('integration-ingestor/tools', [IntegrationIngestorController::class, 'getAvailableTools'])->name('integration.ingestor.tools');
+    Route::get('integration-ingestor/test/invoices', [IntegrationIngestorController::class, 'testFetchInvoices'])->name('integration.ingestor.test.invoices');
 });
 
 // Onboarding route (accessible without onboarding middleware to avoid redirect loops)

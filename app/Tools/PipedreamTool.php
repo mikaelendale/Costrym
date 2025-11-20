@@ -73,7 +73,18 @@ class PipedreamTool implements ToolInterface
 
             // Handle options/enum
             if (isset($prop['options']) && is_array($prop['options'])) {
-                $properties[$propName]['enum'] = $prop['options'];
+                // Extract 'value' from options if they're objects, otherwise use as-is
+                $enumValues = [];
+                foreach ($prop['options'] as $option) {
+                    if (is_array($option) && isset($option['value'])) {
+                        $enumValues[] = $option['value'];
+                    } elseif (is_string($option)) {
+                        $enumValues[] = $option;
+                    }
+                }
+                if (! empty($enumValues)) {
+                    $properties[$propName]['enum'] = $enumValues;
+                }
             }
 
             if (! $isOptional) {

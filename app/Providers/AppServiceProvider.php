@@ -9,9 +9,9 @@ use Laravel\Paddle\Events\WebhookReceived;
 
 /**
  * Application Service Provider
- * 
+ *
  * Registers application-wide services, event listeners, and configurations.
- * 
+ *
  * Currently handles:
  * - Paddle webhook event logging for subscription management
  */
@@ -19,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
 {
     /**
      * The event listener mappings for the application.
-     * 
+     *
      * Maps Paddle webhook events to their respective listeners for logging
      * and monitoring subscription-related events.
      *
@@ -28,11 +28,11 @@ class AppServiceProvider extends ServiceProvider
     protected $listen = [
         // Log all received Paddle webhooks (before processing)
         WebhookReceived::class => [
-            LogPaddleWebhook::class . '@handleReceived',
+            LogPaddleWebhook::class.'@handleReceived',
         ],
         // Log all handled Paddle webhooks (after processing)
         WebhookHandled::class => [
-            LogPaddleWebhook::class . '@handleHandled',
+            LogPaddleWebhook::class.'@handleHandled',
         ],
     ];
 
