@@ -5,19 +5,19 @@ namespace App\Listeners;
 use App\Events\SubscriptionStatusUpdated;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
-use Laravel\Paddle\Events\WebhookReceived;
 use Laravel\Paddle\Events\WebhookHandled;
+use Laravel\Paddle\Events\WebhookReceived;
 
 /**
  * Paddle Webhook Event Listener
- * 
+ *
  * Logs all incoming and processed Paddle webhook events for:
  * - Debugging subscription issues
  * - Monitoring payment events
  * - Tracking subscription status changes
  * - Auditing webhook processing
  * - Broadcasting subscription updates to users in real-time
- * 
+ *
  * Webhook events include:
  * - transaction.created, transaction.completed
  * - subscription.created, subscription.updated, subscription.canceled
@@ -28,17 +28,16 @@ class LogPaddleWebhook
 {
     /**
      * Handle webhook received event.
-     * 
+     *
      * Logs when a webhook is first received from Paddle, before processing.
      * Useful for tracking all incoming webhook events and debugging delivery issues.
      *
-     * @param  WebhookReceived  $event Paddle webhook received event
-     * @return void
+     * @param  WebhookReceived  $event  Paddle webhook received event
      */
     public function handleReceived(WebhookReceived $event): void
     {
         $payload = $event->payload;
-        
+
         Log::info('Paddle webhook received', [
             'event_type' => $payload['event_type'] ?? 'unknown',
             'event_id' => $payload['event_id'] ?? null,
@@ -49,19 +48,18 @@ class LogPaddleWebhook
 
     /**
      * Handle webhook handled event.
-     * 
+     *
      * Logs when a webhook has been successfully processed by Laravel Cashier.
      * Broadcasts subscription status updates to the user in real-time.
      * Useful for confirming webhook processing and tracking successful updates.
      *
-     * @param  WebhookHandled  $event Paddle webhook handled event
-     * @return void
+     * @param  WebhookHandled  $event  Paddle webhook handled event
      */
     public function handleHandled(WebhookHandled $event): void
     {
         $payload = $event->payload;
         $eventType = $payload['event_type'] ?? 'unknown';
-        
+
         Log::info('Paddle webhook handled successfully', [
             'event_type' => $eventType,
             'event_id' => $payload['event_id'] ?? null,
@@ -86,42 +84,42 @@ class LogPaddleWebhook
 
     /**
      * Broadcast subscription status update to the user.
-     * 
+     *
      * Extracts user information from webhook payload and broadcasts
      * current subscription status for real-time frontend updates.
      *
-     * @param array $payload Webhook payload
-     * @return void
+     * @param  array  $payload  Webhook payload
      */
     private function broadcastSubscriptionUpdate(array $payload): void
     {
         try {
             $data = $payload['data'] ?? [];
-            
+
             // Try to find user from customer ID or email
             $user = null;
-            
+
             if (isset($data['customer_id'])) {
                 $user = User::where('paddle_id', $data['customer_id'])->first();
             }
-            
-            if (!$user && isset($data['customer_email'])) {
+
+            if (! $user && isset($data['customer_email'])) {
                 $user = User::where('email', $data['customer_email'])->first();
             }
 
             // Also check subscription data for customer info
-            if (!$user && isset($data['subscription'])) {
+            if (! $user && isset($data['subscription'])) {
                 $subscriptionData = is_array($data['subscription']) ? $data['subscription'] : [];
                 if (isset($subscriptionData['customer_id'])) {
                     $user = User::where('paddle_id', $subscriptionData['customer_id'])->first();
                 }
             }
 
-            if (!$user) {
+            if (! $user) {
                 Log::warning('Could not find user for subscription broadcast', [
                     'event_type' => $payload['event_type'] ?? 'unknown',
                     'payload_data' => $data,
                 ]);
+
                 return;
             }
 
@@ -171,4 +169,3 @@ class LogPaddleWebhook
         }
     }
 }
-

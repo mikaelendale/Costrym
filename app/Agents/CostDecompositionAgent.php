@@ -7,7 +7,6 @@ use App\Tools\GetTotalCostByCategory;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
-use Prism\Prism\ValueObjects\Messages\SystemMessage;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
 
@@ -33,7 +32,7 @@ class CostDecompositionAgent extends BaseLlmAgent
 
     // protected ?string $provider = Provider::Groq->value;
 
-    protected string $model = '';
+    protected string $model = 'gpt-4o-mini';
 
     protected array $tools = [
         GetTotalCostByCategory::class,

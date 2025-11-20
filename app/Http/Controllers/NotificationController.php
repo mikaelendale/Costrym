@@ -44,7 +44,7 @@ class NotificationController extends Controller
         return redirect()->back()->with([
             'notifications' => Auth::user()->notifications()->latest()->take(20)->get()->map(function ($notification) {
                 return $this->formatNotification($notification);
-            })
+            }),
         ]);
     }
 
@@ -58,7 +58,7 @@ class NotificationController extends Controller
         return redirect()->back()->with([
             'notifications' => Auth::user()->notifications()->latest()->take(20)->get()->map(function ($notification) {
                 return $this->formatNotification($notification);
-            })
+            }),
         ]);
     }
 
@@ -72,7 +72,7 @@ class NotificationController extends Controller
         return redirect()->back()->with([
             'notifications' => Auth::user()->notifications()->latest()->take(20)->get()->map(function ($notification) {
                 return $this->formatNotification($notification);
-            })
+            }),
         ]);
     }
 }

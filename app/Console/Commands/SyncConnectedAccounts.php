@@ -33,9 +33,10 @@ class SyncConnectedAccounts extends Command
         $this->info("Syncing accounts that haven't been synced in {$hours} hours...");
 
         $accounts = $this->repository->getConnectionsNeedingSync($hours, $limit);
-        
+
         if ($accounts->isEmpty()) {
             $this->info('No accounts need syncing.');
+
             return Command::SUCCESS;
         }
 
@@ -50,7 +51,7 @@ class SyncConnectedAccounts extends Command
         foreach ($accounts as $account) {
             try {
                 $details = $this->service->getAccountDetails($account->pipedream_account_id);
-                
+
                 if ($details) {
                     $account->update([
                         'metadata' => array_merge($account->metadata, $details),
@@ -78,4 +79,3 @@ class SyncConnectedAccounts extends Command
         return Command::SUCCESS;
     }
 }
-

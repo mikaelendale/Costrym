@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Crypt;
 
 /**
  * ConnectedAccount Model
- * 
+ *
  * Represents a connected third-party account via Pipedream Connect
  * Includes encryption for sensitive metadata and query scopes for common operations
  */
@@ -107,7 +107,7 @@ class ConnectedAccount extends Model
             $q->whereNull('last_synced_at')
                 ->orWhere('last_synced_at', '<', now()->subHours($hours));
         })
-        ->where('is_active', true);
+            ->where('is_active', true);
     }
 
     /**
@@ -115,9 +115,10 @@ class ConnectedAccount extends Model
      */
     public function isExpired(): bool
     {
-        if (!$this->token_expires_at) {
+        if (! $this->token_expires_at) {
             return false;
         }
+
         return $this->token_expires_at->isPast();
     }
 
@@ -126,9 +127,10 @@ class ConnectedAccount extends Model
      */
     public function needsSync(int $hours = 24): bool
     {
-        if (!$this->last_synced_at) {
+        if (! $this->last_synced_at) {
             return true;
         }
+
         return $this->last_synced_at->lt(now()->subHours($hours));
     }
 
@@ -171,35 +173,39 @@ class ConnectedAccount extends Model
         if (empty($value)) {
             return [];
         }
-        
+
         // If value is already an array (from JSON decode), check if it's encrypted
         if (is_array($value)) {
             // Check if it's our encrypted format
             if (isset($value['encrypted']) && is_string($value['encrypted'])) {
                 try {
                     $decrypted = Crypt::decryptString($value['encrypted']);
+
                     return json_decode($decrypted, true) ?? [];
                 } catch (\Exception $e) {
                     return [];
                 }
             }
+
             // Otherwise return as-is (unencrypted data)
             return $value;
         }
-        
+
         // If value is a string, try to decrypt or decode
         if (is_string($value)) {
             try {
                 // Try to decrypt (for encrypted data)
                 $decrypted = Crypt::decryptString($value);
+
                 return json_decode($decrypted, true) ?? [];
             } catch (\Exception $e) {
                 // If decryption fails, try to decode as JSON (for unencrypted data)
                 $decoded = json_decode($value, true);
+
                 return is_array($decoded) ? $decoded : [];
             }
         }
-        
+
         return [];
     }
 
@@ -212,23 +218,25 @@ class ConnectedAccount extends Model
     {
         if (empty($value)) {
             $this->attributes['metadata'] = null;
+
             return;
         }
-        
+
         // If value is already a JSON string with encrypted format, store as-is
         if (is_string($value)) {
             $decoded = json_decode($value, true);
             if (is_array($decoded) && isset($decoded['encrypted']) && count($decoded) === 1) {
                 // Already in encrypted format, store as JSON string
                 $this->attributes['metadata'] = $value;
+
                 return;
             }
         }
-        
+
         // Encrypt sensitive metadata
         $json = is_array($value) ? json_encode($value) : (is_string($value) ? $value : json_encode($value));
         $encrypted = Crypt::encryptString($json);
-        
+
         // Store encrypted value as JSON string (required for JSON column type)
         $this->attributes['metadata'] = json_encode(['encrypted' => $encrypted]);
     }
@@ -239,6 +247,7 @@ class ConnectedAccount extends Model
     public function getMetadataValue(string $key, $default = null)
     {
         $metadata = $this->metadata;
+
         return $metadata[$key] ?? $default;
     }
 

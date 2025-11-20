@@ -30,6 +30,8 @@ See resources/prompts/cost_value_aligner_agent/default.blade.php for full instru
 ***
 INSTRUCTIONS;
 
+    protected string $model = 'gpt-4o-mini';
+
     protected array $subAgents = [
         ValueMapper::class,
         SmartReducer::class,

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RBACController extends Controller
 {
@@ -38,8 +38,6 @@ class RBACController extends Controller
         ]);
     }
 
-
-
     public function store(Request $request)
     {
         $request->validate([
@@ -63,14 +61,15 @@ class RBACController extends Controller
             return redirect()->route('admin.roles-permissions')->with('success', 'Role created successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to create role: ' . $e->getMessage());
+
+            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to create role: '.$e->getMessage());
         }
     }
 
     public function update(Request $request, Role $role)
     {
         $request->validate([
-            'name' => 'required|string|unique:roles,name,' . $role->id,
+            'name' => 'required|string|unique:roles,name,'.$role->id,
             'permissions' => 'array',
         ]);
 
@@ -90,7 +89,8 @@ class RBACController extends Controller
             return redirect()->route('admin.roles-permissions')->with('success', 'Role updated successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to update role: ' . $e->getMessage());
+
+            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to update role: '.$e->getMessage());
         }
     }
 
@@ -103,11 +103,13 @@ class RBACController extends Controller
             }
 
             $role->delete();
+
             return redirect()->route('admin.roles-permissions')->with('success', 'Role deleted successfully');
         } catch (\Exception $e) {
-            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to delete role: ' . $e->getMessage());
+            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to delete role: '.$e->getMessage());
         }
     }
+
     public function storePermission(Request $request)
     {
         $request->validate([
@@ -117,18 +119,19 @@ class RBACController extends Controller
         try {
             Permission::create([
                 'name' => $request->name,
-                'guard_name' => 'web'
+                'guard_name' => 'web',
             ]);
 
             return redirect()->route('admin.roles-permissions')->with('success', 'Permission created successfully');
         } catch (\Exception $e) {
-            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to create permission: ' . $e->getMessage());
+            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to create permission: '.$e->getMessage());
         }
     }
+
     public function updatePermission(Request $request, Permission $permission)
     {
         $request->validate([
-            'name' => 'required|string|unique:permissions,name,' . $permission->id,
+            'name' => 'required|string|unique:permissions,name,'.$permission->id,
         ]);
 
         try {
@@ -136,7 +139,7 @@ class RBACController extends Controller
 
             return redirect()->route('admin.roles-permissions')->with('success', 'Permission updated successfully');
         } catch (\Exception $e) {
-            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to update permission: ' . $e->getMessage());
+            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to update permission: '.$e->getMessage());
         }
     }
 
@@ -149,9 +152,10 @@ class RBACController extends Controller
             }
 
             $permission->delete();
+
             return redirect()->route('admin.roles-permissions')->with('success', 'Permission deleted successfully');
         } catch (\Exception $e) {
-            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to delete permission: ' . $e->getMessage());
+            return redirect()->route('admin.roles-permissions')->with('error', 'Failed to delete permission: '.$e->getMessage());
         }
     }
 }

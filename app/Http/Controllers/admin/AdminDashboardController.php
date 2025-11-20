@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\DB;
 
 class AdminDashboardController extends Controller
 {
@@ -17,11 +16,11 @@ class AdminDashboardController extends Controller
         $total_users = User::role('user')->count();
         $total_revenue = '$11';
         $subscribed_user = User::role('user')->count();
-        
+
         return Inertia::render('admin/dashboard', [
             'total_users' => $total_users,
             'total_revenue' => $total_revenue,
-            'subscribed_user' => $subscribed_user
+            'subscribed_user' => $subscribed_user,
         ]);
     }
 
@@ -36,7 +35,7 @@ class AdminDashboardController extends Controller
                 'created_at' => $user->created_at,
                 'is_banned' => $user->is_banned,
                 'roles' => $user->roles->pluck('name'),
-                'plan' => $user->plan ?? 'basic'
+                'plan' => $user->plan ?? 'basic',
             ];
         });
 
@@ -48,7 +47,7 @@ class AdminDashboardController extends Controller
     public function showUser(User $user)
     {
         $user->load('roles');
-        
+
         $activities = Activity::where('causer_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->take(50)
@@ -75,10 +74,10 @@ class AdminDashboardController extends Controller
                 'updated_at' => $user->updated_at,
                 'is_banned' => $user->is_banned,
                 'roles' => $user->roles->pluck('name'),
-                'plan' => $user->plan ?? 'basic'
+                'plan' => $user->plan ?? 'basic',
             ],
             'activities' => $activities,
-            'available_roles' => $roles
+            'available_roles' => $roles,
         ]);
     }
 
@@ -86,16 +85,16 @@ class AdminDashboardController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'plan' => 'nullable|string|in:basic,pro,enterprise'
+            'email' => 'required|email|unique:users,email,'.$user->id,
+            'plan' => 'nullable|string|in:basic,pro,enterprise',
         ]);
 
         try {
             $user->update($request->only(['name', 'email', 'plan']));
-            
+
             return redirect()->back()->with('success', 'User updated successfully');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to update user: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update user: '.$e->getMessage());
         }
     }
 
@@ -108,24 +107,25 @@ class AdminDashboardController extends Controller
             }
 
             $user->delete();
+
             return redirect()->route('admin.users.index')->with('success', 'User deleted successfully');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to delete user: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to delete user: '.$e->getMessage());
         }
     }
 
     public function assignRole(Request $request, User $user)
     {
         $request->validate([
-            'role' => 'required|string|exists:roles,name'
+            'role' => 'required|string|exists:roles,name',
         ]);
 
         try {
             $user->syncRoles([$request->role]);
-            
+
             return redirect()->back()->with('success', 'Role assigned successfully');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to assign role: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to assign role: '.$e->getMessage());
         }
     }
 
@@ -141,10 +141,10 @@ class AdminDashboardController extends Controller
                 ->causedBy(auth()->user())
                 ->performedOn($user)
                 ->log('banned user');
-                
+
             return redirect()->back()->with('success', 'User banned successfully');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to ban user: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to ban user: '.$e->getMessage());
         }
     }
 
@@ -156,10 +156,10 @@ class AdminDashboardController extends Controller
                 ->causedBy(auth()->user())
                 ->performedOn($user)
                 ->log('unbanned user');
-                
+
             return redirect()->back()->with('success', 'User unbanned successfully');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to unban user: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to unban user: '.$e->getMessage());
         }
     }
 }

@@ -11,10 +11,10 @@ use Illuminate\Queue\SerializesModels;
 
 /**
  * Subscription Status Updated Event
- * 
+ *
  * Broadcasts subscription status changes to the user in real-time via Ably.
  * This allows the frontend to update subscription status without polling.
- * 
+ *
  * Broadcasts to: private-user.{user_id}
  */
 class SubscriptionStatusUpdated implements ShouldBroadcast
@@ -34,8 +34,8 @@ class SubscriptionStatusUpdated implements ShouldBroadcast
     /**
      * Create a new event instance.
      *
-     * @param User $user The user whose subscription changed
-     * @param array $subscriptionData Current subscription status
+     * @param  User  $user  The user whose subscription changed
+     * @param  array  $subscriptionData  Current subscription status
      */
     public function __construct(User $user, array $subscriptionData = [])
     {
@@ -51,14 +51,12 @@ class SubscriptionStatusUpdated implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('private-user.' . $this->user->id),
+            new Channel('private-user.'.$this->user->id),
         ];
     }
 
     /**
      * The event's broadcast name.
-     *
-     * @return string
      */
     public function broadcastAs(): string
     {
@@ -79,4 +77,3 @@ class SubscriptionStatusUpdated implements ShouldBroadcast
         ];
     }
 }
-

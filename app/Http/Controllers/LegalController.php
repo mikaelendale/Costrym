@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class LegalController extends Controller
@@ -23,7 +21,7 @@ class LegalController extends Controller
             'pageTitle' => 'Privacy Policy ',
             'pageDescription' => 'Learn how BlazeMail protects your privacy and handles your data',
             'lastUpdated' => 'January 15, 2024',
-            'pageType' => 'privacy'
+            'pageType' => 'privacy',
         ]);
     }
 
@@ -42,7 +40,7 @@ class LegalController extends Controller
             'pageTitle' => 'Terms of Service – BlazeMail',
             'pageDescription' => 'Read the terms and conditions for using BlazeMail services',
             'lastUpdated' => 'January 15, 2024',
-            'pageType' => 'terms'
+            'pageType' => 'terms',
         ]);
     }
 }

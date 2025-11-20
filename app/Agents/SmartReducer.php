@@ -21,7 +21,7 @@ You are a **Financial Action Planner**. You are logical, decisive, and focused o
 
 See resources/prompts/smart_reducer/default.blade.php for full instructions.';
 
-    protected string $model = '';
+    protected string $model = 'gpt-4o-mini';
 
     protected array $tools = [
         // Example: YourTool::class,

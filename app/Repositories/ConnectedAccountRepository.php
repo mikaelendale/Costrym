@@ -15,10 +15,6 @@ class ConnectedAccountRepository
     /**
      * Get active account for user and app
      * Uses index for optimal performance
-     *
-     * @param int $userId
-     * @param string $appName
-     * @return ConnectedAccount|null
      */
     public function getActiveAccount(int $userId, string $appName): ?ConnectedAccount
     {
@@ -32,9 +28,6 @@ class ConnectedAccountRepository
     /**
      * Get all active accounts for user
      * Optimized query with proper indexes
-     *
-     * @param int $userId
-     * @return Collection
      */
     public function getActiveAccountsForUser(int $userId): Collection
     {
@@ -48,10 +41,6 @@ class ConnectedAccountRepository
     /**
      * Get accounts by app name across all users
      * Useful for admin operations
-     *
-     * @param string $appName
-     * @param int $limit
-     * @return Collection
      */
     public function getAccountsByApp(string $appName, int $limit = 100): Collection
     {
@@ -63,9 +52,6 @@ class ConnectedAccountRepository
 
     /**
      * Get expired connections that need attention
-     *
-     * @param int $limit
-     * @return Collection
      */
     public function getExpiredConnections(int $limit = 100): Collection
     {
@@ -76,10 +62,6 @@ class ConnectedAccountRepository
 
     /**
      * Get connections that need syncing
-     *
-     * @param int $hours
-     * @param int $limit
-     * @return Collection
      */
     public function getConnectionsNeedingSync(int $hours = 24, int $limit = 100): Collection
     {
@@ -90,10 +72,6 @@ class ConnectedAccountRepository
 
     /**
      * Get paginated accounts for user
-     *
-     * @param int $userId
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
     public function getPaginatedAccountsForUser(int $userId, int $perPage = 15): LengthAwarePaginator
     {
@@ -104,9 +82,6 @@ class ConnectedAccountRepository
 
     /**
      * Count active connections for user
-     *
-     * @param int $userId
-     * @return int
      */
     public function countActiveConnections(int $userId): int
     {
@@ -118,10 +93,6 @@ class ConnectedAccountRepository
 
     /**
      * Check if user has connection for app
-     *
-     * @param int $userId
-     * @param string $appName
-     * @return bool
      */
     public function hasConnection(int $userId, string $appName): bool
     {
@@ -134,7 +105,6 @@ class ConnectedAccountRepository
     /**
      * Bulk deactivate expired connections
      *
-     * @param int $limit
      * @return int Number of connections deactivated
      */
     public function deactivateExpiredConnections(int $limit = 100): int
@@ -149,9 +119,6 @@ class ConnectedAccountRepository
 
     /**
      * Get connection statistics for user
-     *
-     * @param int $userId
-     * @return array
      */
     public function getConnectionStats(int $userId): array
     {
@@ -172,4 +139,3 @@ class ConnectedAccountRepository
         ];
     }
 }
-

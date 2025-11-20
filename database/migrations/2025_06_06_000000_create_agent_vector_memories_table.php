@@ -44,8 +44,8 @@ return new class extends Migration
             //     // For PostgreSQL with pgvector extension
             //     $table->addColumn('vector', 'embedding', ['dimensions' => 1536]); // Default OpenAI dimensions
             // } else {
-                // For other databases, store as JSON (less efficient but compatible)
-                $table->json('embedding_vector');
+            // For other databases, store as JSON (less efficient but compatible)
+            $table->json('embedding_vector');
             // }
 
             $table->float('embedding_norm')->nullable(); // Vector magnitude for optimization
