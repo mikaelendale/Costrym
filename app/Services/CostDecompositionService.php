@@ -18,27 +18,19 @@ class CostDecompositionService
         //
     }
 
-    /**
-     * Run the full cost decomposition flow:
-     * - Use categorized expenses to generate associated/direct cost breakdowns
-     * - Build a benchmark (should-cost OPEX model)
-     * - Compute CER (Cost Efficiency Ratios) comparing actual vs benchmark
-     *
-     * Returns a concise array of persisted results for observability.
-     */
     public function run(?int $userId = null): array
     {
-        $rawExpenses = $this->expenseRepository->getExpense($userId) ?? [];
+        $expenses = $this->expenseRepository->getDirectCosts($userId) ?? [];
 
         // Compact JSON for agent prompts
-        if (is_array($rawExpenses) || $rawExpenses instanceof \JsonSerializable || $rawExpenses instanceof \Illuminate\Support\Collection) {
-            $expensesJson = json_encode($rawExpenses, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (is_array($expenses) || $expenses instanceof \JsonSerializable || $expenses instanceof \Illuminate\Support\Collection) {
+            $expensesJson = json_encode($expenses, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } else {
-            $expensesJson = (string) $rawExpenses;
+            $expensesJson = (string) $expenses;
         }
 
         Log::info('CostDecomposition: starting decomposition run', [
-            'expense_count' => is_array($rawExpenses) ? count($rawExpenses) : 0,
+            'expense_count' => is_array($expenses) ? count($expenses) : 0,
         ]);
 
         // 1) Cost decomposition based on categorized expenses
@@ -79,7 +71,7 @@ class CostDecompositionService
         Log::info('CostDecomposition: benchmarking agent response captured');
 
         // 3) Compute actual OPEX by category percent from categorized expenses
-        $byCategoryPercent = $this->computeOpexByCategoryPercent($rawExpenses);
+        $byCategoryPercent = $this->computeOpexByCategoryPercent($userId);
         Log::info('CostDecomposition: computed actual OPEX by category percent', [
             'by_category_percent' => $byCategoryPercent,
         ]);
@@ -119,8 +111,10 @@ class CostDecompositionService
      * - amount (numeric)
      * - category (string) optional; defaults to expense_name if absent
      */
-    protected function computeOpexByCategoryPercent(array $expenses): array
+    protected function computeOpexByCategoryPercent($userId): array
     {
+
+        $expenses = $this->expenseRepository->getExpense($userId) ?? [];
         $sumByCategory = [];
         $total = 0.0;
 

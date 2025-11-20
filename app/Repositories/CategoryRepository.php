@@ -3,7 +3,6 @@
 namespace App\Repositories;
 
 use App\Models\CategoryModel;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
 
 class CategoryRepository
@@ -19,7 +18,7 @@ class CategoryRepository
         return $category;
     }
 
-    public function getCategories(array $filters = [], int $perPage = 15): LengthAwarePaginator
+    public function getCategories(array $filters = [], int $perPage = 15)
     {
         Log::info('getCategories called with filters', ['data' => $filters]);
         $query = CategoryModel::query()->orderBy('created_at', 'desc');
@@ -117,7 +116,7 @@ class CategoryRepository
         return $categories;
     }
 
-    public function addExpenseToCategory($name, $expenseData): ?array
+    public function addExpenseToCategory($name, $expenseData, $userId): ?array
     {
         Log::info('addExpenseToCategory invoked', [
             'category' => $name,
@@ -136,6 +135,7 @@ class CategoryRepository
                 ['name' => $name],
                 [
                     'description' => $name,
+                    'user_id' => $userId,
                     'meta_data' => [],
                     'expenses' => [],
                 ]
@@ -169,5 +169,36 @@ class CategoryRepository
 
             return null;
         }
+    }
+
+    public function getExpensesByCategory(string $categoryName, int $userId): array
+    {
+        Log::info('Fetching expenses for category', [
+            'category' => $categoryName,
+            'user_id' => $userId,
+        ]);
+
+        $category = CategoryModel::where('name', $categoryName)
+            ->where('user_id', $userId)
+            ->first();
+
+        if (! $category) {
+            Log::warning('Category not found', [
+                'category' => $categoryName,
+                'user_id' => $userId,
+            ]);
+
+            return [];
+        }
+
+        $expenses = $category->expenses ?? [];
+        $expenses = is_array($expenses) ? $expenses : [];
+
+        Log::info('Fetched expenses for category', [
+            'category' => $categoryName,
+            'expense_count' => count($expenses),
+        ]);
+
+        return $expenses;
     }
 }

@@ -78,7 +78,8 @@ class CompanyProfileService
                 'available_sheets' => array_keys($allSheets),
             ]);
 
-            return;
+            $title = $this->companyProfileRepository->getCompanyProfileTitles();
+            $rows = $allSheets[$title[0]] ?? null;
         }
 
         $this->workflowService->runWorkflow($rows, $selectedTitle, Auth::id());

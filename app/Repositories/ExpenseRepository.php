@@ -124,4 +124,21 @@ class ExpenseRepository
             'new_total' => count($existing),
         ]);
     }
+
+    public function getDirectCosts(int $userId): array
+    {
+        $responseUserId = $userId ?? Auth::id();
+        Log::info('ExpenseRepository getDirectCosts called', ['user_id' => $responseUserId]);
+        if (! $responseUserId) {
+            Log::warning('ExpenseRepository: Missing user_id in getDirectCosts; returning empty.');
+
+            return [];
+        }
+
+        $expense = CompanyData::where('name', 'direct_cost')
+            ->where('user_id', $responseUserId)
+            ->first();
+
+        return is_array($expense?->data) ? $expense->data : [];
+    }
 }

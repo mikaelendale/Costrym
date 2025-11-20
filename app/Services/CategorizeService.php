@@ -16,12 +16,14 @@ class CategorizeService
 
     public function categorize(string $input, int $userId)
     {
-        Log::info('CategorizeService', ['' => $input]);
+        Log::info('CategorizeService categorize', ['input' => $input]);
         $categorizer_response = CategorizerAgent::run($input)->go();
 
         try {
+            Log::info('CategorizeService received response', ['response' => $categorizer_response]);
             $parsed = CleanUpResponse::extractJsonPayload($categorizer_response);
         } catch (\Throwable $e) {
+            Log::error('unable to parser the response', ['error' => $e->getMessage(), 'response' => $categorizer_response]);
             $this->expenseRepository->update([], $userId);
 
             return [];
@@ -59,7 +61,7 @@ class CategorizeService
         // Persist only the expenses and return them
         $this->expenseRepository->update($expenses, $userId);
 
-        $this->addExpenseToCategory($expenses);
+        $this->addExpenseToCategory($expenses, $userId);
 
         // Filter and persist direct costs (tag contains "Direct")
         $directCosts = $this->filterDirectCosts($expenses);
@@ -73,13 +75,13 @@ class CategorizeService
         return $expenses;
     }
 
-    public function addExpenseToCategory($expenseData)
+    public function addExpenseToCategory($expenseData, $userId)
     {
         foreach ($expenseData as $expense) {
             if (is_array($expense) && ! empty($expense['category'])) {
                 try {
 
-                    $this->categoryRepository->addExpenseToCategory($expense['category'], $expense);
+                    $this->categoryRepository->addExpenseToCategory($expense['category'], $expense, $userId);
                 } catch (\Throwable $e) {
                     Log::warning('Failed adding expense to category', [
                         'category' => $expense['category'] ?? null,
@@ -102,7 +104,8 @@ class CategorizeService
     protected function filterDirectCosts(array $expenses): array
     {
         $direct = [];
-        foreach ($expenses as $expense) {
+        Log::info('filterDirectCosts invoked', ['expenses' => $expenses]);
+        foreach ($expenses as $expense['expenses']) {
             if (! is_array($expense)) {
                 continue;
             }

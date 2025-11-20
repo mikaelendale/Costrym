@@ -3,6 +3,8 @@
 namespace App\Agents;
 
 use App\Services\CleanUpResponse;
+use App\Tools\GetCategory;
+use App\Tools\GetCompanyContext;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
@@ -15,12 +17,13 @@ class CategorizerAgent extends BaseLlmAgent
 
     protected string $description = 'AI agent that intelligently categorizes financial transactions into predefined expense categories using transaction descriptions, amounts, and context.';
 
-    protected string $instructions = 'You are a financial transaction categorizer. Use the list_financial_categories tool to see all available categories, then analyze each transaction and assign the most appropriate category_id. Return clean JSON with categorizations.';
+    protected string $instructions = 'You are a financial transaction categorizer. Use the GetCompanyContext tool to see all available categories, then analyze each transaction and assign the most appropriate category_id. Return clean JSON with categorizations.';
 
     protected string $model = 'gpt-4o-mini';
 
     protected array $tools = [
-        ListFinancialCategoriesTool::class,
+        GetCompanyContext::class,
+        GetCategory::class,
     ];
 
     // // protected ?string $provider = Provider::Groq->value;
@@ -28,8 +31,8 @@ class CategorizerAgent extends BaseLlmAgent
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
         Log::info('CategorizerAgent: Starting categorization', [
-            'batch_size' => $context->getState('batch_size'),
-            'user_id' => $context->getState('user_id'),
+            // 'batch_size' => $context->getState('batch_size'),
+            // 'user_id' => $context->getState('user_id'),
         ]);
 
         return parent::beforeLlmCall($inputMessages, $context);

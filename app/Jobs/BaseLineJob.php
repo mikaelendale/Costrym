@@ -11,7 +11,10 @@ class BaseLineJob implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public int $userId) {}
+    public function __construct(public int $userId)
+    {
+        $this->onQueue('baseline_jobs');
+    }
 
     public function handle(BaseLineService $baseLineService): void
     {

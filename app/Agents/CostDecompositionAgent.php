@@ -22,7 +22,7 @@ class CostDecompositionAgent extends BaseLlmAgent
 
     // protected ?string $provider = Provider::Groq->value;
 
-    protected string $model = 'gpt-4o-mini';
+    protected string $model = '';
 
     protected array $tools = [
         GetCompanyContext::class,

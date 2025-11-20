@@ -22,7 +22,10 @@ class CostDecomposerJob implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct(public int $userId) {}
+    public function __construct(public int $userId)
+    {
+        $this->onQueue('cost_decomposer_jobs');
+    }
 
     /**
      * Execute the job.

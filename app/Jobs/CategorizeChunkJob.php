@@ -26,7 +26,9 @@ class CategorizeChunkJob implements ShouldQueue
         public int $startRowNumber,
         public int $endRowNumber,
         public int $userId,
-    ) {}
+    ) {
+        $this->onQueue('categorize_chunks');
+    }
 
     /**
      * Execute the job.
