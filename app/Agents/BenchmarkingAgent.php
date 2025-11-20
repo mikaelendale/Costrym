@@ -5,6 +5,7 @@ namespace App\Agents;
 use App\Tools\FireCrawler;
 use App\Tools\GetCompanyContext;
 use App\Tools\GetCompanyTitle;
+use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
@@ -68,4 +69,21 @@ class BenchmarkingAgent extends BaseLlmAgent
         return parent::afterToolResult($toolName, $result, $context);
 
     } */
+
+    public function beforeLlmCall(array $inputMessages, AgentContext $context): array
+    {
+        Log::info('BenchmarkingAgent before LLM call...');
+        Log::info('Input messages:', ['messages' => $inputMessages]);
+
+        return parent::beforeLlmCall($inputMessages, $context);
+    }
+
+    public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
+    {
+        Log::info('After BenchmarkingAgent LLM response ...');
+        Log::info('Response:', ['response' => $response]);
+
+        return parent::afterLlmResponse($response, $context, $request);
+
+    }
 }

@@ -21,7 +21,7 @@ class AutomationService
      * Run automation planning then approval layer.
      * Uses the Cost Value Alignment output as the input for automation.
      */
-    public function run(?int $userId = null): array
+    public function run(int $userId): array
     {
         // Fetch prior aligned portfolio (from CostOptimizationService)
         $aligned = $this->costOptimizationRepository->getCostValueAlignment($userId);

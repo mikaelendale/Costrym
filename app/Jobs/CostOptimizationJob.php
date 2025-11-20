@@ -15,7 +15,7 @@ class CostOptimizationJob implements ShouldQueue
 
     public int $tries = 1;
 
-    public function __construct(public ?int $userId = null)
+    public function __construct(public int $userId)
     {
         //
     }

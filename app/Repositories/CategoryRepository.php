@@ -63,34 +63,43 @@ class CategoryRepository
             return null;
         }
 
-        $category = CategoryModel::firstOrCreate(
-            ['name' => $name],
-            [
-                'description' => $name,
-                'meta_data' => [],
-                'expenses' => [],
-            ]
-        );
+        try {
+            $category = CategoryModel::firstOrCreate(
+                ['name' => $name],
+                [
+                    'description' => $name,
+                    'meta_data' => [],
+                    'expenses' => [],
+                ]
+            );
 
-        $existing = $category->expenses ?? [];
-        $existing = is_array($existing) ? $existing : [];
+            $existing = $category->expenses ?? [];
+            $existing = is_array($existing) ? $existing : [];
 
-        // If previous structure was associative, flatten it to a list of values
-        $keys = array_keys($existing);
-        $isList = $keys === range(0, count($keys) - 1);
-        if (! $isList) {
-            $existing = array_values($existing);
+            // If previous structure was associative, flatten it to a list of values
+            $keys = array_keys($existing);
+            $isList = $keys === range(0, count($keys) - 1);
+            if (! $isList) {
+                $existing = array_values($existing);
+            }
+
+            $existing[] = $expenseData;
+            $category->expenses = $existing;
+            $category->save();
+
+            Log::info('Added expense to category', [
+                'category' => $name,
+                'new_total' => count($existing),
+            ]);
+
+            return $category->expenses;
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error('Failed adding expense to category', [
+                'category' => $name,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
         }
-
-        $existing[] = $expenseData;
-        $category->expenses = $existing;
-        $category->save();
-
-        Log::info('Added expense to category', [
-            'category' => $name,
-            'new_total' => count($existing),
-        ]);
-
-        return $category->expenses;
     }
 }

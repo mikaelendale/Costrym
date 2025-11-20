@@ -26,17 +26,14 @@ class CostDecompositionAgent extends BaseLlmAgent
 
     protected array $tools = [
         GetCompanyContext::class,
-        GetTotalCostByCategory::class,
+        // GetTotalCostByCategory::class,
         // Example: YourTool::class,
     ];
 
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
-
-        // Log::info('CostDecompositionAgent.beforeLlmCall:start', [
-        //     'input_msg' => $inputMessages,
-        // ]);
-
+        Log::info('CostDecompositionAgent before LLM call...');
+        Log::info('Input messages:', ['messages' => $inputMessages]);
         $result = parent::beforeLlmCall($inputMessages, $context);
 
         return $result;
@@ -44,6 +41,8 @@ class CostDecompositionAgent extends BaseLlmAgent
 
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
+        Log::info('After CostDecompositionAgent LLM response ...');
+        Log::info('Response:', ['response' => $response]);
 
         $processed = parent::afterLlmResponse($response, $context, $request);
 

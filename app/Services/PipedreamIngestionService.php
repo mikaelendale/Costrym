@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Agents\FilterAgent;
 use App\Repositories\CompanyProfileRepository;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class PipedreamIngestionService
@@ -20,8 +21,7 @@ class PipedreamIngestionService
         Log::info('ingesting expenses for company profile');
         // Request relevant sheet title via FilterAgent
 
-        $this->workflowService->runWorkflow($data);
-        // Fetch full context array for the selected company profile and sheet title
+        $this->workflowService->runWorkflow($data, 'Pipedream Ingestion', Auth::id());
 
     }
 }

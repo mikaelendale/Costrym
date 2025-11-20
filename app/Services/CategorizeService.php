@@ -10,12 +10,11 @@ use Illuminate\Support\Facades\Log;
 class CategorizeService
 {
     public function __construct(
-        private CategorizerAgent $categorizerAgent,
         private ExpenseRepository $expenseRepository,
         private CategoryRepository $categoryRepository
     ) {}
 
-    public function categorize(string $input, ?int $userId = null)
+    public function categorize(string $input, int $userId)
     {
         Log::info('CategorizeService', ['' => $input]);
         $categorizer_response = CategorizerAgent::run($input)->go();

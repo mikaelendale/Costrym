@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 
 class CostDecompositionRepository
 {
-    public function updateAssociatedCosts(array $data, ?int $userId = null)
+    public function updateAssociatedCosts(array $data, int $userId)
     {
         $resolvedUserId = $userId ?? Auth::id();
         Log::info('CostDecompositionRepository updateAssociatedCosts called', ['user_id' => $resolvedUserId]);
@@ -87,9 +87,9 @@ class CostDecompositionRepository
         return $associatedCosts->data;
     }
 
-    public function getassociatedCosts(?int $userId = null)
+    public function getassociatedCosts(int $userId)
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         $associatedCosts = CompanyData::where('name', 'associatedCosts')->where('user_id', $resolvedUserId)->first();
 
         $data = $associatedCosts ? $associatedCosts->data : null;
@@ -97,9 +97,9 @@ class CostDecompositionRepository
         return $data;
     }
 
-    public function updateCER(array $data, ?int $userId = null)
+    public function updateCER(array $data, int $userId)
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         $cer = CompanyData::where('name', 'cer')->where('user_id', $resolvedUserId)->first();
 
         // If no record exists, create a new one with the incoming data
@@ -124,9 +124,9 @@ class CostDecompositionRepository
         return $cer->data;
     }
 
-    public function getCER(?int $userId = null)
+    public function getCER(int $userId)
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         $cer = CompanyData::where('name', 'cer')->where('user_id', $resolvedUserId)->first();
 
         $data = $cer ? $cer->data : null;

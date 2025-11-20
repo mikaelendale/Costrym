@@ -5,6 +5,7 @@ namespace App\Agents\CostOptomizerAgent;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
+use Vizra\VizraADK\Events\ToolCallFailed;
 use Vizra\VizraADK\System\AgentContext;
 
 class CostOptomizerAgent extends BaseLlmAgent
@@ -336,7 +337,7 @@ INSTRUCTIONS;
                 } catch (\Throwable $e) {
                     $this->onToolException($tool->definition()['name'], $e, $context);
 
-                    event(new \Vizra\VizraADK\Events\ToolCallFailed($context, $this->getName(), $tool->definition()['name'], $e));
+                    event(new ToolCallFailed($context, $this->getName(), $tool->definition()['name'], $e));
 
                     throw new \Vizra\VizraADK\Exceptions\ToolExecutionException("Error executing tool '".$tool->definition()['name']."': ".$e->getMessage(), 0, $e);
                 }

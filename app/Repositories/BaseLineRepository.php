@@ -3,12 +3,11 @@
 namespace App\Repositories;
 
 use App\Models\CompanyData;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class BaseLineRepository
 {
-    public function update(array $data, ?int $userId)
+    public function update(array $data, int $userId)
     {
         Log::info('BaseLineRepository update called', ['user_id' => $userId]);
         $baseline = CompanyData::where('name', 'baseline')->where('user_id', $userId)->first();
@@ -41,9 +40,9 @@ class BaseLineRepository
 
     }
 
-    public function getBaseline(?int $userId = null)
+    public function getBaseline(int $userId)
     {
-        $resolvedUserId = $userId ?? Auth::id();
+        $resolvedUserId = $userId;
         $baseline = CompanyData::where('name', 'baseline')->where('user_id', $resolvedUserId)->first();
 
         $data = $baseline?->data;
