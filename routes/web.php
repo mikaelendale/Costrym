@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\admin\RBACController;
+use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\IntegrationIngestorController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotionAgentController;
 use App\Http\Controllers\OnboardingController;
@@ -21,6 +23,7 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return redirect()->route('dashboard');
 })->name('home');
+
 // Changelog
 Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
 Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
@@ -30,6 +33,17 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+
+    // Integrations
+    // Route::get('integrations', function () {
+    //     return Inertia::render('Integrations/Index');
+    // })->name('integrations.index');
+
+    // Optimized Cost
+    Route::get('optimization-costs', function () {
+        return Inertia::render('OptomizationCost/Index');
+    })->name('optimization-costs.index');
+
     // Notification routes
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->middleware('auth');
@@ -122,6 +136,10 @@ Route::get('/ai/test', [WorkflowController::class, 'index'])->name('ai.workflow'
 // OAuth routes
 Route::get('/auth/{provider}/redirect', ProviderRedirectController::class)->name('auth.redirect')->middleware(['throttle:5,1']);
 Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name('auth.callback')->middleware(['throttle:5,1']);
+
+require __DIR__.'/settings.php';
+require __DIR__.'/auth.php';
+require __DIR__.'/paymentRoute.php';
 
 Route::middleware(['auth', 'verified', 'onboarding'])->get('/dispatch', function () {
     $user = auth()->user();
