@@ -59,9 +59,16 @@ class CategorizeService
         // Persist only the expenses and return them
         $this->expenseRepository->update($expenses, $userId);
 
-        // Also persist each expense grouped under its category without overwriting existing JSON.
-
         $this->addExpenseToCategory($expenses);
+
+        // Filter and persist direct costs (tag contains "Direct")
+        $directCosts = $this->filterDirectCosts($expenses);
+        if (! empty($directCosts)) {
+            Log::info('CategorizeService direct costs extracted', ['count' => count($directCosts)]);
+            $this->expenseRepository->updateDirectCosts($directCosts, $userId);
+        } else {
+            Log::info('CategorizeService no direct costs found');
+        }
 
         return $expenses;
     }
@@ -84,5 +91,35 @@ class CategorizeService
             }
         }
 
+    }
+
+    public function updateDirectCosts(array $directCosts, int $userId): void
+    {
+
+        $this->expenseRepository->updateDirectCosts($directCosts, $userId);
+    }
+
+    protected function filterDirectCosts(array $expenses): array
+    {
+        $direct = [];
+        foreach ($expenses as $expense) {
+            if (! is_array($expense)) {
+                continue;
+            }
+            $tags = $expense['tags'] ?? [];
+            if (is_string($tags)) {
+                $tags = [$tags];
+            }
+            if (! is_array($tags)) {
+                continue;
+            }
+            // Case-insensitive match in case upstream changes capitalization
+            $lower = array_map(fn ($t) => is_string($t) ? strtolower($t) : $t, $tags);
+            if (in_array('direct', $lower, true)) {
+                $direct[] = $expense;
+            }
+        }
+
+        return $direct;
     }
 }

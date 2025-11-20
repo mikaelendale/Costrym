@@ -31,6 +31,7 @@ class AutomationService
         Log::info('AutomationService: dispatching AutomationPlanningAgent');
         $automationRaw = AutomationPlanningAgent::run($alignedJson)->go();
 
+        Log::info('AutomationService: AutomationPlanningAgent raw response', ['automationRaw' => $automationRaw]);
         $automationParsed = [];
         try {
             $automationParsed = CleanUpResponse::extractJsonPayload($automationRaw);
@@ -51,11 +52,12 @@ class AutomationService
 
         Log::info('AutomationService: dispatching ApprovalAgent');
         $approvalRaw = ApprovalAgent::run(input: $approvalInput)->go();
+        Log::info('AutomationService: ApprovalAgent raw response', ['approvalRaw' => $approvalRaw]);
 
         $approvalParsed = [];
         try {
             $approvalParsed = CleanUpResponse::extractJsonPayload($approvalRaw);
-            $data = $approvalParsed['approval_requests'] ?? [];
+            $data = $approvalParsed['approval_agent_response']['approval_requests'] ?? [];
         } catch (\Throwable $e) {
             Log::warning('AutomationService: failed to parse approval layer; storing empty array', ['error' => $e->getMessage()]);
         }

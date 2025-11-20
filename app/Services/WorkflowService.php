@@ -60,8 +60,8 @@ class WorkflowService
             $delaySeconds += 20; // space jobs by 20 seconds
         }
 
-        $bufferAfterChunksSeconds = 10;
-        $spacingBetweenJobsSeconds = 10;
+        $bufferAfterChunksSeconds = 30;
+        $spacingBetweenJobsSeconds = 30;
         $startAfterSeconds = $delaySeconds + $bufferAfterChunksSeconds;
 
         BaseLineJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds));

@@ -34,10 +34,10 @@ class ExpenseIngestionController extends Controller
             Log::info('ExcelToJsonController: File validation passed');
 
             // Increase execution time for large files
-            set_time_limit(700); // 5 minutes
+            set_time_limit(seconds: 60); // 1 minute
             ini_set('memory_limit', '512M');
             Log::info('ExcelToJsonController: Execution limits set', [
-                'time_limit' => 700,
+                'time_limit' => 60,
                 'memory_limit' => '512M',
             ]);
 

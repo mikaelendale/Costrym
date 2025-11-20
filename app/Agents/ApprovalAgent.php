@@ -55,7 +55,8 @@ class ApprovalAgent extends BaseLlmAgent
 
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
-        // Log::info('response', ['approval_agent Response:', $response]);
+        Log::info('approval_response', ['approval_agent Response:', $response]);
+
         return parent::afterLlmResponse($response, $context, $request);
 
     }
