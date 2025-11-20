@@ -1,10 +1,9 @@
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { PageProps } from '@/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card';
-import { Button } from '@/Components/ui/button';
-import { Input } from '@/Components/ui/input';
-import { Badge } from '@/Components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { FileText, Download, Archive, Search, Filter, Calendar, FileCode } from 'lucide-react';
 import { useState } from 'react';
 
@@ -23,20 +22,7 @@ interface Automation {
     } | null;
 }
 
-interface AutomationsProps extends PageProps {
-    automations: {
-        data: Automation[];
-        links: any[];
-        meta: any;
-    };
-    filters: {
-        type: string;
-        search: string;
-    };
-    typeCounts: Record<string, number>;
-}
-
-export default function Index({ auth, automations, filters, typeCounts }: AutomationsProps) {
+export default function Index({ automations, filters, typeCounts }: { automations: Automation[], filters: { type: string, search: string }, typeCounts: Record<string, number> }) {
     const [search, setSearch] = useState(filters.search);
     const [selectedType, setSelectedType] = useState(filters.type);
 
