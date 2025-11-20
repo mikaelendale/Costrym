@@ -7,7 +7,6 @@ use App\Tools\BaseLineAnalysis\RollingAggregateTool;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
-use Prism\Prism\ValueObjects\Messages\SystemMessage;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
 
@@ -19,7 +18,7 @@ class BaseLineAgent extends BaseLlmAgent
 
     // protected ?string $provider = Provider::Groq->value;
 
-    protected string $model = '';
+    protected string $model = 'gpt-4o-mini';
 
     protected array $tools = [
         RollingAggregateTool::class,
@@ -68,7 +67,11 @@ class BaseLineAgent extends BaseLlmAgent
         $company_financials = $context->getState('company_financials');
         $category_mapping = $context->getState('categorized_data');
 
-        $inputMessages[] = new SystemMessage("Company Financials:\n".json_encode($company_financials, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\nCategory Mapping:\n".json_encode($category_mapping, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        // Add context as a standard system message array instead of SystemMessage object
+        $inputMessages[] = [
+            'role' => 'system',
+            'content' => "Company Financials:\n".json_encode($company_financials, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\nCategory Mapping:\n".json_encode($category_mapping, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ];
 
         return parent::beforeLlmCall($inputMessages, $context);
     }

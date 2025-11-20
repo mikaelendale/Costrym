@@ -19,9 +19,9 @@ class CheckOnboardingStatus
         $user = Auth::user();
 
         // If user is authenticated and hasn't completed onboarding
-        if ($user && !$user->onboarding_status) {
+        if ($user && ! $user->onboarding_status) {
             // Allow access to onboarding route to avoid redirect loops
-            if (!$request->routeIs('onboarding')) {
+            if (! $request->routeIs('onboarding')) {
                 return redirect()->route('onboarding');
             }
         }

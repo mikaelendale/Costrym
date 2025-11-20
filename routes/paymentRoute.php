@@ -16,7 +16,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/subscription/stop-cancellation', [SubscriptionController::class, 'stopCancellation'])->name('subscription.stop-cancellation');
     Route::get('/download-invoice', function (Request $request) {
         $transactionId = $request->query('transaction_id');
-        if (!$transactionId) {
+        if (! $transactionId) {
             abort(404, 'Transaction ID is required.');
         }
         $transaction = Transaction::findOrFail($transactionId);

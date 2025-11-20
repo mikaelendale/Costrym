@@ -4,7 +4,7 @@ import { type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import { ArrowUpIcon, CaretLeftIcon, CaretRightIcon, CheckIcon, FileCsvIcon } from '@phosphor-icons/react';
 import { PipedreamClient } from '@pipedream/sdk';
-import { GoogleGmail, NotionIcon, Paypal, Stripe, Xero, Zoho } from 'brand-logos';
+import { GoogleGmail, NotionIcon, Xero, Zoho } from 'brand-logos';
 import { Bot, LoaderCircle, Trash2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -41,13 +41,6 @@ interface Tool {
 // Essential accounting integrations that users must connect
 const essentialTools: Tool[] = [
     {
-        name: 'QuickBooks Online',
-        appId: 'quickbooks',
-        iconUrl: 'https://freebiehive.com/wp-content/uploads/2024/06/Quickbooks-Logo-PNG-758x473.jpg',
-        requiresPipedream: true,
-        required: true,
-    },
-    {
         name: 'Xero',
         appId: 'xero_accounting_api',
         icon: Xero,
@@ -56,57 +49,36 @@ const essentialTools: Tool[] = [
     },
     {
         name: 'Zoho Books',
-        appId: 'zoho',
+        appId: 'zoho_books',
         icon: Zoho,
         requiresPipedream: true,
         required: true,
     },
     {
-        name: 'FreshBooks',
-        appId: 'freshbooks',
-        iconUrl: 'https://www.freshbooks.com/favicon.ico',
+        name: 'QuickBooks Online',
+        appId: 'quickbooks',
+        iconUrl: 'https://freebiehive.com/wp-content/uploads/2024/06/Quickbooks-Logo-PNG-758x473.jpg',
         requiresPipedream: true,
         required: true,
     },
     {
-        name: 'Wave Accounting',
-        appId: 'wave',
-        iconUrl: 'https://cdn.prod.website-files.com/62446230dcb514b828a6e237/67dc615447285df192591015_favicon.png',
-        requiresPipedream: true,
-        required: true,
-    },
-    {
-        name: 'Sage Intacct',
-        appId: 'sage_intacct',
-        iconUrl: 'https://www.sage.com/Areas/SageDotCom/img/favicon/favicon-32x32.png',
-        requiresPipedream: true,
-        required: true,
-    },
-    {
-        name: 'NetSuite',
-        appId: 'netsuite',
-        iconUrl: 'icons/netsuite.ico',
-        requiresPipedream: true,
-        required: true,
-    },
-    {
-        name: 'Odoo Accounting',
-        appId: 'odoo',
-        iconUrl: 'https://www.odoo.com/favicon.ico',
+        name: 'Sevdesk',
+        appId: 'sevdesk',
+        iconUrl: 'https://www.sevdesk.de/favicon.ico',
         requiresPipedream: true,
         required: true,
     },
 ];
 
-// Additional accounting integrations (shown in modal)
+// Additional expense management integrations (shown in modal)
 const additionalAccountingTools: Tool[] = [
-    { name: 'Stripe', appId: 'stripe', icon: Stripe, requiresPipedream: true, required: false },
-    { name: 'PayPal', appId: 'paypal', icon: Paypal, requiresPipedream: true, required: false },
-    { name: 'Square', appId: 'square', iconUrl: 'https://squareup.com/favicon.ico', requiresPipedream: true, required: false },
-    { name: 'Paddle', appId: 'paddle', iconUrl: 'https://paddle.com/favicon.ico', requiresPipedream: true, required: false },
-    { name: 'Adyen', appId: 'adyen', iconUrl: 'https://www.adyen.com/favicon.ico', requiresPipedream: true, required: false },
-    { name: 'Checkout.com', appId: 'checkout_com', iconUrl: 'https://cdn.prod.website-files.com/64db80a5e88c6b1723ff760b/678a43ad3ae286e4574c6bb7_Logo_Symbol_Full%20Colour%201.png', requiresPipedream: true, required: false },
-    // { name: 'Braintree', appId: 'braintree', iconUrl: 'https://www.braintreepayments.com/favicon.ico', requiresPipedream: true, required: false },
+    {
+        name: 'Expensify', 
+        appId: 'expensify', 
+        iconUrl: 'https://www.expensify.com/favicon.ico', 
+        requiresPipedream: true,
+        required: false 
+    },
 ];
 
 // Optional integrations (non-accounting)

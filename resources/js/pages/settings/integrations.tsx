@@ -2,7 +2,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { PipedreamClient } from '@pipedream/sdk';
 import { CheckCircle2, XCircle, Loader2, RefreshCw, CheckIcon, LoaderCircle } from 'lucide-react';
-import { GoogleGmail, NotionIcon, Paypal, Stripe, Xero, Zoho } from 'brand-logos';
+import { GoogleGmail, NotionIcon, Xero, Zoho } from 'brand-logos';
 import { toast } from 'sonner';
 
 import AppLayout from '@/layouts/app-layout';
@@ -26,74 +26,29 @@ interface Tool {
 // Map available integrations to tools with icons
 const getToolForAppId = (appId: string, name: string, required: boolean): Tool | null => {
     const toolMap: Record<string, Omit<Tool, 'name' | 'required'>> = {
-        quickbooks: {
-            appId: 'quickbooks',
-            iconUrl: 'https://freebiehive.com/wp-content/uploads/2024/06/Quickbooks-Logo-PNG-758x473.jpg',
-            requiresPipedream: true,
-        },
         xero_accounting_api: {
             appId: 'xero_accounting_api',
             icon: Xero,
             requiresPipedream: true,
         },
-        zoho: {
-            appId: 'zoho',
+        zoho_books: {
+            appId: 'zoho_books',
             icon: Zoho,
             requiresPipedream: true,
         },
-        freshbooks: {
-            appId: 'freshbooks',
-            iconUrl: 'https://www.freshbooks.com/favicon.ico',
+        quickbooks: {
+            appId: 'quickbooks',
+            iconUrl: 'https://freebiehive.com/wp-content/uploads/2024/06/Quickbooks-Logo-PNG-758x473.jpg',
             requiresPipedream: true,
         },
-        wave: {
-            appId: 'wave',
-            iconUrl: 'https://cdn.prod.website-files.com/62446230dcb514b828a6e237/67dc615447285df192591015_favicon.png',
+        sevdesk: {
+            appId: 'sevdesk',
+            iconUrl: 'https://www.sevdesk.de/favicon.ico',
             requiresPipedream: true,
         },
-        sage_intacct: {
-            appId: 'sage_intacct',
-            iconUrl: 'https://www.sage.com/Areas/SageDotCom/img/favicon/favicon-32x32.png',
-            requiresPipedream: true,
-        },
-        netsuite: {
-            appId: 'netsuite',
-            iconUrl: '/icons/netsuite.ico',
-            requiresPipedream: true,
-        },
-        odoo: {
-            appId: 'odoo',
-            iconUrl: 'https://www.odoo.com/favicon.ico',
-            requiresPipedream: true,
-        },
-        stripe: {
-            appId: 'stripe',
-            icon: Stripe,
-            requiresPipedream: true,
-        },
-        paypal: {
-            appId: 'paypal',
-            icon: Paypal,
-            requiresPipedream: true,
-        },
-        square: {
-            appId: 'square',
-            iconUrl: 'https://squareup.com/favicon.ico',
-            requiresPipedream: true,
-        },
-        paddle: {
-            appId: 'paddle',
-            iconUrl: 'https://paddle.com/favicon.ico',
-            requiresPipedream: true,
-        },
-        adyen: {
-            appId: 'adyen',
-            iconUrl: 'https://www.adyen.com/favicon.ico',
-            requiresPipedream: true,
-        },
-        checkout_com: {
-            appId: 'checkout_com',
-            iconUrl: 'https://cdn.prod.website-files.com/64db80a5e88c6b1723ff760b/678a43ad3ae286e4574c6bb7_Logo_Symbol_Full%20Colour%201.png',
+        expensify: {
+            appId: 'expensify',
+            iconUrl: 'https://www.expensify.com/favicon.ico',
             requiresPipedream: true,
         },
         gmail: {
