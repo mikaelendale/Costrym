@@ -12,27 +12,46 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Drop old columns and add new ones
-        Schema::table('financial_categories', function (Blueprint $table) {
-            // Drop old columns
-            $table->dropColumn([
-                'user_id',
-                'type',
-                'parent_id',
-                'color',
-                'icon',
-                'ai_keywords',
-            ]);
+        // Check if columns to drop exist
+        $columnsToCheck = ['user_id', 'type', 'parent_id', 'color', 'icon', 'ai_keywords'];
+        $columnsToDrop = [];
+        
+        foreach ($columnsToCheck as $column) {
+            if (Schema::hasColumn('financial_categories', $column)) {
+                $columnsToDrop[] = $column;
+            }
+        }
 
-            // Add new columns
-            $table->text('description')->after('name');
-            $table->boolean('is_active')->default(true)->after('description');
-            $table->integer('display_order')->default(0)->after('is_active');
+        Schema::table('financial_categories', function (Blueprint $table) use ($columnsToDrop) {
+            // Drop old columns if they exist
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
 
-            // Add indexes
-            $table->index('name');
-            $table->index('is_active');
+            // Add new columns if they don't exist
+            if (!Schema::hasColumn('financial_categories', 'description')) {
+                $table->text('description')->after('name');
+            }
+            if (!Schema::hasColumn('financial_categories', 'is_active')) {
+                $table->boolean('is_active')->default(true)->after('description');
+            }
+            if (!Schema::hasColumn('financial_categories', 'display_order')) {
+                $table->integer('display_order')->default(0)->after('is_active');
+            }
         });
+
+        // Add indexes if they don't exist
+        if (!Schema::hasIndex('financial_categories', 'financial_categories_name_index')) {
+            Schema::table('financial_categories', function (Blueprint $table) {
+                $table->index('name');
+            });
+        }
+        
+        if (!Schema::hasIndex('financial_categories', 'financial_categories_is_active_index')) {
+            Schema::table('financial_categories', function (Blueprint $table) {
+                $table->index('is_active');
+            });
+        }
 
         // Make name unique
         DB::statement('CREATE UNIQUE INDEX IF NOT EXISTS financial_categories_name_unique ON financial_categories (name)');
