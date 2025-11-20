@@ -46,7 +46,8 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
-        $user->notify(new WelcomeNotification());
+        $user->notify(new WelcomeNotification);
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 }

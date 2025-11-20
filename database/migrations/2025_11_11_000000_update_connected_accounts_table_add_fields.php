@@ -31,12 +31,16 @@ return new class extends Migration
             }
 
             if (! Schema::hasColumn('connected_accounts', 'connection_status')) {
+
+            if (! Schema::hasColumn('connected_accounts', 'connection_status')) {
                 $table->enum('connection_status', ['connected', 'disconnected', 'expired', 'error'])
                     ->default('connected')
                     ->after('last_synced_at')
                     ->index()
                     ->comment('Current status of the connection');
             }
+
+            if (! Schema::hasColumn('connected_accounts', 'last_error')) {
 
             if (! Schema::hasColumn('connected_accounts', 'last_error')) {
                 $table->text('last_error')

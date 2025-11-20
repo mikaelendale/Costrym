@@ -22,14 +22,14 @@ class PipedreamConnectController extends Controller
     public function getToken(Request $request): JsonResponse
     {
         $user = Auth::user();
-        
+
         if (! $user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
         try {
             $result = $this->pipedreamService->createConnectToken((string) $user->id);
-            
+
             if ($result['success']) {
                 return response()->json([
                     'success' => true,
@@ -37,7 +37,7 @@ class PipedreamConnectController extends Controller
                     'expires_at' => $result['expires_at'],
                 ]);
             }
-            
+
             return response()->json([
                 'success' => false,
                 'error' => $result['error'],
@@ -61,7 +61,7 @@ class PipedreamConnectController extends Controller
     public function saveConnection(Request $request, string $appName): JsonResponse
     {
         $user = Auth::user();
-        
+
         if (! $user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
@@ -76,7 +76,7 @@ class PipedreamConnectController extends Controller
             $accountId = $request->input('connection_id');
             $externalUserId = $request->input('external_user_id') ?? (string) $user->id;
             $metadata = $request->input('metadata', []);
-            
+
             // Parse token expiration if provided
             $tokenExpiresAt = null;
             if (isset($metadata['expires_at']) || isset($metadata['token_expires_at'])) {
@@ -87,7 +87,7 @@ class PipedreamConnectController extends Controller
                     // Invalid date, will be null
                 }
             }
-            
+
             $account = $this->pipedreamService->storeAccount(
                 userId: $user->id,
                 appName: $appName,
@@ -128,7 +128,7 @@ class PipedreamConnectController extends Controller
     public function listAccounts(Request $request): JsonResponse
     {
         $user = Auth::user();
-        
+
         if (! $user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
@@ -171,7 +171,7 @@ class PipedreamConnectController extends Controller
     public function makeRequest(Request $request, string $appName): JsonResponse
     {
         $user = Auth::user();
-        
+
         if (! $user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
@@ -185,14 +185,14 @@ class PipedreamConnectController extends Controller
 
         try {
             $account = $this->pipedreamService->getStoredAccount($user->id, $appName);
-            
+
             if (! $account) {
                 return response()->json([
                     'success' => false,
                     'error' => 'No connected account found for '.$appName,
                 ], 404);
             }
-            
+
             $result = $this->pipedreamService->makeApiRequest(
                 accountId: $account->pipedream_account_id,
                 method: $request->input('method'),
@@ -200,7 +200,7 @@ class PipedreamConnectController extends Controller
                 body: $request->input('body', []),
                 headers: $request->input('headers', [])
             );
-            
+
             if ($result['success']) {
                 return response()->json([
                     'success' => true,
@@ -208,13 +208,13 @@ class PipedreamConnectController extends Controller
                     'status' => $result['status'],
                 ]);
             }
-            
+
             return response()->json([
                 'success' => false,
                 'error' => $result['error'],
                 'status' => $result['status'] ?? 500,
             ], $result['status'] ?? 500);
-            
+
         } catch (\Exception $e) {
             Log::error('Pipedream API request error', [
                 'error' => $e->getMessage(),
@@ -234,7 +234,7 @@ class PipedreamConnectController extends Controller
     public function callback(Request $request, string $appName): RedirectResponse
     {
         $user = Auth::user();
-        
+
         if (! $user) {
             return redirect()->route('onboarding')->with('error', 'Please log in first');
         }

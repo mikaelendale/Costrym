@@ -6,9 +6,9 @@ use App\Agents\NotionAgent;
 use App\Services\PipedreamToolLoader;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
-use Vizra\VizraADK\System\AgentContext;
 
 class NotionAgentController extends Controller
 {
@@ -46,22 +46,58 @@ class NotionAgentController extends Controller
         }
 
         try {
-            // Create agent instance
-            $agent = new NotionAgent;
+            // Execute agent using fluent API
+            $response = NotionAgent::run($message)
+                ->forUser($user)
+                ->withSession($sessionId)
+                ->go();
 
-            // Create context with user ID
-            $context = new AgentContext($sessionId);
-            $context->setState('user_id', $user->id);
-
-            // Execute agent
-            $response = $agent->execute($message, $context);
+            // Extract text content from response (handles both string and object responses)
+            $responseText = $this->extractResponseText($response);
 
             return response()->json([
                 'success' => true,
-                'response' => $response,
+                'response' => $responseText,
                 'session_id' => $sessionId,
             ]);
+        } catch (\Vizra\VizraADK\Exceptions\AgentExecutionException $e) {
+            // Handle Vizra ADK specific errors
+            $errorMessage = $e->getMessage();
+            $previousException = $e->getPrevious();
+
+            Log::error('NotionAgent execution error', [
+                'user_id' => $user->id,
+                'message' => $message,
+                'error' => $errorMessage,
+                'previous_error' => $previousException?->getMessage(),
+                'previous_trace' => $previousException?->getTraceAsString(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Provide more user-friendly error message
+            $userFriendlyError = 'Agent execution failed. ';
+            if (str_contains($errorMessage, 'HTTP request returned status code 400')) {
+                $userFriendlyError .= 'The request was invalid. This might be due to too many tools or an invalid configuration.';
+            } elseif (str_contains($errorMessage, 'HTTP request returned status code 401')) {
+                $userFriendlyError .= 'Authentication failed. Please check your API keys.';
+            } elseif (str_contains($errorMessage, 'HTTP request returned status code 429')) {
+                $userFriendlyError .= 'Rate limit exceeded. Please try again later.';
+            } else {
+                $userFriendlyError .= $errorMessage;
+            }
+
+            return response()->json([
+                'success' => false,
+                'error' => $userFriendlyError,
+            ], 500);
         } catch (\Exception $e) {
+            Log::error('NotionAgent chat error', [
+                'user_id' => $user->id,
+                'message' => $message,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'error' => 'Agent execution failed: '.$e->getMessage(),
@@ -87,5 +123,50 @@ class NotionAgentController extends Controller
             'actions' => $notionSummary ? $notionSummary['tools'] : [],
             'count' => $notionSummary ? $notionSummary['tool_count'] : 0,
         ]);
+    }
+
+    /**
+     * Extract text content from agent response (handles both string and object responses)
+     */
+    private function extractResponseText(mixed $response): string
+    {
+        if (is_string($response)) {
+            return $response;
+        }
+
+        // Handle Prism Response objects
+        if (is_object($response)) {
+            if (method_exists($response, 'text')) {
+                return (string) $response->text;
+            }
+            if (property_exists($response, 'text')) {
+                return (string) $response->text;
+            }
+            if (method_exists($response, 'content')) {
+                return (string) $response->content;
+            }
+            if (property_exists($response, 'content')) {
+                return (string) $response->content;
+            }
+            if (method_exists($response, '__toString')) {
+                return (string) $response;
+            }
+        }
+
+        // Handle arrays
+        if (is_array($response)) {
+            if (isset($response['text'])) {
+                return (string) $response['text'];
+            }
+            if (isset($response['content'])) {
+                return (string) $response['content'];
+            }
+            if (isset($response['message']) && is_string($response['message'])) {
+                return (string) $response['message'];
+            }
+        }
+
+        // Fallback: convert to JSON string
+        return json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 }

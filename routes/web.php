@@ -24,6 +24,7 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return redirect()->route('dashboard');
 })->name('home');
+
 // Changelog
 Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
 Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
@@ -31,8 +32,45 @@ Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
 
 Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        $pendingTasks = \App\Models\Task::where('user_id', auth()->id())
+            ->where('status', 'pending')
+            ->orderBy('priority')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('dashboard', [
+            'pendingTasks' => $pendingTasks,
+        ]);
     })->name('dashboard');
+
+    // Integrations
+    // Route::get('integrations', function () {
+    //     return Inertia::render('Integrations/Index');
+    // })->name('integrations.index');
+
+    // Optimized Cost
+    Route::get('optimization-costs', function () {
+        return Inertia::render('OptomizationCost/Index');
+    })->name('optimization-costs.index');
+    // Task Approval routes
+    Route::post('tasks/{task}/approve', [\App\Http\Controllers\TaskApprovalController::class, 'approve'])->name('tasks.approve');
+    Route::post('tasks/{task}/reject', [\App\Http\Controllers\TaskApprovalController::class, 'reject'])->name('tasks.reject');
+
+    // Automation routes
+    Route::get('automations', [\App\Http\Controllers\AutomationController::class, 'index'])->name('automations.index');
+    Route::get('automations/{automation}', [\App\Http\Controllers\AutomationController::class, 'show'])->name('automations.show');
+    Route::post('automations/{automation}/archive', [\App\Http\Controllers\AutomationController::class, 'archive'])->name('automations.archive');
+    Route::get('automations/{automation}/download', [\App\Http\Controllers\AutomationController::class, 'download'])->name('automations.download');
+    // Task Approval routes
+    Route::post('tasks/{task}/approve', [\App\Http\Controllers\TaskApprovalController::class, 'approve'])->name('tasks.approve');
+    Route::post('tasks/{task}/reject', [\App\Http\Controllers\TaskApprovalController::class, 'reject'])->name('tasks.reject');
+
+    // Automation routes
+    Route::get('automations', [\App\Http\Controllers\AutomationController::class, 'index'])->name('automations.index');
+    Route::get('automations/{automation}', [\App\Http\Controllers\AutomationController::class, 'show'])->name('automations.show');
+    Route::post('automations/{automation}/archive', [\App\Http\Controllers\AutomationController::class, 'archive'])->name('automations.archive');
+    Route::get('automations/{automation}/download', [\App\Http\Controllers\AutomationController::class, 'download'])->name('automations.download');
+
     // Notification routes
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->middleware('auth');
@@ -51,9 +89,7 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::post('integration-ingestor/chat', [IntegrationIngestorController::class, 'chat'])->name('integration.ingestor.chat');
     Route::get('integration-ingestor/integrations', [IntegrationIngestorController::class, 'getAvailableIntegrations'])->name('integration.ingestor.integrations');
     Route::get('integration-ingestor/tools', [IntegrationIngestorController::class, 'getAvailableTools'])->name('integration.ingestor.tools');
-
-    // text
-
+    Route::get('integration-ingestor/test/invoices', [IntegrationIngestorController::class, 'testFetchInvoices'])->name('integration.ingestor.test.invoices');
 });
 // Onboarding route (accessible without onboarding middleware to avoid redirect loops)
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -130,6 +166,10 @@ Route::get('/ai/test', [WorkflowController::class, 'index'])->name('ai.workflow'
 // OAuth routes
 Route::get('/auth/{provider}/redirect', ProviderRedirectController::class)->name('auth.redirect')->middleware(['throttle:5,1']);
 Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name('auth.callback')->middleware(['throttle:5,1']);
+
+require __DIR__.'/settings.php';
+require __DIR__.'/auth.php';
+require __DIR__.'/paymentRoute.php';
 
 Route::middleware(['auth', 'verified', 'onboarding'])->get('/dispatch', function () {
     $user = auth()->user();

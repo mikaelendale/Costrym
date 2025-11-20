@@ -35,4 +35,3 @@ class DeactivateExpiredAccounts extends Command
         return Command::SUCCESS;
     }
 }
-

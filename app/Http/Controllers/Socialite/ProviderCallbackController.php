@@ -5,14 +5,14 @@ namespace App\Http\Controllers\Socialite;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\WelcomeNotification;
-use Illuminate\Support\Str;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\InvalidStateException;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Auth\Events\Registered;
 
 class ProviderCallbackController extends Controller
 {
@@ -28,7 +28,7 @@ class ProviderCallbackController extends Controller
             return 'User ID is required but not provided by the authentication provider.';
         }
 
-        if (!filter_var($socialUser->email, FILTER_VALIDATE_EMAIL)) {
+        if (! filter_var($socialUser->email, FILTER_VALIDATE_EMAIL)) {
             return 'Invalid email format provided by the authentication provider.';
         }
 
@@ -38,18 +38,18 @@ class ProviderCallbackController extends Controller
     private function generateUsername($socialUser, string $provider): string
     {
         // If name is provided, use it
-        if (!empty($socialUser->name)) {
+        if (! empty($socialUser->name)) {
             return $socialUser->name;
         }
 
         // Generate a username based on provider
         switch ($provider) {
             case 'github':
-                return $socialUser->nickname ?? 'GitHubUser_' . Str::random(8);
+                return $socialUser->nickname ?? 'GitHubUser_'.Str::random(8);
             case 'google':
-                return explode('@', $socialUser->email)[0] ?? 'GoogleUser_' . Str::random(8);
+                return explode('@', $socialUser->email)[0] ?? 'GoogleUser_'.Str::random(8);
             default:
-                return 'User_' . Str::random(8);
+                return 'User_'.Str::random(8);
         }
     }
 
@@ -69,7 +69,7 @@ class ProviderCallbackController extends Controller
     private function handleExistingUser(User $user, $socialUser, string $provider): User
     {
         // Check if user has a password (registered with email/password)
-        if (!empty($user->password)) {
+        if (! empty($user->password)) {
             throw new \Exception("This email is already registered with email and password. Please sign in using your email and password, or reset your password if you've forgotten it.");
         }
 
@@ -107,12 +107,13 @@ class ProviderCallbackController extends Controller
         }
 
         // Link provider if not already linked
-        if (!$user->provider_id) {
+        if (! $user->provider_id) {
             $updateData['provider_id'] = $socialUser->id;
             $updateData['provider_name'] = $provider;
         }
 
         $user->update($updateData);
+
         return $user;
     }
 
@@ -144,16 +145,18 @@ class ProviderCallbackController extends Controller
         // Fire the Registered event for new social users
         event(new Registered($user));
 
-        $user->notify(new WelcomeNotification());
+        $user->notify(new WelcomeNotification);
+
         return $user;
     }
 
     public function __invoke(string $provider): RedirectResponse
     {
-        if (!in_array($provider, self::SUPPORTED_PROVIDERS, true)) {
+        if (! in_array($provider, self::SUPPORTED_PROVIDERS, true)) {
             Log::warning('Unsupported provider callback attempted', ['provider' => $provider]);
+
             return redirect()->route('login')->with([
-                'error' => 'Unsupported authentication provider.'
+                'error' => 'Unsupported authentication provider.',
             ]);
         }
 
@@ -178,7 +181,7 @@ class ProviderCallbackController extends Controller
                     'token' => $socialUser->token,
                     'refreshToken' => $socialUser->refreshToken,
                     'raw' => $socialUser->user,
-                ]
+                ],
             ]);
 
             // Validate social user data (removed name requirement)
@@ -186,8 +189,9 @@ class ProviderCallbackController extends Controller
             if ($validationError) {
                 Log::warning('Invalid social user data', [
                     'provider' => $provider,
-                    'error' => $validationError
+                    'error' => $validationError,
                 ]);
+
                 return redirect()->route('login')->with(['error' => $validationError]);
             }
 
@@ -219,17 +223,17 @@ class ProviderCallbackController extends Controller
                     'email' => $user->email,
                     'name' => $user->name,
                     'is_new_user' => $isNewUser,
-                    'has_refresh_token' => !empty($user->provider_refresh_token),
-                    'has_profile_url' => !empty($user->profile_url),
-                    'email_verified' => !empty($user->email_verified_at)
+                    'has_refresh_token' => ! empty($user->provider_refresh_token),
+                    'has_profile_url' => ! empty($user->profile_url),
+                    'email_verified' => ! empty($user->email_verified_at),
                 ]);
 
                 Auth::login($user, true);
                 session()->forget('referral_code');
 
                 $message = $isNewUser
-                    ? "Welcome! Successfully registered with " . ucfirst($provider) . "!"
-                    : "Successfully signed in with " . ucfirst($provider) . "!";
+                    ? 'Welcome! Successfully registered with '.ucfirst($provider).'!'
+                    : 'Successfully signed in with '.ucfirst($provider).'!';
 
                 return redirect()->intended('/dashboard')->with('success', $message);
             } catch (\Exception $e) {
@@ -239,15 +243,16 @@ class ProviderCallbackController extends Controller
         } catch (InvalidStateException $e) {
             Log::warning('Invalid state exception during social auth', [
                 'provider' => $provider,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
+
             return redirect()->route('login')->with([
-                'error' => 'Authentication session expired. Please try again.'
+                'error' => 'Authentication session expired. Please try again.',
             ]);
         } catch (\Exception $e) {
             Log::error('Social authentication error', [
                 'provider' => $provider,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             $errorMessage = $e->getMessage();
@@ -256,7 +261,7 @@ class ProviderCallbackController extends Controller
             }
 
             return redirect()->route('login')->with([
-                'error' => 'Authentication failed. Please try again or contact support if the problem persists.'
+                'error' => 'Authentication failed. Please try again or contact support if the problem persists.',
             ]);
         }
     }

@@ -34,7 +34,9 @@ class MasterOrchestrator extends BaseLlmAgent
     protected string $model = 'gpt-4o-mini';
 
     protected array $tools = [
-        // Tools will be added dynamically based on needs
+        \App\Tools\KnowledgeBaseTool::class, // Access user business context
+        \App\Tools\QueryFinancialRecordsTool::class, // Query and analyze financial transactions
+        \App\Tools\ListFinancialCategoriesTool::class, // List all expense categories
     ];
 
     /**

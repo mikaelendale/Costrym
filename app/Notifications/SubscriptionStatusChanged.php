@@ -3,20 +3,17 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
  * SubscriptionStatusChanged Notification
- * 
+ *
  * Notifies users when their subscription status changes, including:
  * - Plan swaps
  * - Subscription pauses/resumes
  * - Cancellations
  * - Payment method updates
- * 
- * @package App\Notifications
  */
 class SubscriptionStatusChanged extends Notification
 {
@@ -24,15 +21,13 @@ class SubscriptionStatusChanged extends Notification
 
     /**
      * The message to display in the notification.
-     * 
-     * @var string
      */
     private string $message;
 
     /**
      * Create a new notification instance.
-     * 
-     * @param string $message The notification message describing the subscription change
+     *
+     * @param  string  $message  The notification message describing the subscription change
      */
     public function __construct(string $message)
     {
@@ -41,11 +36,11 @@ class SubscriptionStatusChanged extends Notification
 
     /**
      * Get the notification's delivery channels.
-     * 
+     *
      * Currently configured to deliver via database only.
      * Can be extended to include email, SMS, etc.
      *
-     * @param object $notifiable The user being notified
+     * @param  object  $notifiable  The user being notified
      * @return array<int, string>
      */
     public function via(object $notifiable): array
@@ -55,12 +50,11 @@ class SubscriptionStatusChanged extends Notification
 
     /**
      * Get the mail representation of the notification.
-     * 
+     *
      * Optional: Can be implemented to send email notifications
      * for subscription changes.
      *
-     * @param object $notifiable The user being notified
-     * @return MailMessage
+     * @param  object  $notifiable  The user being notified
      */
     public function toMail(object $notifiable): MailMessage
     {
@@ -73,11 +67,11 @@ class SubscriptionStatusChanged extends Notification
 
     /**
      * Get the array representation of the notification.
-     * 
+     *
      * This format is stored in the database and displayed in the
      * user's notification center.
      *
-     * @param object $notifiable The user being notified
+     * @param  object  $notifiable  The user being notified
      * @return array<string, mixed>
      */
     public function toArray(object $notifiable): array
@@ -91,4 +85,3 @@ class SubscriptionStatusChanged extends Notification
         ];
     }
 }
-

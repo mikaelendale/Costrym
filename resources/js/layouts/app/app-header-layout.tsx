@@ -19,7 +19,8 @@ export default function AppHeaderLayout({ children, breadcrumbs }: PropsWithChil
             <AppHeader breadcrumbs={breadcrumbs} />
             <AppContent>{children}</AppContent>
             <AppFooter />
-            <Toaster expand
+            <Toaster
+                expand
                 toastOptions={{
                     style: {
                         background: 'var(--primary-foreground)',
@@ -27,8 +28,7 @@ export default function AppHeaderLayout({ children, breadcrumbs }: PropsWithChil
                         color: 'var(--primary)',
                         borderRadius: '20px', // Modern, moderately rounded corners
                     },
-                }
-                }
+                }}
                 theme="system"
             />
         </AppShell>

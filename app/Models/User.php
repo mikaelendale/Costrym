@@ -7,15 +7,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Paddle\Billable;
-use Spatie\Permission\Traits\HasRoles;
-use Spatie\Activitylog\Traits\CausesActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\CausesActivity;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles, CausesActivity, LogsActivity, Billable;
+    use Billable, CausesActivity, HasFactory, HasRoles, LogsActivity, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -60,9 +60,10 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_banned' => 'boolean',
-            'onboarding_status' => 'boolean'
+            'onboarding_status' => 'boolean',
         ];
     }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

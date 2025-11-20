@@ -2,7 +2,8 @@
 
 namespace App\Tools;
 
-use App\Services\PipedreamToolLoader;
+use App\Models\ConnectedAccount;
+use App\Models\PipedreamComponent;
 use Vizra\VizraADK\Contracts\ToolInterface;
 use Vizra\VizraADK\Memory\AgentMemory;
 use Vizra\VizraADK\System\AgentContext;
@@ -10,7 +11,8 @@ use Vizra\VizraADK\System\AgentContext;
 /**
  * Tool to list all available tools for the agent
  *
- * This tool allows the agent to see what tools are available and their definitions
+ * This tool queries the database directly to avoid repeated API calls.
+ * Tools are cached in the pipedream_components table.
  */
 class ListAvailableToolsTool implements ToolInterface
 {
@@ -28,7 +30,7 @@ class ListAvailableToolsTool implements ToolInterface
     {
         return [
             'name' => 'list_available_tools',
-            'description' => 'List all available tools/actions that the agent can use. Returns a comprehensive list of all Pipedream actions available for the connected integrations, including tool names, descriptions, and required parameters. Use this to discover what actions are available before attempting to use them.',
+            'description' => 'List all available tools/actions that the agent can use. Returns a comprehensive list of all Pipedream actions available for the connected integrations, including tool names, descriptions, and required parameters. IMPORTANT: This tool queries cached data from the database - call it ONCE at the start of your workflow, not repeatedly.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -43,7 +45,7 @@ class ListAvailableToolsTool implements ToolInterface
     }
 
     /**
-     * Execute the tool
+     * Execute the tool - queries database directly for efficiency
      */
     public function execute(array $arguments, AgentContext $context, AgentMemory $memory): string
     {
@@ -58,41 +60,83 @@ class ListAvailableToolsTool implements ToolInterface
                 ]);
             }
 
-            $toolLoader = app(PipedreamToolLoader::class);
             $appName = $arguments['app_name'] ?? null;
 
-            // Load tools for the user
-            if ($appName) {
-                $tools = $toolLoader->loadToolsForApp($userId, $appName);
-            } else {
-                // Load all tools (required integrations only for IntegrationIngestor)
-                $tools = $toolLoader->loadToolsForUser($userId, true);
-            }
+            // Get connected accounts for the user
+            $connectedAccounts = ConnectedAccount::where('user_id', $userId)
+                ->where('is_active', true)
+                ->get();
 
-            if ($tools->isEmpty()) {
+            if ($connectedAccounts->isEmpty()) {
                 return json_encode([
                     'success' => true,
-                    'message' => 'No tools available',
+                    'message' => 'No connected integrations found',
                     'tools' => [],
-                    'total' => 0,
+                    'total_tools' => 0,
                 ]);
             }
 
-            // Build tool definitions
+            // Get app names from connected accounts
+            $appNames = $connectedAccounts->pluck('app_name')->unique()->toArray();
+
+            // Filter by specific app if requested
+            if ($appName) {
+                if (! in_array($appName, $appNames)) {
+                    return json_encode([
+                        'success' => true,
+                        'message' => "App '{$appName}' is not connected",
+                        'tools' => [],
+                        'total_tools' => 0,
+                    ]);
+                }
+                $appNames = [$appName];
+            }
+
+            // Query components directly from database (cached data)
+            $components = PipedreamComponent::active()
+                ->actions()
+                ->whereIn('app_name', $appNames)
+                ->orderBy('app_name')
+                ->orderBy('component_name')
+                ->get();
+
+            if ($components->isEmpty()) {
+                return json_encode([
+                    'success' => true,
+                    'message' => 'No tools available for connected integrations',
+                    'tools' => [],
+                    'total_tools' => 0,
+                ]);
+            }
+
+            // Build tool definitions directly from database
             $toolDefinitions = [];
-            foreach ($tools as $tool) {
-                $component = $tool->getComponent();
-                $definition = $tool->definition();
+            foreach ($components as $component) {
+                $componentData = $component->component_data ?? [];
+                $props = $componentData['props'] ?? [];
+
+                // Extract parameter information from component_data
+                $paramDetails = [];
+                $requiredParams = [];
+                foreach ($props as $key => $prop) {
+                    $paramDetails[$key] = [
+                        'type' => $prop['type'] ?? 'string',
+                        'description' => $prop['label'] ?? $prop['description'] ?? '',
+                    ];
+                    if (($prop['optional'] ?? false) === false) {
+                        $requiredParams[] = $key;
+                    }
+                }
 
                 $toolDefinitions[] = [
-                    'tool_name' => $definition['name'],
+                    'tool_name' => 'pipedream_'.$component->component_key,
                     'component_key' => $component->component_key,
                     'component_name' => $component->component_name,
                     'app_name' => $component->app_name,
-                    'description' => $definition['description'],
-                    'required_params' => $definition['parameters']['required'] ?? [],
-                    'all_params' => array_keys($definition['parameters']['properties'] ?? []),
-                    'param_details' => $definition['parameters']['properties'] ?? [],
+                    'description' => $component->description ?? $component->component_name,
+                    'required_params' => $requiredParams,
+                    'all_params' => array_keys($paramDetails),
+                    'param_details' => $paramDetails,
                 ];
             }
 
@@ -116,8 +160,8 @@ class ListAvailableToolsTool implements ToolInterface
                 'tools_by_app' => $toolsByApp,
                 'apps' => array_keys($toolsByApp),
                 'message' => $appName
-                    ? "Found {$totalCount} tools for {$appName}"
-                    : "Found {$totalCount} total tools across {$appCount} integrations",
+                    ? "Found {$totalCount} tools for {$appName} (from cached database)"
+                    : "Found {$totalCount} total tools across {$appCount} integrations (from cached database)",
             ]);
         } catch (\Exception $e) {
             return json_encode([

@@ -33,7 +33,7 @@ class BenchmarkingAgent extends BaseLlmAgent
 
     // protected ?string $provider = Provider::Groq->value;
 
-    protected string $model = '';
+    protected string $model = 'gpt-4o-mini';
 
     protected array $tools = [
         FireCrawler::class,

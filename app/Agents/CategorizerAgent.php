@@ -3,38 +3,34 @@
 namespace App\Agents;
 
 use App\Services\CleanUpResponse;
-use App\Tools\CreateCategory;
-use App\Tools\GetCategory;
-use App\Tools\GetCompanyContext;
-use App\Tools\GetCompanyTitle;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
 use Vizra\VizraADK\System\AgentContext;
 
-// use App\Tools\YourTool; // Example: Import your tool
-
 class CategorizerAgent extends BaseLlmAgent
 {
     protected string $name = 'categorizer_agent';
 
-    protected string $description = 'Maps and normalizes raw category names to a canonical master list.';
+    protected string $description = 'AI agent that intelligently categorizes financial transactions into predefined expense categories using transaction descriptions, amounts, and context.';
 
-    protected string $instructions = 'Normalize and map incoming category/name variants to the master category list and return a clean JSON mapping. Keep it precise; see prompt file for full details.';
+    protected string $instructions = 'You are a financial transaction categorizer. Use the list_financial_categories tool to see all available categories, then analyze each transaction and assign the most appropriate category_id. Return clean JSON with categorizations.';
+
+    protected string $model = 'gpt-4o-mini';
 
     protected array $tools = [
-        GetCategory::class,
-        // CreateCategory::class,
-        GetCompanyTitle::class,
-        GetCompanyContext::class,
+        ListFinancialCategoriesTool::class,
     ];
 
     // // protected ?string $provider = Provider::Groq->value;
 
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
-        // Log::info('Before CategorizerAgent LLM call ...', ['input_message' => $inputMessages]);
+        Log::info('CategorizerAgent: Starting categorization', [
+            'batch_size' => $context->getState('batch_size'),
+            'user_id' => $context->getState('user_id'),
+        ]);
 
         return parent::beforeLlmCall($inputMessages, $context);
     }
