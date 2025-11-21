@@ -69,7 +69,7 @@ class CategorizeService
             Log::info('CategorizeService direct costs extracted', ['count' => count($directCosts)]);
             $this->expenseRepository->updateDirectCosts($directCosts, $userId);
         } else {
-            Log::info('CategorizeService no direct costs found');
+            Log::info('CategorizeService no direct costs found', ['expenses' => $expenses]);
         }
 
         return $expenses;
@@ -105,8 +105,10 @@ class CategorizeService
     {
         $direct = [];
         Log::info('filterDirectCosts invoked', ['expenses' => $expenses]);
-        foreach ($expenses as $expense['expenses']) {
+        foreach ($expenses as $expense) { // iterate each expense correctly
             if (! is_array($expense)) {
+                Log::debug('filterDirectCosts skipping non-array expense', ['expense' => $expense]);
+
                 continue;
             }
             $tags = $expense['tags'] ?? [];
@@ -114,11 +116,17 @@ class CategorizeService
                 $tags = [$tags];
             }
             if (! is_array($tags)) {
+                Log::debug('filterDirectCosts skipping expense with invalid tags', ['expense' => $expense]);
+
                 continue;
             }
             // Case-insensitive match in case upstream changes capitalization
             $lower = array_map(fn ($t) => is_string($t) ? strtolower($t) : $t, $tags);
             if (in_array('direct', $lower, true)) {
+                Log::info('filterDirectCosts matched direct cost', [
+                    'expense_name' => $expense['expense_name'] ?? null,
+                    'tags' => $tags,
+                ]);
                 $direct[] = $expense;
             }
         }

@@ -124,6 +124,52 @@ class CostDecompositionService
     }
 
     /**
+     * Process a single chunk of direct costs. This is invoked by CostDecompositionChunkJob
+     * with delays between jobs to respect TPM limits.
+     *
+     * @param  array<int,mixed>  $chunk
+     */
+    public function processChunk(array $chunk, int $chunkIndex, int $totalChunks, int $userId): void
+    {
+        $chunkJson = json_encode($chunk, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $prompt = 'Cost decomposition chunk '.($chunkIndex + 1).' of '.$totalChunks.'; using ONLY this subset of direct costs. Return JSON per schema. DirectCostsSubset: '.$chunkJson;
+        Log::info('CostDecomposition: prepared chunk prompt (delayed job)', [
+            'chunk_index' => $chunkIndex,
+            'prompt_length' => strlen($prompt),
+            'chunk_size' => count($chunk),
+        ]);
+
+        $raw = CostDecompositionAgent::run($prompt)->go();
+        Log::info('CostDecomposition: raw agent response for chunk (delayed job)', [
+            'chunk_index' => $chunkIndex,
+            'response_length' => is_string($raw) ? strlen($raw) : 0,
+        ]);
+
+        $productDecompositions = [];
+        try {
+            $parsed = CleanUpResponse::extractJsonPayload($raw);
+            $productDecompositions = $parsed['cost_decomposition_response']['product_decompositions'] ?? [];
+        } catch (\Throwable $e) {
+            Log::warning('CostDecomposition: parse failure for chunk (delayed job)', [
+                'chunk_index' => $chunkIndex,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        if (! empty($productDecompositions)) {
+            $merged = $this->costDecompositionRepository->updateAssociatedCosts($productDecompositions, $userId);
+            Log::info('CostDecomposition: merged associated costs after chunk (delayed job)', [
+                'chunk_index' => $chunkIndex,
+                'cumulative_products' => is_array($merged) ? count($merged) : 0,
+            ]);
+        } else {
+            Log::info('CostDecomposition: no product_decompositions produced for chunk (delayed job)', [
+                'chunk_index' => $chunkIndex,
+            ]);
+        }
+    }
+
+    /**
      * Compute OPEX by category percent from an expenses list.
      * Accepts a flat array of expense rows. Each row may contain:
      * - amount (numeric)

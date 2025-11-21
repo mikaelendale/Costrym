@@ -17,8 +17,8 @@ class WorkflowService
     public function runWorkflow($data, $title, int $userId)
     {
 
-        $windowData = 11;
-        $stepData = 11;
+        $windowData = 15; // number of data rows (excluding header) included per chunk
+        $stepData = 15;   // iteration step matches window size for non-overlapping chunks
         $header = $data[0];
         $dataRows = array_slice($data, 1);
         $totalData = count($dataRows);
@@ -57,7 +57,7 @@ class WorkflowService
             ]);
 
             $chunkIndex++;
-            $delaySeconds += 60; // space jobs by 60 seconds
+            $delaySeconds += 30; // space jobs by 30 seconds to respect token-per-minute limits
         }
 
         $bufferAfterChunksSeconds = 30;

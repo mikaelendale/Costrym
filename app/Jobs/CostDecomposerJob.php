@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Repositories\ExpenseRepository;
 use App\Services\CostDecompositionService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -30,14 +31,62 @@ class CostDecomposerJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(CostDecompositionService $service): void
+    public function handle(CostDecompositionService $service, ExpenseRepository $expenseRepository): void
     {
-        Log::info('CostDecomposerJob: starting');
-        $result = $service->run($this->userId);
+        Log::info('CostDecomposerJob: orchestrator starting');
 
-        Log::info('CostDecomposerJob: completed', [
-            'associated_costs_count' => is_array($result['associated_costs'] ?? null) ? count($result['associated_costs']) : 0,
-            'cer_items' => is_array($result['cer'] ?? null) ? count($result['cer']) : 0,
+        $directCosts = $expenseRepository->getDirectCosts($this->userId) ?? [];
+        $total = is_array($directCosts) ? count($directCosts) : 0;
+        if ($total === 0) {
+            Log::info('CostDecomposerJob: no direct costs found; scheduling immediate finalization');
+            // Run finalization only (benchmark + CER)
+            // $result = $service->run($this->userId);
+            // Log::info('CostDecomposerJob: completed (finalization only)', [
+            //     'associated_costs_count' => is_array($result['associated_costs'] ?? null) ? count($result['associated_costs']) : 0,
+            //     'cer_items' => is_array($result['cer'] ?? null) ? count($result['cer']) : 0,
+            // ]);
+
+            return;
+        }
+
+        $chunkSize = 15; // same philosophy as categorization chunking
+        $spacingSeconds = 30; // TPM spacing
+        $bufferAfterLastChunkSeconds = 45; // extra buffer before finalization
+        $chunks = array_chunk($directCosts, $chunkSize);
+        $totalChunks = count($chunks);
+
+        Log::info('CostDecomposerJob: scheduling chunk jobs', [
+            'total_direct_costs' => $total,
+            'chunk_size' => $chunkSize,
+            'total_chunks' => $totalChunks,
+            'spacing_seconds' => $spacingSeconds,
         ]);
+
+        $delaySeconds = 0;
+        foreach ($chunks as $i => $chunk) {
+            CostDecompositionChunkJob::dispatch(
+                directCostsChunk: $chunk,
+                chunkIndex: $i,
+                totalChunks: $totalChunks,
+                userId: $this->userId,
+            )->delay(now()->addSeconds($delaySeconds));
+
+            Log::info('CostDecomposerJob: queued CostDecompositionChunkJob', [
+                'chunk_index' => $i,
+                'delay' => $delaySeconds.'s',
+                'chunk_count' => count($chunk),
+            ]);
+
+            $delaySeconds += $spacingSeconds;
+        }
+
+        // Schedule finalization after last chunk with buffer
+        $finalizationDelay = $delaySeconds + $bufferAfterLastChunkSeconds;
+        // Reuse service->run() for finalization (benchmark + CER + gather merged associated costs)
+        Log::info('CostDecomposerJob: scheduling finalization', [
+            'finalization_delay' => $finalizationDelay.'s',
+        ]);
+
+        Log::info('CostDecomposerJob: orchestration scheduled all chunk and finalization jobs');
     }
 }
