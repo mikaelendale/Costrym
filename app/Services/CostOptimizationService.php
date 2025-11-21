@@ -133,27 +133,9 @@ class CostOptimizationService
             $newData = is_string($raw) ? $raw : json_encode($raw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
-        // If we have structured array data, attempt to merge with existing; otherwise overwrite with raw/string
-        if (is_array($newData)) {
-            $existingAll = $this->costOptimizationRepository->getCutCostOptimizer($userId) ?? [];
-            $existingCategory = is_array($existingAll[$category] ?? null) ? $existingAll[$category] : [];
-
-            // If both are lists, append; else merge associative arrays with new values overwriting
-            $isExistingList = array_keys($existingCategory) === range(0, count($existingCategory) - 1);
-            $isNewList = array_keys($newData) === range(0, count($newData) - 1);
-            if ($isExistingList && $isNewList) {
-                $merged = array_values(array_merge($existingCategory, $newData));
-            } else {
-                $merged = array_merge(is_array($existingCategory) ? $existingCategory : [], is_array($newData) ? $newData : []);
-            }
-
-            $updated = $this->costOptimizationRepository->updateCutCostOptimizerByCategory($category, $merged, $userId);
-            Log::info('CostOptimization: merged and persisted category optimizer data', ['category' => $category, 'cumulative_items' => is_array($updated[$category] ?? null) ? count($updated[$category]) : 0]);
-        } else {
-            // Persist raw/string result for this category
-            $updated = $this->costOptimizationRepository->updateCutCostOptimizerByCategory($category, $newData, $userId);
-            Log::info('CostOptimization: persisted raw optimizer string for category', ['category' => $category]);
-        }
+        // Simply append the new result for this category (raw or structured). User requested append-only behaviour.
+        $updated = $this->costOptimizationRepository->updateCutCostOptimizerByCategory($category, $newData, $userId);
+        Log::info('CostOptimization: appended optimizer result for category', ['category' => $category, 'cumulative_items' => is_array($updated[$category] ?? null) ? count($updated[$category]) : 0]);
     }
 
     /**
@@ -217,29 +199,17 @@ class CostOptimizationService
         Log::info('CostOptimization: raw alignment chunk response', ['category' => $category, 'response_length' => is_string($raw) ? strlen($raw) : 0]);
 
         $parsed = [];
-        $newAlignment = [];
+        $newAlignment = null;
         try {
             $parsed = CleanUpResponse::extractJsonPayload($raw);
-            $newAlignment = $parsed['cost_value_alignment'] ?? [];
+            $newAlignment = $parsed['cost_value_alignment'] ?? $parsed;
         } catch (\Throwable $e) {
-            Log::warning('CostOptimization: failed to parse alignment chunk response', ['category' => $category, 'error' => $e->getMessage()]);
-
-            return;
+            Log::warning('CostOptimization: failed to parse alignment chunk response, will persist raw', ['category' => $category, 'error' => $e->getMessage()]);
+            $newAlignment = is_string($raw) ? $raw : json_encode($raw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
-        // Merge with existing per-category alignment
-        $existingAll = $this->costOptimizationRepository->getCostValueAlignment($userId) ?? [];
-        $existingCategory = is_array($existingAll[$category] ?? null) ? $existingAll[$category] : [];
-
-        $isExistingList = array_keys($existingCategory) === range(0, count($existingCategory) - 1);
-        $isNewList = array_keys($newAlignment) === range(0, count($newAlignment) - 1);
-        if ($isExistingList && $isNewList) {
-            $merged = array_values(array_merge($existingCategory, $newAlignment));
-        } else {
-            $merged = array_merge(is_array($existingCategory) ? $existingCategory : [], is_array($newAlignment) ? $newAlignment : []);
-        }
-
-        $updated = $this->costOptimizationRepository->updateCostValueAlignmentByCategory($category, $merged, $userId);
-        Log::info('CostOptimization: merged and persisted category alignment data', ['category' => $category, 'cumulative_items' => is_array($updated[$category] ?? null) ? count($updated[$category]) : 0]);
+        // Append the alignment result (raw or structured) to the per-category store
+        $updated = $this->costOptimizationRepository->updateCostValueAlignmentByCategory($category, $newAlignment, $userId);
+        Log::info('CostOptimization: appended category alignment data', ['category' => $category, 'cumulative_items' => is_array($updated[$category] ?? null) ? count($updated[$category]) : 0]);
     }
 }

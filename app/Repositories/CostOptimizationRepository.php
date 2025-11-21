@@ -45,9 +45,10 @@ class CostOptimizationRepository
         $resolvedUserId = $userId;
         $record = CompanyData::where('name', 'cutCostOptimizer')->where('user_id', $resolvedUserId)->first();
         if (! $record) {
-            $payload = [$category => $data];
+            // create with the category containing the first element
+            $payload = [$category => [$data]];
             $record = CompanyData::create([
-                'name' => 'cut_cost_optimizer',
+                'name' => 'cutCostOptimizer',
                 'data' => $payload,
                 'user_id' => $resolvedUserId,
             ]);
@@ -58,8 +59,13 @@ class CostOptimizationRepository
         $existing = $record->data ?? [];
         $existing = is_array($existing) ? $existing : [];
 
-        // normalize incoming data (may be JSON string or object) and store/overwrite
-        $existing[$category] = $this->normalizeForStorage($data);
+        // Ensure the category key is an array, preserve scalar if present
+        if (! array_key_exists($category, $existing) || ! is_array($existing[$category])) {
+            $existing[$category] = array_key_exists($category, $existing) ? [$existing[$category]] : [];
+        }
+
+        // Append the raw data (no decoding) as a list entry for this category
+        $existing[$category][] = $data;
 
         $record->data = $existing;
         $record->save();
@@ -70,9 +76,36 @@ class CostOptimizationRepository
     public function getCutCostOptimizer(int $userId): array
     {
         $resolvedUserId = $userId;
-        $record = CompanyData::where('name', 'cutCostOptimizer')->where('user_id', $resolvedUserId)->first();
+        // Support both the legacy 'cut_cost_optimizer' and the canonical 'cutCostOptimizer'
+        $records = CompanyData::whereIn('name', ['cutCostOptimizer', 'cut_cost_optimizer'])
+            ->where('user_id', $resolvedUserId)
+            ->get();
 
-        return is_array($record?->data) ? $record->data : [];
+        if ($records->isEmpty()) {
+            return [];
+        }
+
+        $merged = [];
+        foreach ($records as $rec) {
+            $data = $rec->data ?? [];
+            $data = is_array($data) ? $data : (is_string($data) ? json_decode($data, true) ?? [] : []);
+
+            foreach ($data as $category => $entries) {
+                // Normalize entries to an array
+                if (! is_array($entries)) {
+                    $entries = [$entries];
+                }
+
+                if (! array_key_exists($category, $merged) || ! is_array($merged[$category])) {
+                    $merged[$category] = [];
+                }
+
+                // Append entries preserving original structure
+                $merged[$category] = array_merge($merged[$category], $entries);
+            }
+        }
+
+        return $merged;
     }
 
     public function updateCostValueAlignment(mixed $data, int $userId)
@@ -112,7 +145,7 @@ class CostOptimizationRepository
         $resolvedUserId = $userId;
         $record = CompanyData::where('name', 'costValueAlignment')->where('user_id', $resolvedUserId)->first();
         if (! $record) {
-            $payload = [$category => $data];
+            $payload = [$category => [$data]];
             $record = CompanyData::create([
                 'name' => 'costValueAlignment',
                 'data' => $payload,
@@ -125,8 +158,11 @@ class CostOptimizationRepository
         $existing = $record->data ?? [];
         $existing = is_array($existing) ? $existing : [];
 
-        // store/overwrite category-specific entry; normalize first
-        $existing[$category] = $this->normalizeForStorage($data);
+        if (! array_key_exists($category, $existing) || ! is_array($existing[$category])) {
+            $existing[$category] = array_key_exists($category, $existing) ? [$existing[$category]] : [];
+        }
+
+        $existing[$category][] = $data;
 
         $record->data = $existing;
         $record->save();

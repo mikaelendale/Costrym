@@ -78,8 +78,20 @@ class CompanyProfileService
                 'available_sheets' => array_keys($allSheets),
             ]);
 
-            $title = $this->companyProfileRepository->getCompanyProfileTitles();
-            $rows = $allSheets[$title[0]] ?? null;
+            // getCompanyProfileTitles() returns a collection/array of titles; pick the first available
+            $titles = $this->companyProfileRepository->getCompanyProfileTitles();
+            $fallbackTitle = null;
+            if (is_array($titles)) {
+                $fallbackTitle = $titles[0] ?? null;
+            } elseif (is_object($titles) && method_exists($titles, 'first')) {
+                $fallbackTitle = $titles->first();
+            } elseif (is_iterable($titles)) {
+                // last-resort: cast to array and pick first
+                $tmp = (array) $titles;
+                $fallbackTitle = $tmp[0] ?? null;
+            }
+
+            $rows = $allSheets[$fallbackTitle] ?? null;
         }
 
         $this->workflowService->runWorkflow($rows, $selectedTitle, Auth::id());
