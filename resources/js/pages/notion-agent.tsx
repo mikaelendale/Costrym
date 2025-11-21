@@ -2,9 +2,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Head, router, usePage } from '@inertiajs/react';
-import { Send, Bot, User } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { Head, usePage } from '@inertiajs/react';
+import { Bot, Send, User } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -28,9 +28,14 @@ export default function NotionAgent() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const getCsrfToken = (): string => {
-        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-                     document.querySelector('input[name="_token"]')?.getAttribute('value') ||
-                     document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=')[1] || '';
+        const token =
+            document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+            document.querySelector('input[name="_token"]')?.getAttribute('value') ||
+            document.cookie
+                .split('; ')
+                .find((row) => row.startsWith('XSRF-TOKEN='))
+                ?.split('=')[1] ||
+            '';
         return decodeURIComponent(token);
     };
 
@@ -121,7 +126,7 @@ export default function NotionAgent() {
                 </div>
 
                 <div className="flex flex-1 flex-col gap-4 rounded-lg border bg-card p-4">
-                    <div className="flex-1 overflow-y-auto space-y-4">
+                    <div className="flex-1 space-y-4 overflow-y-auto">
                         {messages.length === 0 ? (
                             <div className="flex h-full items-center justify-center text-center text-muted-foreground">
                                 <div className="space-y-2">
@@ -132,12 +137,7 @@ export default function NotionAgent() {
                             </div>
                         ) : (
                             messages.map((message, index) => (
-                                <div
-                                    key={index}
-                                    className={`flex gap-3 ${
-                                        message.role === 'user' ? 'justify-end' : 'justify-start'
-                                    }`}
-                                >
+                                <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     {message.role === 'assistant' && (
                                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                                             <Bot className="h-4 w-4" />
@@ -145,15 +145,11 @@ export default function NotionAgent() {
                                     )}
                                     <div
                                         className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                                            message.role === 'user'
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-muted'
+                                            message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
                                         }`}
                                     >
-                                        <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                                        <p className="mt-1 text-xs opacity-70">
-                                            {message.timestamp.toLocaleTimeString()}
-                                        </p>
+                                        <p className="break-words whitespace-pre-wrap">{message.content}</p>
+                                        <p className="mt-1 text-xs opacity-70">{message.timestamp.toLocaleTimeString()}</p>
                                     </div>
                                     {message.role === 'user' && (
                                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
@@ -164,7 +160,7 @@ export default function NotionAgent() {
                             ))
                         )}
                         {isLoading && (
-                            <div className="flex gap-3 justify-start">
+                            <div className="flex justify-start gap-3">
                                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                                     <Bot className="h-4 w-4" />
                                 </div>
@@ -198,4 +194,3 @@ export default function NotionAgent() {
         </AppLayout>
     );
 }
-

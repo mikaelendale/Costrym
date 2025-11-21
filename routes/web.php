@@ -137,6 +137,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/ingest/expenses/csv', [ExpenseIngestionController::class, 'create'])->name('expenses.ingest.form');
     Route::post('/ingest/expenses/csv', [ExpenseIngestionController::class, 'store'])->name('expenses.ingest.upload');
 
+    // Execution Agent test routes
+    Route::get('execution-agent', [\App\Http\Controllers\ExecutionAgentController::class, 'index'])->name('execution.agent');
+    Route::post('execution-agent/execute', [\App\Http\Controllers\ExecutionAgentController::class, 'execute'])->name('execution.agent.execute');
+
 });
 
 if (config('features.rbac')) {

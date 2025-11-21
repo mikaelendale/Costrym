@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Services\PipedreamToolLoader;
+use Illuminate\Support\Facades\Log;
 use Vizra\VizraADK\System\AgentContext;
 
 /**
@@ -54,8 +55,13 @@ trait LoadsPipedreamTools
             try {
                 $toolName = $tool->definition()['name'];
                 $this->loadedTools[$toolName] = $tool;
+                Log::info('Loaded Pipedream tool', [
+                    'user_id' => $userId,
+                    'tool_name' => $toolName,
+                    'component_key' => $tool->getComponent()->component_key ?? 'unknown',
+                ]);
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning('Failed to load Pipedream tool', [
+                Log::warning('Failed to load Pipedream tool', [
                     'error' => $e->getMessage(),
                     'component_key' => $tool->getComponent()->component_key ?? 'unknown',
                 ]);
