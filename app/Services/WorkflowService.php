@@ -17,8 +17,8 @@ class WorkflowService
     public function runWorkflow($data, $title, int $userId)
     {
 
-        $windowData = 20;
-        $stepData = 10;
+        $windowData = 11;
+        $stepData = 11;
         $header = $data[0];
         $dataRows = array_slice($data, 1);
         $totalData = count($dataRows);
@@ -57,7 +57,7 @@ class WorkflowService
             ]);
 
             $chunkIndex++;
-            $delaySeconds += 20; // space jobs by 20 seconds
+            $delaySeconds += 60; // space jobs by 60 seconds
         }
 
         $bufferAfterChunksSeconds = 30;
@@ -66,11 +66,12 @@ class WorkflowService
 
         BaseLineJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds));
 
+        // Run cost decomposition after baseline finishes. We schedule it with a buffer so all categorize chunk jobs have completed.
         CostDecomposerJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds + $spacingBetweenJobsSeconds));
 
-        CostOptimizationJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds + 2 * $spacingBetweenJobsSeconds));
+        // CostOptimizationJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds + 2 * $spacingBetweenJobsSeconds));
 
-        AutomationJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds + 3 * $spacingBetweenJobsSeconds));
+        // AutomationJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds + 3 * $spacingBetweenJobsSeconds));
 
         // $this->expenseIngestionService->ingest($input); // Optional future step
 

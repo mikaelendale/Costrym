@@ -21,46 +21,64 @@ class CostDecompositionService
     public function run(?int $userId = null): array
     {
         $expenses = $this->expenseRepository->getDirectCosts($userId) ?? [];
+        $totalExpenses = is_array($expenses) ? count($expenses) : 0;
+        Log::info('CostDecomposition: starting chunked decomposition run', [
+            'expense_count' => $totalExpenses,
+        ]);
 
-        // Compact JSON for agent prompts
-        if (is_array($expenses) || $expenses instanceof \JsonSerializable || $expenses instanceof \Illuminate\Support\Collection) {
-            $expensesJson = json_encode($expenses, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        // Guard: nothing to do
+        if ($totalExpenses === 0) {
+            Log::info('CostDecomposition: no direct costs found; skipping decomposition phase');
         } else {
-            $expensesJson = (string) $expenses;
+            $chunkSize = 30; // tune as needed for token limits / performance
+            $chunks = array_chunk($expenses, $chunkSize);
+            $totalChunks = count($chunks);
+
+            foreach ($chunks as $i => $chunk) {
+                $chunkJson = json_encode($chunk, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $prompt = 'Cost decomposition chunk '.($i + 1).' of '.$totalChunks.'; using ONLY this subset of direct costs. Return JSON per schema. DirectCostsSubset: '.$chunkJson;
+                Log::info('CostDecomposition: prepared chunk prompt', [
+                    'chunk_index' => $i,
+                    'prompt_length' => strlen($prompt),
+                    'chunk_size' => count($chunk),
+                ]);
+
+                $raw = CostDecompositionAgent::run($prompt)->go();
+                Log::info('CostDecomposition: raw agent response for chunk', [
+                    'chunk_index' => $i,
+                    // Avoid logging entire payload if huge; length only
+                    'response_length' => is_string($raw) ? strlen($raw) : 0,
+                ]);
+
+                $parsed = [];
+                $productDecompositions = [];
+                try {
+                    $parsed = CleanUpResponse::extractJsonPayload($raw);
+                    $productDecompositions = $parsed['cost_decomposition_response']['product_decompositions'] ?? [];
+                } catch (\Throwable $e) {
+                    Log::warning('CostDecomposition: parse failure for chunk', [
+                        'chunk_index' => $i,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                if (! empty($productDecompositions)) {
+                    $merged = $this->costDecompositionRepository->updateAssociatedCosts($productDecompositions, $userId);
+                    Log::info('CostDecomposition: merged associated costs after chunk', [
+                        'chunk_index' => $i,
+                        'cumulative_products' => is_array($merged) ? count($merged) : 0,
+                    ]);
+                } else {
+                    Log::info('CostDecomposition: no product_decompositions produced for chunk', [
+                        'chunk_index' => $i,
+                    ]);
+                }
+            }
         }
 
-        Log::info('CostDecomposition: starting decomposition run', [
-            'expense_count' => is_array($expenses) ? count($expenses) : 0,
-        ]);
-
-        // 1) Cost decomposition based on categorized expenses
-        $decompPrompt = 'use categorized expense to decompose costs '.$expensesJson;
-        Log::info('CostDecomposition: prepared decomposition prompt', [
-            'prompt_length' => strlen($decompPrompt),
-        ]);
-
-        $decompositionResponse = CostDecompositionAgent::run($decompPrompt)->go();
-
-        Log::info('CostDecomposition: raw decomposition response', [
-            'response' => $decompositionResponse,
-        ]);
-
-        $associatedCosts = [];
-        try {
-            $associatedCosts = CleanUpResponse::extractJsonPayload($decompositionResponse);
-            $data = $associatedCosts['cost_decomposition_response']['product_decompositions'] ?? [];
-        } catch (\Throwable $e) {
-            Log::warning('CostDecomposition: failed to parse decomposition response, storing empty array', [
-                'error' => $e->getMessage(),
-            ]);
-
-            $data = [];
-        }
-
-        // Persist associated costs
-        $persistedAssociated = $this->costDecompositionRepository->updateAssociatedCosts($data, $userId);
-
-        Log::info('CostDecomposition: associated costs persisted', [
+        // Retrieve full merged associated costs after all chunks
+        $persistedAssociated = $this->costDecompositionRepository->getassociatedCosts($userId);
+        Log::info('CostDecomposition: final associated costs count', [
             'items' => is_array($persistedAssociated) ? count($persistedAssociated) : 0,
         ]);
 

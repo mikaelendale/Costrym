@@ -34,6 +34,7 @@ class CostDecomposerJob implements ShouldQueue
     {
         Log::info('CostDecomposerJob: starting');
         $result = $service->run($this->userId);
+
         Log::info('CostDecomposerJob: completed', [
             'associated_costs_count' => is_array($result['associated_costs'] ?? null) ? count($result['associated_costs']) : 0,
             'cer_items' => is_array($result['cer'] ?? null) ? count($result['cer']) : 0,

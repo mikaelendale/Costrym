@@ -18,9 +18,9 @@ class BaseLineAgent extends BaseLlmAgent
 
     protected string $description = 'Analyzes company spending patterns to define baselines, identify recurring costs, and major expense drivers.';
 
-    // protected ?string $provider = Provider::Groq->value;
+    protected ?string $provider = Provider::Gemini->value;
 
-    protected string $model = 'gpt-4o-mini';
+    protected string $model = 'gemini-2.5-flash';
 
     protected array $tools = [
         RollingAggregateTool::class,
