@@ -38,5 +38,10 @@ class CostValueAlignmentFinalizeJob implements ShouldQueue
         Log::info('CostValueAlignmentFinalizeJob: completed aggregation', [
             'categories_finalized' => count(array_keys($persisted ?? [])),
         ]);
+
+        // Trigger the next stage: Automation Planning
+        $delay = 5; // small buffer
+        AutomationPlanningOrchestratorJob::dispatch(userId: $this->userId)->delay(now()->addSeconds($delay));
+        Log::info('CostValueAlignmentFinalizeJob: dispatched AutomationPlanningOrchestratorJob', ['delay' => $delay.'s']);
     }
 }
