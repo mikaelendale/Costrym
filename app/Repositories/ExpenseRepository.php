@@ -141,4 +141,36 @@ class ExpenseRepository
 
         return is_array($expense?->data) ? $expense->data : [];
     }
+
+    /**
+     * Return expenses grouped by their category field.
+     * Result shape: [ 'Category A' => [row1, row2], 'Category B' => [...], ... ]
+     */
+    public function getExpensesGroupedByCategory(int $userId): array
+    {
+        $responseUserId = $userId ?? Auth::id();
+        Log::info('ExpenseRepository getExpensesGroupedByCategory called', ['user_id' => $responseUserId]);
+        if (! $responseUserId) {
+            Log::warning('ExpenseRepository: Missing user_id in getExpensesGroupedByCategory; returning empty.');
+
+            return [];
+        }
+
+        $expense = CompanyData::where('name', 'expense')
+            ->where('user_id', $responseUserId)
+            ->first();
+
+        $rows = is_array($expense?->data) ? $expense->data : [];
+        $grouped = [];
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $cat = trim((string) ($row['category'] ?? ($row['expense_name'] ?? 'Uncategorized')));
+            $cat = $cat !== '' ? $cat : 'Uncategorized';
+            $grouped[$cat][] = $row;
+        }
+
+        return $grouped;
+    }
 }

@@ -20,5 +20,8 @@ class BenchmarkJob implements ShouldQueue
     {
         Log::info('benchmark Job', ['user_id' => $this->userId]);
         $costDecompositionService->run($this->userId);
+        // After benchmark completes, start the cost optimization orchestrator which will
+        // dispatch per-category chunk jobs and finalize optimization when done.
+        CostOptimizationOrchestratorJob::dispatch(userId: $this->userId)->delay(now()->addSeconds(5));
     }
 }
