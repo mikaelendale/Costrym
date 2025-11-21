@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Agents\CostOptomizerAgent\CostOptomizerAgent;
 use App\Agents\CostValueAlignerAgent;
+use App\Repositories\BaseLineRepository;
 use App\Repositories\CostDecompositionRepository;
 use App\Repositories\CostOptimizationRepository;
 use App\Repositories\ExpenseRepository;
@@ -15,6 +16,7 @@ class CostOptimizationService
         private ExpenseRepository $expenseRepository,
         private CostDecompositionRepository $costDecompositionRepository,
         private CostOptimizationRepository $costOptimizationRepository,
+        private BaseLineRepository $baselineRepository
     ) {
         //
     }
@@ -44,13 +46,16 @@ class CostOptimizationService
         ]);
 
         $optimizerParsed = [];
+        $dataToPersist = null;
         try {
             $optimizerParsed = CleanUpResponse::extractJsonPayload($optimizerRaw);
-            $data = $optimizerParsed['cost_cut_portfolio'] ?? [];
+            $dataToPersist = $optimizerParsed['cost_cut_portfolio'] ?? $optimizerParsed;
         } catch (\Throwable $e) {
-            Log::warning('CostOptimization: failed to parse optimizer response, storing empty array', ['error' => $e->getMessage()]);
+            Log::warning('CostOptimization: failed to parse optimizer response, storing raw string', ['error' => $e->getMessage()]);
+            $dataToPersist = is_string($optimizerRaw) ? $optimizerRaw : json_encode($optimizerRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
-        $persistedOptimizer = $this->costOptimizationRepository->updateCutCostOptimizer($data, $userId);
+
+        $persistedOptimizer = $this->costOptimizationRepository->updateCutCostOptimizer($dataToPersist, $userId);
         Log::info('CostOptimization: cut cost optimizer data persisted', [
             'items' => is_array($persistedOptimizer) ? count($persistedOptimizer) : 0,
         ]);
@@ -66,10 +71,12 @@ class CostOptimizationService
         $alignmentParsed = [];
         try {
             $alignmentParsed = CleanUpResponse::extractJsonPayload($alignmentRaw);
+            $alignmentToPersist = $alignmentParsed;
         } catch (\Throwable $e) {
-            Log::warning('CostOptimization: failed to parse value alignment response, storing empty array', ['error' => $e->getMessage()]);
+            Log::warning('CostOptimization: failed to parse value alignment response, storing raw string', ['error' => $e->getMessage()]);
+            $alignmentToPersist = is_string($alignmentRaw) ? $alignmentRaw : json_encode($alignmentRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
-        $persistedAlignment = $this->costOptimizationRepository->updateCostValueAlignment($alignmentParsed, $userId);
+        $persistedAlignment = $this->costOptimizationRepository->updateCostValueAlignment($alignmentToPersist, $userId);
         Log::info('CostOptimization: cost value alignment data persisted', [
             'items' => is_array($persistedAlignment) ? count($persistedAlignment) : 0,
         ]);
@@ -94,10 +101,12 @@ class CostOptimizationService
         // keep categoryAgentResponse keyed by category and include benchmark/CER.
         $rawDataForCategory = [$category => $rows];
         $benchMarkData = $this->costDecompositionRepository->getCER($userId) ?? [];
+        $baseline = $this->baselineRepository->getBaseline($userId) ?? [];
 
         $payload = json_encode([
             'rawData' => $rawDataForCategory,
             'benchMarkData' => $benchMarkData,
+            'baseline' => $baseline,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         Log::info('CostOptimization: calling optimizer for category chunk', [
@@ -115,32 +124,36 @@ class CostOptimizationService
         ]);
 
         $parsed = [];
-        $newData = [];
+        $newData = null;
         try {
             $parsed = CleanUpResponse::extractJsonPayload($raw);
-            $newData = $parsed['cost_cut_portfolio'] ?? [];
+            $newData = $parsed['cost_cut_portfolio'] ?? $parsed;
         } catch (\Throwable $e) {
-            Log::warning('CostOptimization: failed to parse optimizer chunk response', ['category' => $category, 'error' => $e->getMessage()]);
-
-            return;
+            Log::warning('CostOptimization: failed to parse optimizer chunk response, persisting raw string for category', ['category' => $category, 'error' => $e->getMessage()]);
+            $newData = is_string($raw) ? $raw : json_encode($raw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
-        // Merge with existing per-category optimizer data
-        $existingAll = $this->costOptimizationRepository->getCutCostOptimizer($userId) ?? [];
-        $existingCategory = is_array($existingAll[$category] ?? null) ? $existingAll[$category] : [];
+        // If we have structured array data, attempt to merge with existing; otherwise overwrite with raw/string
+        if (is_array($newData)) {
+            $existingAll = $this->costOptimizationRepository->getCutCostOptimizer($userId) ?? [];
+            $existingCategory = is_array($existingAll[$category] ?? null) ? $existingAll[$category] : [];
 
-        // If both are lists, append; else merge associative arrays with new values overwriting
-        $merged = [];
-        $isExistingList = array_keys($existingCategory) === range(0, count($existingCategory) - 1);
-        $isNewList = array_keys($newData) === range(0, count($newData) - 1);
-        if ($isExistingList && $isNewList) {
-            $merged = array_values(array_merge($existingCategory, $newData));
+            // If both are lists, append; else merge associative arrays with new values overwriting
+            $isExistingList = array_keys($existingCategory) === range(0, count($existingCategory) - 1);
+            $isNewList = array_keys($newData) === range(0, count($newData) - 1);
+            if ($isExistingList && $isNewList) {
+                $merged = array_values(array_merge($existingCategory, $newData));
+            } else {
+                $merged = array_merge(is_array($existingCategory) ? $existingCategory : [], is_array($newData) ? $newData : []);
+            }
+
+            $updated = $this->costOptimizationRepository->updateCutCostOptimizerByCategory($category, $merged, $userId);
+            Log::info('CostOptimization: merged and persisted category optimizer data', ['category' => $category, 'cumulative_items' => is_array($updated[$category] ?? null) ? count($updated[$category]) : 0]);
         } else {
-            $merged = array_merge(is_array($existingCategory) ? $existingCategory : [], is_array($newData) ? $newData : []);
+            // Persist raw/string result for this category
+            $updated = $this->costOptimizationRepository->updateCutCostOptimizerByCategory($category, $newData, $userId);
+            Log::info('CostOptimization: persisted raw optimizer string for category', ['category' => $category]);
         }
-
-        $updated = $this->costOptimizationRepository->updateCutCostOptimizerByCategory($category, $merged, $userId);
-        Log::info('CostOptimization: merged and persisted category optimizer data', ['category' => $category, 'cumulative_items' => is_array($updated[$category] ?? null) ? count($updated[$category]) : 0]);
     }
 
     /**
@@ -150,20 +163,32 @@ class CostOptimizationService
     public function finalizeOptimization(int $userId): array
     {
         $allOptimized = $this->costOptimizationRepository->getCutCostOptimizer($userId) ?? [];
-        $payload = json_encode($allOptimized, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        // Build a payload consistent with the optimizer prompt but use the
+        // aggregated per-category optimizer outputs (allOptimized).
+        $rawData = $this->expenseRepository->getExpense($userId) ?? [];
+        $benchMarkData = $this->costDecompositionRepository->getCER($userId) ?? [];
+
+        $payload = json_encode([
+            'rawData' => $rawData,
+            'categoryAgentResponse' => $allOptimized,
+            'benchMarkData' => $benchMarkData,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
         Log::info('CostOptimization: running final alignment over aggregated optimizer data', ['user_id' => $userId, 'payload_length' => strlen($payload)]);
 
-        $alignmentRaw = CostValueAlignerAgent::run('cutcostoptimizer: '.$payload)->go();
+        $alignmentRaw = CostValueAlignerAgent::run($payload)->go();
         Log::info('CostOptimization: value aligner raw response', ['response_length' => is_string($alignmentRaw) ? strlen($alignmentRaw) : 0]);
 
-        $alignmentParsed = [];
+        $alignmentToPersist = null;
         try {
             $alignmentParsed = CleanUpResponse::extractJsonPayload($alignmentRaw);
+            $alignmentToPersist = $alignmentParsed;
         } catch (\Throwable $e) {
-            Log::warning('CostOptimization: failed to parse alignment response', ['error' => $e->getMessage()]);
+            Log::warning('CostOptimization: failed to parse alignment response, storing raw', ['error' => $e->getMessage()]);
+            $alignmentToPersist = is_string($alignmentRaw) ? $alignmentRaw : json_encode($alignmentRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
-        $persistedAlignment = $this->costOptimizationRepository->updateCostValueAlignment($alignmentParsed, $userId);
+        $persistedAlignment = $this->costOptimizationRepository->updateCostValueAlignment($alignmentToPersist, $userId);
 
         return [
             'cost_cut_portfolio' => $allOptimized,

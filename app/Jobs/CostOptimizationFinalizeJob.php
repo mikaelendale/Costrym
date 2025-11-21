@@ -27,6 +27,9 @@ class CostOptimizationFinalizeJob implements ShouldQueue
     {
         Log::info('CostOptimizationFinalizeJob: starting finalization (mark optimizer complete)', ['user_id' => $this->userId]);
 
+        // At this point per-category optimization outputs should be persisted in DB by chunk jobs.
+        // Now dispatch the alignment orchestrator which will read the stored optimizer outputs and
+        // process alignment in spaced chunks.
         CostValueAlignmentOrchestratorJob::dispatch(userId: $this->userId)->delay(now()->addSeconds(5));
 
         Log::info('CostOptimizationFinalizeJob: dispatched CostValueAlignmentOrchestratorJob');
