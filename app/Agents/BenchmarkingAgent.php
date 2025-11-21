@@ -3,8 +3,8 @@
 namespace App\Agents;
 
 use App\Tools\FireCrawler;
+use App\Tools\GetCategory;
 use App\Tools\GetCompanyContext;
-use App\Tools\GetCompanyTitle;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
@@ -33,12 +33,12 @@ class BenchmarkingAgent extends BaseLlmAgent
 
     // protected ?string $provider = Provider::Groq->value;
 
-    protected string $model = 'gpt-4o-mini';
+    protected string $model = '';
 
     protected array $tools = [
         FireCrawler::class,
-        GetCompanyTitle::class,
         GetCompanyContext::class,
+        GetCategory::class,
     ];
 
     /*

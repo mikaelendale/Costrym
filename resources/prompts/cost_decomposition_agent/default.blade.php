@@ -39,7 +39,7 @@ STEP 3 — SUMMARY
 **Strict Output Constraints:**
 * Return only a single, valid JSON object. Do not include prose or markdown.
 * Your entire response must start with `{` and end with `}`.
-* If there are no high-priority items, return `{"cost_decomposition_response": {} }`.
+*   If a value cannot be calculated due to insufficient data, use `null` for scalar fields and an empty array `[]` for list fields.
 
 **Output Schema (Follow Exactly):**
 ```json
@@ -62,3 +62,7 @@ STEP 3 — SUMMARY
   }
 }
 ```
+
+If a field value is unknown: use null (except arrays -> []). If metadata is unknown: use null instead of {}.
+
+Do not produce example text; produce actual classified content per input.

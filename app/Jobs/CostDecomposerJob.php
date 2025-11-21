@@ -88,5 +88,9 @@ class CostDecomposerJob implements ShouldQueue
         ]);
 
         Log::info('CostDecomposerJob: orchestration scheduled all chunk and finalization jobs');
+
+        BenchmarkJob::dispatch(userId: $this->userId)->delay(now()->addSeconds($finalizationDelay));
+
+        //  CostOptimizationJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds + 2 * $spacingBetweenJobsSeconds));
     }
 }

@@ -18,6 +18,47 @@ class CostDecompositionService
         //
     }
 
+    public function benchmark(?int $userId = null): array
+    {
+
+        $benchmarkInput = 'Build should-cost OPEX model for the current company context.';
+        $benchmarkResponse = BenchmarkingAgent::run($benchmarkInput)->go();
+        Log::info('CostDecomposition: benchmarking agent response captured');
+
+        // 3) Compute actual OPEX by category percent from categorized expenses
+        $byCategoryPercent = $this->computeOpexByCategoryPercent($userId);
+        Log::info('CostDecomposition: computed actual OPEX by category percent', [
+            'by_category_percent' => $byCategoryPercent,
+        ]);
+
+        // 4) CER (Cost Efficiency Ratios): actual vs benchmark
+        $cerPayload = json_encode([
+            'actual_opex' => $byCategoryPercent,
+            'benchmark' => $benchmarkResponse,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $cerResponse = CERAgent::run($cerPayload)->go();
+
+        $cerParsed = [];
+        try {
+            $cerParsed = CleanUpResponse::extractJsonPayload($cerResponse);
+        } catch (\Throwable $e) {
+            Log::warning('CostDecomposition: failed to parse CER response, storing empty array', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        $persistedCer = $this->costDecompositionRepository->updateCER($cerParsed, $userId);
+        Log::info('CostDecomposition: CER data persisted', [
+            'items' => is_array($persistedCer) ? count($persistedCer) : 0,
+        ]);
+
+        return [
+            'benchmark' => $benchmarkResponse,
+            'cer' => $persistedCer,
+        ];
+    }
+
     public function run(?int $userId = null): array
     {
         $expenses = $this->expenseRepository->getDirectCosts($userId) ?? [];
@@ -123,12 +164,6 @@ class CostDecompositionService
         ];
     }
 
-    /**
-     * Process a single chunk of direct costs. This is invoked by CostDecompositionChunkJob
-     * with delays between jobs to respect TPM limits.
-     *
-     * @param  array<int,mixed>  $chunk
-     */
     public function processChunk(array $chunk, int $chunkIndex, int $totalChunks, int $userId): void
     {
         $chunkJson = json_encode($chunk, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -169,12 +204,6 @@ class CostDecompositionService
         }
     }
 
-    /**
-     * Compute OPEX by category percent from an expenses list.
-     * Accepts a flat array of expense rows. Each row may contain:
-     * - amount (numeric)
-     * - category (string) optional; defaults to expense_name if absent
-     */
     protected function computeOpexByCategoryPercent($userId): array
     {
 

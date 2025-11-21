@@ -67,6 +67,7 @@ class WorkflowService
         BaseLineJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds));
 
         // Run cost decomposition after baseline finishes. We schedule it with a buffer so all categorize chunk jobs have completed.
+
         CostDecomposerJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds + $spacingBetweenJobsSeconds));
 
         // CostOptimizationJob::dispatch(userId: $userId)->delay(now()->addSeconds($startAfterSeconds + 2 * $spacingBetweenJobsSeconds));
