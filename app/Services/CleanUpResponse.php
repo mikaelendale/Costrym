@@ -34,13 +34,35 @@ class CleanUpResponse
         try {
             return json_decode($text, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
-            // Attempt salvage: look for a valid JSON object within the provided text (handles code fences and embedded prose)
+            // Attempt normalization then decode again (handles code fences, escaped strings, BOM/zero-width chars, HTML entities)
+            $normalized = static::normalizeJsonString($text);
+            if ($normalized !== $text) {
+                try {
+                    return json_decode($normalized, true, 512, JSON_THROW_ON_ERROR);
+                } catch (JsonException $e) {
+                    // continue to salvage attempts below
+                }
+            }
+
+            // Attempt salvage: look for a valid JSON object within the provided (possibly noisy) text
             $salvaged = static::searchForJsonString($text);
             if ($salvaged !== null) {
                 try {
                     return json_decode($salvaged, true, 512, JSON_THROW_ON_ERROR);
                 } catch (JsonException $e) {
                     // fallthrough to original error below
+                }
+            }
+
+            // Attempt salvage again with normalized variant
+            if ($normalized !== $text) {
+                $salvaged2 = static::searchForJsonString($normalized);
+                if ($salvaged2 !== null) {
+                    try {
+                        return json_decode($salvaged2, true, 512, JSON_THROW_ON_ERROR);
+                    } catch (JsonException $e) {
+                        // fallthrough to original error below
+                    }
                 }
             }
             throw new RuntimeException('LLM response text is not valid JSON.', 0, $exception);
@@ -233,18 +255,9 @@ class CleanUpResponse
     {
         // Helper to normalize a candidate string and validate as JSON object
         $try = static function (string $s): ?string {
-            $s = trim($s);
+            $s = static::normalizeJsonString($s);
             if ($s === '') {
                 return null;
-            }
-
-            // Strip markdown code fences if present
-            if (str_starts_with($s, '```')) {
-                // remove first fence line and possible language hint
-                $s = preg_replace('/^```[a-zA-Z0-9]*\n?/m', '', $s, 1) ?? $s;
-                // remove trailing fence
-                $s = preg_replace('/\n?```\s*$/m', '', $s, 1) ?? $s;
-                $s = trim($s);
             }
 
             // Extract substring from first '{' to last '}' to isolate JSON object
@@ -322,5 +335,51 @@ class CleanUpResponse
         }
 
         return null;
+    }
+
+    /**
+     * Normalize a potentially messy string that is intended to contain JSON.
+     * - Trims whitespace and removes BOM/zero-width characters
+     * - Strips markdown code fences (``` or ```json)
+     * - Decodes HTML entities (e.g., &quot;)
+     * - Unwraps quoted, escaped JSON strings and unescapes C-style sequences (e.g., \n, \t, \" )
+     */
+    protected static function normalizeJsonString(string $s): string
+    {
+        // Trim and remove UTF-8 BOM if present
+        $s = (string) $s;
+        $s = trim($s);
+        if ($s === '') {
+            return $s;
+        }
+
+        // Remove BOM
+        $s = preg_replace('/^\xEF\xBB\xBF/', '', $s) ?? $s;
+
+        // Remove zero-width and non-breaking spaces
+        $s = preg_replace('/[\x{200B}\x{200C}\x{200D}\x{FEFF}\x{00A0}]/u', '', $s) ?? $s;
+
+        // Strip markdown code fences if present
+        if (str_starts_with($s, '```')) {
+            $s = preg_replace('/^```[a-zA-Z0-9]*\n?/m', '', $s, 1) ?? $s;
+            $s = preg_replace('/\n?```\s*$/m', '', $s, 1) ?? $s;
+            $s = trim($s);
+        }
+
+        // Decode HTML entities (e.g., &quot;)
+        $decodedEntities = html_entity_decode($s, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
+        if ($decodedEntities !== '') {
+            $s = $decodedEntities;
+        }
+
+        // If the whole payload is a quoted JSON string, unwrap and unescape it
+        if (preg_match('/^([\'"\"])\s*(.*)\s*\1$/s', $s, $m) === 1) {
+            $inner = $m[2];
+            // Unescape common C-style sequences (\n, \t, \r, \", \\). stripcslashes won't touch valid JSON braces/quotes.
+            $inner = stripcslashes($inner);
+            $s = trim($inner);
+        }
+
+        return $s;
     }
 }

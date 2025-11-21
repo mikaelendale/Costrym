@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -12,6 +13,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Drop the index if it exists (PostgreSQL only)
+        if (Schema::getConnection()->getDriverName() === 'pgsql') {
+            DB::statement('DROP INDEX IF EXISTS idx_app_active');
+        }
         Schema::create('pipedream_components', function (Blueprint $table) {
             $table->id();
 

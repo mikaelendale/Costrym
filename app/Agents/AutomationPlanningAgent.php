@@ -51,10 +51,10 @@ class AutomationPlanningAgent extends BaseLlmAgent
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
 
-        Log::info('AutomationPlanningAgent.afterLlmResponse', [
-            'context' => $context,
-            'response' => $response,
-        ]);
+        // Log::info('AutomationPlanningAgent.afterLlmResponse', [
+        //     'context' => $context,
+        //     'response' => $response,
+        // ]);
 
         return parent::afterLlmResponse($response, $context, $request);
 

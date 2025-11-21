@@ -36,7 +36,7 @@ Focus on:
 - Creating actionable next steps
 INSTRUCTIONS;
 
-    protected string $model = 'gpt-4o';
+    protected string $model = 'gpt-4o-mini';
 
     protected array $tools = [];
 

@@ -58,6 +58,12 @@ class XeroActionTool implements ToolInterface
      */
     public function execute(array $arguments, AgentContext $context, AgentMemory $memory): string
     {
+        Log::info('XeroActionTool execute called', [
+            'user_id' => $this->userId ?? $context->getState('user_id'),
+            'action_name' => $arguments['action_name'] ?? null,
+            'parameters' => $arguments['parameters'] ?? null,
+            'session_id' => $context->getSessionId(),
+        ]);
         try {
             // Get user ID from context if not set in constructor
             $userId = $this->userId ?? $context->getState('user_id');

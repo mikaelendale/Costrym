@@ -57,15 +57,6 @@ class CERAgent extends BaseLlmAgent
     public function beforeToolCall(string $toolName, array $arguments, AgentContext $context): array
     {
         // Log tool call arguments for traceability
-        try {
-            Log::info('CERAgent beforeToolCall', [
-                'agent' => $this->name,
-                'tool' => $toolName,
-                'arguments' => $arguments,
-            ]);
-        } catch (\Throwable $e) {
-            // Avoid interrupting flow due to logging issues
-        }
 
         return parent::beforeToolCall($toolName, $arguments, $context);
 
@@ -74,16 +65,6 @@ class CERAgent extends BaseLlmAgent
     public function afterToolResult(string $toolName, string $result, AgentContext $context): string
     {
         // Log the tool result for debugging/analytics
-        try {
-            $decoded = json_decode($result, true);
-            Log::info('CERAgent afterToolResult', [
-                'agent' => $this->name,
-                'tool' => $toolName,
-                'result' => $decoded !== null ? $decoded : $result,
-            ]);
-        } catch (\Throwable $e) {
-            // Avoid interrupting flow due to logging issues
-        }
 
         return parent::afterToolResult($toolName, $result, $context);
 
