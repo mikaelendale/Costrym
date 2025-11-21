@@ -8,14 +8,14 @@ class CategoryModel extends Model
 {
     protected $fillable = [
         'name',
-        'tags',
-        'category',
+        'user_id',
         'meta_data',
+        'description',
+        'expenses',
     ];
 
     protected $casts = [
-        'tags' => 'array',
         'meta_data' => 'array',
+        'expenses' => 'array',
     ];
-    //
 }

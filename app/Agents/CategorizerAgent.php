@@ -3,7 +3,8 @@
 namespace App\Agents;
 
 use App\Services\CleanUpResponse;
-use App\Tools\ListFinancialCategoriesTool;
+use App\Tools\GetCategory;
+use App\Tools\GetCompanyContext;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
@@ -16,21 +17,25 @@ class CategorizerAgent extends BaseLlmAgent
 
     protected string $description = 'AI agent that intelligently categorizes financial transactions into predefined expense categories using transaction descriptions, amounts, and context.';
 
-    protected string $instructions = 'You are a financial transaction categorizer. Use the list_financial_categories tool to see all available categories, then analyze each transaction and assign the most appropriate category_id. Return clean JSON with categorizations.';
+    protected string $instructions = 'You are a financial transaction categorizer. Use the GetCompanyContext tool to see all available categories, then analyze each transaction and assign the most appropriate category_id. Return clean JSON with categorizations.';
 
     protected string $model = 'gpt-4o-mini';
 
     protected array $tools = [
-        ListFinancialCategoriesTool::class,
+        GetCompanyContext::class,
+        GetCategory::class,
     ];
 
     // // protected ?string $provider = Provider::Groq->value;
 
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
+        // Avoid logging full message payloads; log counts to reduce verbosity
+        $count = is_array($inputMessages) ? count($inputMessages) : 0;
         Log::info('CategorizerAgent: Starting categorization', [
-            'batch_size' => $context->getState('batch_size'),
-            'user_id' => $context->getState('user_id'),
+            'input_messages_count' => $count,
+            // 'batch_size' => $context->getState('batch_size'),
+            // 'user_id' => $context->getState('user_id'),
         ]);
 
         return parent::beforeLlmCall($inputMessages, $context);
@@ -39,12 +44,10 @@ class CategorizerAgent extends BaseLlmAgent
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
         Log::info('After CategorizerAgent LLM response ...');
-        $parsedResponse = CleanUpResponse::extractJsonPayload($response);
-        Log::info('Parsed CategorizerAgent response payload.', ['response' => $parsedResponse]);
+        // $parsedResponse = CleanUpResponse::extractJsonPayload($response);
+        // Log::info('Parsed CategorizerAgent response payload.', ['response' => $parsedResponse]);
 
-        $context->setState('categorized_data', $parsedResponse);
-
-        Log::info('Finished setting categorized_data state.');
+        // Log::info('categorizer agent response', ['categorizer agent response' => $response]);
 
         return parent::afterLlmResponse($response, $context, $request);
 

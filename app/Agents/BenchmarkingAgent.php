@@ -3,6 +3,9 @@
 namespace App\Agents;
 
 use App\Tools\FireCrawler;
+use App\Tools\GetCategory;
+use App\Tools\GetCompanyContext;
+use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
@@ -30,11 +33,12 @@ class BenchmarkingAgent extends BaseLlmAgent
 
     // protected ?string $provider = Provider::Groq->value;
 
-    protected string $model = 'gpt-4o-mini';
+    protected string $model = '';
 
     protected array $tools = [
         FireCrawler::class,
-        // Example: YourTool::class,
+        GetCompanyContext::class,
+        GetCategory::class,
     ];
 
     /*
@@ -65,4 +69,28 @@ class BenchmarkingAgent extends BaseLlmAgent
         return parent::afterToolResult($toolName, $result, $context);
 
     } */
+
+    public function beforeLlmCall(array $inputMessages, AgentContext $context): array
+    {
+        // Avoid logging full message payloads (can be very bulky). Log counts instead.
+        $count = is_array($inputMessages) ? count($inputMessages) : 0;
+        Log::info('BenchmarkingAgent before LLM call', ['input_messages_count' => $count]);
+
+        return parent::beforeLlmCall($inputMessages, $context);
+    }
+
+    public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
+    {
+        // Log concise diagnostics: length / count / type instead of full response payload
+        if (is_string($response)) {
+            Log::info('After BenchmarkingAgent LLM response', ['response_length' => mb_strlen($response, 'UTF-8')]);
+        } elseif (is_array($response) || $response instanceof \Countable) {
+            Log::info('After BenchmarkingAgent LLM response', ['response_count' => count((array) $response)]);
+        } else {
+            Log::info('After BenchmarkingAgent LLM response', ['response_type' => gettype($response)]);
+        }
+
+        return parent::afterLlmResponse($response, $context, $request);
+
+    }
 }

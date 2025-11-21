@@ -2,7 +2,10 @@
 
 namespace App\Agents\CostOptomizerAgent;
 
+use Illuminate\Support\Facades\Log;
+use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
+use Vizra\VizraADK\Events\ToolCallFailed;
 use Vizra\VizraADK\System\AgentContext;
 
 class CostOptomizerAgent extends BaseLlmAgent
@@ -77,6 +80,9 @@ INSTRUCTIONS;
         $rootResult = $rootAgent->execute($task1, $rootCtx);
         $rootResultStr = is_string($rootResult) ? $rootResult : json_encode($rootResult);
 
+        // Minimal logging to avoid bulky payloads or serialization issues
+        Log::info('CostOptomizerAgent: RootAnalysisAgent executed');
+
         // Persist for visibility across steps
         $context->setState('root_analysis_result', $rootResultStr);
         $this->memory()->remember($rootResultStr, 'root_analysis_result');
@@ -106,6 +112,9 @@ INSTRUCTIONS;
         $solutionResult = $solutionAgent->execute($task2, $solutionCtx);
         $solutionResultStr = is_string($solutionResult) ? $solutionResult : json_encode($solutionResult);
 
+        // Minimal log for step completion
+        Log::info('CostOptomizerAgent: SolutionGeneratorAgent executed');
+
         // Persist between steps
         $context->setState('solution_generator_result', $solutionResultStr);
         $this->memory()->remember($solutionResultStr, 'solution_generator_result');
@@ -119,6 +128,7 @@ INSTRUCTIONS;
         }
 
         $searchInput = "SOLUTIONS_INPUT_JSON:\n".$solutionResultProcessed."\nTASK: For each solution, if its description begins with 'search for this:' extract the query and call the SearchTool; otherwise construct a precise query from the title/description. RETURN_JSON: search_insights only";
+
         $contextSummary3 = 'Run targeted web searches to support solution estimates.';
         [$subName3, $task3, $summary3] = $this->beforeSubAgentDelegation('search', $searchInput, $contextSummary3, $context);
 
@@ -154,6 +164,7 @@ INSTRUCTIONS;
 
         $simCtx = new AgentContext($context->getSessionId().'_sub_'.$subName4);
         $simCtx->setState('delegation_depth', $context->getState('delegation_depth', 0) + 1);
+
         $simCtx->setState('pipeline', [
             'user_input' => $input,
             'root_analysis_result' => $rootResultProcessed,
@@ -167,12 +178,16 @@ INSTRUCTIONS;
         $finalResult = $simAgent->execute($task4, $simCtx);
         $finalResultStr = is_string($finalResult) ? $finalResult : json_encode($finalResult);
 
-        // Persist final output
+        // Minimal log for final step completion
+        Log::info('CostOptomizerAgent: CostImpactSimulatorAgent executed, preparing to return final result');
+
         $context->setState('final_cost_optimization_portfolio', $finalResultStr);
         $this->memory()->remember($finalResultStr, 'final_cost_optimization_portfolio');
 
         // Ensure strictly JSON-only output (remove any stray commentary)
         $sanitized = $this->sanitizeJsonOutput($finalResultStr);
+
+        Log::info('CostOptomizerAgent: Final output sanitized to valid JSON');
 
         return $this->afterSubAgentDelegation($subName4, $task4, $sanitized, $context, $simCtx);
     }
@@ -324,7 +339,7 @@ INSTRUCTIONS;
                 } catch (\Throwable $e) {
                     $this->onToolException($tool->definition()['name'], $e, $context);
 
-                    event(new \Vizra\VizraADK\Events\ToolCallFailed($context, $this->getName(), $tool->definition()['name'], $e));
+                    event(new ToolCallFailed($context, $this->getName(), $tool->definition()['name'], $e));
 
                     throw new \Vizra\VizraADK\Exceptions\ToolExecutionException("Error executing tool '".$tool->definition()['name']."': ".$e->getMessage(), 0, $e);
                 }
@@ -334,5 +349,13 @@ INSTRUCTIONS;
         }
 
         return $tools;
+    }
+
+    public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
+    {
+        // Keep LLM response logs minimal to avoid heavy payloads
+        Log::info('CostOptomizerAgent After LLM Call');
+
+        return parent::afterLlmResponse($response, $context, $request);
     }
 }

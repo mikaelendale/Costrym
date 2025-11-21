@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\admin\RBACController;
 use App\Http\Controllers\ChangelogController;
+use App\Http\Controllers\ExpenseIngestionController;
 use App\Http\Controllers\IntegrationIngestorController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\NotificationController;
@@ -90,7 +91,6 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('integration-ingestor/tools', [IntegrationIngestorController::class, 'getAvailableTools'])->name('integration.ingestor.tools');
     Route::get('integration-ingestor/test/invoices', [IntegrationIngestorController::class, 'testFetchInvoices'])->name('integration.ingestor.test.invoices');
 });
-
 // Onboarding route (accessible without onboarding middleware to avoid redirect loops)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('onboarding', function () {
@@ -133,6 +133,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('notion-agent', [NotionAgentController::class, 'index'])->name('notion.agent');
     Route::post('notion-agent/chat', [NotionAgentController::class, 'chat'])->name('notion.agent.chat');
     Route::get('notion-agent/actions', [NotionAgentController::class, 'getAvailableActions'])->name('notion.agent.actions');
+
+    Route::get('/ingest/expenses/csv', [ExpenseIngestionController::class, 'create'])->name('expenses.ingest.form');
+    Route::post('/ingest/expenses/csv', [ExpenseIngestionController::class, 'store'])->name('expenses.ingest.upload');
 
 });
 

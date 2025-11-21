@@ -4,6 +4,8 @@ namespace App\Agents;
 
 use App\Services\CleanUpResponse;
 use App\Tools\BaseLineAnalysis\RollingAggregateTool;
+use App\Tools\GetCompanyContext;
+use App\Tools\GetCompanyTitle;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Text\PendingRequest;
@@ -16,12 +18,14 @@ class BaseLineAgent extends BaseLlmAgent
 
     protected string $description = 'Analyzes company spending patterns to define baselines, identify recurring costs, and major expense drivers.';
 
-    // protected ?string $provider = Provider::Groq->value;
+    protected ?string $provider = Provider::Gemini->value;
 
-    protected string $model = 'gpt-4o-mini';
+    protected string $model = 'gemini-2.5-flash';
 
     protected array $tools = [
         RollingAggregateTool::class,
+        GetCompanyTitle::class,
+        GetCompanyContext::class,
     ];
 
     /*
@@ -59,19 +63,7 @@ class BaseLineAgent extends BaseLlmAgent
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
         Log::info('BaseLineAgent before LLM call...');
-        Log::info('inputmessages: ', ['inputMessages' => $inputMessages]);
-        Log::info('context value: ', ['context' => $context->getAllState()]);
-
-        Log::info('----------------------------------------');
-
-        $company_financials = $context->getState('company_financials');
-        $category_mapping = $context->getState('categorized_data');
-
-        // Add context as a standard system message array instead of SystemMessage object
-        $inputMessages[] = [
-            'role' => 'system',
-            'content' => "Company Financials:\n".json_encode($company_financials, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\nCategory Mapping:\n".json_encode($category_mapping, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        ];
+        Log::info('Input messages:', ['messages' => $inputMessages]);
 
         return parent::beforeLlmCall($inputMessages, $context);
     }
@@ -79,12 +71,10 @@ class BaseLineAgent extends BaseLlmAgent
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
         Log::info('After BaseLineAgent LLM response ...');
-        $parsedResponse = CleanUpResponse::extractJsonPayload($response);
-        Log::info('Parsed BaseLineAgent response payload.', ['response' => $parsedResponse]);
+        // $parsedResponse = CleanUpResponse::extractJsonPayload($response);
+        // Log::info('Parsed BaseLineAgent response payload.', ['response' => $parsedResponse]);
 
-        $context->setState('baseline_data', $parsedResponse);
-
-        Log::info('Finished setting baseline_data state.');
+        Log::info('Finished setting baseline_data state.', ['response' => $response]);
 
         return parent::afterLlmResponse($response, $context, $request);
     }

@@ -251,8 +251,14 @@ INSTRUCTIONS;
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
 
-        Log::info('After LLM response cost value aligner .....');
-        Log::info('Response: ', ['response' => $response]);
+        // Keep logs lightweight — record count/length/type rather than full payload
+        if (is_string($response)) {
+            Log::info('After LLM response cost value aligner', ['response_length' => mb_strlen($response, 'UTF-8')]);
+        } elseif (is_array($response) || $response instanceof \Countable) {
+            Log::info('After LLM response cost value aligner', ['response_count' => count((array) $response)]);
+        } else {
+            Log::info('After LLM response cost value aligner', ['response_type' => gettype($response)]);
+        }
 
         return parent::afterLlmResponse($response, $context, $request);
 
