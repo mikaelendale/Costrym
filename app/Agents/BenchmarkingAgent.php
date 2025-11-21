@@ -72,16 +72,23 @@ class BenchmarkingAgent extends BaseLlmAgent
 
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
-        Log::info('BenchmarkingAgent before LLM call...');
-        Log::info('Input messages:', ['messages' => $inputMessages]);
+        // Avoid logging full message payloads (can be very bulky). Log counts instead.
+        $count = is_array($inputMessages) ? count($inputMessages) : 0;
+        Log::info('BenchmarkingAgent before LLM call', ['input_messages_count' => $count]);
 
         return parent::beforeLlmCall($inputMessages, $context);
     }
 
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
-        Log::info('After BenchmarkingAgent LLM response ...');
-        Log::info('Response:', ['response' => $response]);
+        // Log concise diagnostics: length / count / type instead of full response payload
+        if (is_string($response)) {
+            Log::info('After BenchmarkingAgent LLM response', ['response_length' => mb_strlen($response, 'UTF-8')]);
+        } elseif (is_array($response) || $response instanceof \Countable) {
+            Log::info('After BenchmarkingAgent LLM response', ['response_count' => count((array) $response)]);
+        } else {
+            Log::info('After BenchmarkingAgent LLM response', ['response_type' => gettype($response)]);
+        }
 
         return parent::afterLlmResponse($response, $context, $request);
 

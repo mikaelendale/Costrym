@@ -80,7 +80,8 @@ INSTRUCTIONS;
         $rootResult = $rootAgent->execute($task1, $rootCtx);
         $rootResultStr = is_string($rootResult) ? $rootResult : json_encode($rootResult);
 
-        Log::info('CostOptomizerAgent: RootAnalysisAgent executed', ['result_preview' => $rootResultStr]);
+        // Minimal logging to avoid bulky payloads or serialization issues
+        Log::info('CostOptomizerAgent: RootAnalysisAgent executed');
 
         // Persist for visibility across steps
         $context->setState('root_analysis_result', $rootResultStr);
@@ -111,8 +112,8 @@ INSTRUCTIONS;
         $solutionResult = $solutionAgent->execute($task2, $solutionCtx);
         $solutionResultStr = is_string($solutionResult) ? $solutionResult : json_encode($solutionResult);
 
-        Log::info('CostOptomizerAgent: SolutionGeneratorAgent executed', [
-            'result_preview' => mb_substr($solutionResultStr, 0, 1000, 'UTF-8').(mb_strlen($solutionResultStr, 'UTF-8') > 1000 ? '... (truncated)' : '')]);
+        // Minimal log for step completion
+        Log::info('CostOptomizerAgent: SolutionGeneratorAgent executed');
 
         // Persist between steps
         $context->setState('solution_generator_result', $solutionResultStr);
@@ -177,7 +178,8 @@ INSTRUCTIONS;
         $finalResult = $simAgent->execute($task4, $simCtx);
         $finalResultStr = is_string($finalResult) ? $finalResult : json_encode($finalResult);
 
-        Log::info('CostOptomizerAgent: CostImpactSimulatorAgent executed, preparing to return final result', ['result_preview' => $finalResultStr]);
+        // Minimal log for final step completion
+        Log::info('CostOptomizerAgent: CostImpactSimulatorAgent executed, preparing to return final result');
 
         $context->setState('final_cost_optimization_portfolio', $finalResultStr);
         $this->memory()->remember($finalResultStr, 'final_cost_optimization_portfolio');
@@ -185,7 +187,7 @@ INSTRUCTIONS;
         // Ensure strictly JSON-only output (remove any stray commentary)
         $sanitized = $this->sanitizeJsonOutput($finalResultStr);
 
-        Log::info('CostOptomizerAgent: Final output sanitized to valid JSON', ['sanitized_preview' => $sanitized]);
+        Log::info('CostOptomizerAgent: Final output sanitized to valid JSON');
 
         return $this->afterSubAgentDelegation($subName4, $task4, $sanitized, $context, $simCtx);
     }
@@ -351,8 +353,8 @@ INSTRUCTIONS;
 
     public function afterLlmResponse(mixed $response, AgentContext $context, ?PendingRequest $request = null): mixed
     {
-        Log::info('CostOptomizerAgent After LLM Call...');
-        Log::info('Response: ', ['response' => $response]);
+        // Keep LLM response logs minimal to avoid heavy payloads
+        Log::info('CostOptomizerAgent After LLM Call');
 
         return parent::afterLlmResponse($response, $context, $request);
     }

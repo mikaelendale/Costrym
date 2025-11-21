@@ -30,8 +30,10 @@ class CategorizerAgent extends BaseLlmAgent
 
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
     {
+        // Avoid logging full message payloads; log counts to reduce verbosity
+        $count = is_array($inputMessages) ? count($inputMessages) : 0;
         Log::info('CategorizerAgent: Starting categorization', [
-            'input_messages' => $inputMessages,
+            'input_messages_count' => $count,
             // 'batch_size' => $context->getState('batch_size'),
             // 'user_id' => $context->getState('user_id'),
         ]);
