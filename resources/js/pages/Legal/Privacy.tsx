@@ -33,11 +33,11 @@ export default function Privacy({ content, pageTitle, pageDescription, lastUpdat
                     <div className="absolute inset-0 " />
                     <div className="container relative mx-auto px-4 py-20 sm:px-6 lg:px-8">
                         <div className="mx-auto max-w-3xl text-center"> 
-                            <h1 className="mb-6 text-5xl font-bold tracking-tight text-primary sm:text-6xl">
+                            <h1 className="mb-6 text-5xl font-spirax tracking-tight text-primary sm:text-6xl">
                                 Your Privacy Matters
                             </h1>
-                            <p className="text-xl text-primary mb-8">
-                                Learn how we protect your data and respect your privacy at Razory
+                            <p className="text-sm text-primary">
+                                Learn how we protect your data and respect your privacy at Costrym
                             </p> 
                         </div>
                     </div>

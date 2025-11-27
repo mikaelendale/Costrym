@@ -28,6 +28,7 @@ Route::get('/', function () {
 Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
 Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
 Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
+Route::get('/refund-policy', [LegalController::class, 'refundPolicy'])->name('refund-policy');
 
 Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('dashboard', function () {
@@ -37,8 +38,30 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Get first-time cost analysis automation
+        $firstTimeAutomation = \App\Models\Automation::where('user_id', auth()->id())
+            ->where('type', 'first_time_cost_analysis')
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        // Get recent automations (last 5)
+        $recentAutomations = \App\Models\Automation::where('user_id', auth()->id())
+            ->where('status', 'active')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        // Get total automation count
+        $totalAutomations = \App\Models\Automation::where('user_id', auth()->id())
+            ->where('status', 'active')
+            ->count();
+
         return Inertia::render('dashboard', [
             'pendingTasks' => $pendingTasks,
+            'firstTimeAutomation' => $firstTimeAutomation,
+            'recentAutomations' => $recentAutomations,
+            'totalAutomations' => $totalAutomations,
         ]);
     })->name('dashboard');
 

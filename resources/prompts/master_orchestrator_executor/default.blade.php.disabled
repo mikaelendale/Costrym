@@ -21,7 +21,7 @@ You have access to the following specialized agents. Choose the best one(s) for 
 @foreach($available_agents ?? [] as $agent)
 **{{ $agent['name'] }}**
 - {{ $agent['description'] }}
-- Capabilities: {{ $agent['capabilities'] }}
+- Capabilities: {{ is_array($agent['capabilities']) ? implode(', ', $agent['capabilities']) : $agent['capabilities'] }}
 
 @endforeach
 

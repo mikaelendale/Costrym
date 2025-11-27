@@ -37,7 +37,7 @@ DAILY SCHEDULE (7 AM)
     ↓
 ┌─────────────────────────────────────────┐
 │ MasterOrchestrator                      │
-│ - Receives task details                │
+│ - Receives task details                 │
 │ - Has access to all agents              │
 │ - Delegates to best agent(s)            │
 │ - Coordinates execution                 │

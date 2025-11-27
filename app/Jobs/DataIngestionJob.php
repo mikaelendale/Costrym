@@ -28,7 +28,8 @@ class DataIngestionJob implements ShouldQueue
      */
     public function __construct(
         public int $userId,
-        public bool $isInitialSync = true
+        public bool $isInitialSync = true,
+        public ?string $jsonFilePath = null
     ) {
         $this->onQueue('data_ingestion');
     }
@@ -49,6 +50,7 @@ class DataIngestionJob implements ShouldQueue
         Log::info('DataIngestionJob started', [
             'user_id' => $this->userId,
             'is_initial_sync' => $this->isInitialSync,
+            'has_json_file' => ! is_null($this->jsonFilePath),
         ]);
 
         // Get all active connected accounts for this user
@@ -56,48 +58,69 @@ class DataIngestionJob implements ShouldQueue
             ->where('is_active', true)
             ->get();
 
-        if ($connectedAccounts->isEmpty()) {
-            Log::warning('DataIngestionJob: No connected accounts found', ['user_id' => $this->userId]);
-
-            return;
-        }
-
-        Log::info('DataIngestionJob: Found connected accounts', [
-            'user_id' => $this->userId,
-            'count' => $connectedAccounts->count(),
-            'integrations' => $connectedAccounts->pluck('app_name')->toArray(),
-        ]);
-
         // Collect all ingestion jobs
         $ingestionJobs = [];
-        foreach ($connectedAccounts as $account) {
-            $integrationType = $account->app_name;
 
-            // Map integration type to ingestion job class
-            $jobClass = $this->getIngestionJobClass($integrationType);
-
-            if (! $jobClass) {
-                Log::warning('DataIngestionJob: No ingestion job found for integration', [
-                    'integration_type' => $integrationType,
-                    'user_id' => $this->userId,
-                ]);
-
-                continue;
-            }
-
-            Log::info('DataIngestionJob: Preparing integration ingestion job', [
+        // 1. Add JSON Ingestion Job if file path provided
+        if ($this->jsonFilePath) {
+            Log::info('DataIngestionJob: Adding JsonFileIngestionJob', [
                 'user_id' => $this->userId,
-                'integration_type' => $integrationType,
-                'job_class' => $jobClass,
+                'file_path' => $this->jsonFilePath,
             ]);
-
-            $ingestionJobs[] = new $jobClass($this->userId, $integrationType, $this->isInitialSync);
+            $ingestionJobs[] = new JsonFileIngestionJob($this->userId, $this->jsonFilePath);
         }
 
+        // 2. Add Integration Ingestion Jobs
+        if ($connectedAccounts->isNotEmpty()) {
+            Log::info('DataIngestionJob: Found connected accounts', [
+                'user_id' => $this->userId,
+                'count' => $connectedAccounts->count(),
+                'integrations' => $connectedAccounts->pluck('app_name')->toArray(),
+            ]);
+
+            foreach ($connectedAccounts as $account) {
+                $integrationType = $account->app_name;
+
+                // Map integration type to ingestion job class
+                $jobClass = $this->getIngestionJobClass($integrationType);
+
+                if (! $jobClass) {
+                    Log::warning('DataIngestionJob: No ingestion job found for integration', [
+                        'integration_type' => $integrationType,
+                        'user_id' => $this->userId,
+                    ]);
+
+                    continue;
+                }
+
+                Log::info('DataIngestionJob: Preparing integration ingestion job', [
+                    'user_id' => $this->userId,
+                    'integration_type' => $integrationType,
+                    'job_class' => $jobClass,
+                ]);
+
+                $ingestionJobs[] = new $jobClass($this->userId, $integrationType, $this->isInitialSync);
+            }
+        } else {
+            Log::warning('DataIngestionJob: No connected accounts found', ['user_id' => $this->userId]);
+        }
+
+        // If no jobs to run (no JSON file AND no connected accounts)
         if (empty($ingestionJobs)) {
             Log::warning('DataIngestionJob: No valid ingestion jobs to dispatch', [
                 'user_id' => $this->userId,
             ]);
+
+            // Even without connected accounts/files, if this is initial sync, dispatch FirstTimeCostAnalysisJob
+            // This handles cases where data might have been seeded or uploaded separately
+            if ($this->isInitialSync) {
+                Log::info('DataIngestionJob: No ingestion jobs, but dispatching FirstTimeCostAnalysisJob for fallback', [
+                    'user_id' => $this->userId,
+                ]);
+
+                FirstTimeCostAnalysisJob::dispatch($this->userId)
+                    ->delay(now()->addSeconds(5));
+            }
 
             return;
         }
@@ -109,23 +132,16 @@ class DataIngestionJob implements ShouldQueue
 
         Bus::batch($ingestionJobs)
             ->name("Data Ingestion - User {$userId}")
-            ->then(function () use ($userId, $isInitialSync) {
+            ->then(function () use ($userId) {
                 Log::info('All ingestion jobs completed, starting categorization', [
                     'user_id' => $userId,
                 ]);
 
                 // First, categorize all the ingested financial records
-                FinancialCategorizerJob::dispatch($userId, batchSize: 20);
+                // And trigger FirstTimeCostAnalysisJob when done
+                FinancialCategorizerJob::dispatch($userId, batchSize: 20, triggerAnalysis: true);
 
-                // Then dispatch MasterOrchestratorJob with categorized data available
-                // Add a delay to give categorization time to process at least one batch
-                MasterOrchestratorJob::dispatch(
-                    userId: $userId,
-                    scenario: $isInitialSync ? 'first_onboarding' : 'task_generation',
-                    additionalContext: ['trigger' => 'post_ingestion']
-                )->delay(now()->addSeconds(5));
-
-                Log::info('Dispatched FinancialCategorizerJob and MasterOrchestratorJob', [
+                Log::info('Dispatched FinancialCategorizerJob (with analysis trigger)', [
                     'user_id' => $userId,
                 ]);
             })

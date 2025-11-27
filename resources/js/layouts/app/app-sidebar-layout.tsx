@@ -13,7 +13,7 @@ export default function AppSidebarLayout({ children, breadcrumbs = [] }: PropsWi
             <div className="hidden lg:block">
                 <AppSidebar />
             </div>
-            <AppContent variant="sidebar" className="m-3 overflow-x-hidden rounded-md bg-primary-foreground">
+            <AppContent variant="sidebar" className="overflow-x-hidden rounded-md bg-background">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 {children}
             </AppContent>

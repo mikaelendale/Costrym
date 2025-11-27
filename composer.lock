@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4c197343d67fa27ece6e236a12eb55be",
+    "content-hash": "03cb1ecf7229de9f8ff67c19e4494aab",
     "packages": [
         {
             "name": "ably/ably-php",
@@ -1377,6 +1377,83 @@
                 "source": "https://github.com/inertiajs/inertia-laravel/tree/v2.0.10"
             },
             "time": "2025-09-28T21:21:36+00:00"
+        },
+        {
+            "name": "jpcaparas/laravel-firecrawl",
+            "version": "v0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jpcaparas/laravel-firecrawl.git",
+                "reference": "2335f96c0469d1c49f904c69abcbf6ad6d22a0b1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jpcaparas/laravel-firecrawl/zipball/2335f96c0469d1c49f904c69abcbf6ad6d22a0b1",
+                "reference": "2335f96c0469d1c49f904c69abcbf6ad6d22a0b1",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/contracts": "^10.0||^11.0||^12.0",
+                "php": "^8.2||^8.3||^8.4",
+                "spatie/laravel-package-tools": "^1.16"
+            },
+            "require-dev": {
+                "larastan/larastan": "^2.9||^3.0",
+                "laravel/pint": "^1.14",
+                "nunomaduro/collision": "^8.1.1||^7.10.0",
+                "orchestra/testbench": "^10.0.0||^9.0.0||^8.22.0",
+                "pestphp/pest": "^3.0",
+                "pestphp/pest-plugin-arch": "^3.0",
+                "pestphp/pest-plugin-laravel": "^3.0",
+                "phpstan/extension-installer": "^1.3||^2.0",
+                "phpstan/phpstan-deprecation-rules": "^1.1||^2.0",
+                "phpstan/phpstan-phpunit": "^1.3||^2.0",
+                "spatie/laravel-ray": "^1.35"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "LaravelFirecrawl": "JPCaparas\\LaravelFirecrawl\\Facades\\LaravelFirecrawl"
+                    },
+                    "providers": [
+                        "JPCaparas\\LaravelFirecrawl\\LaravelFirecrawlServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "JPCaparas\\LaravelFirecrawl\\": "src/",
+                    "JPCaparas\\LaravelFirecrawl\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "JP Caparas",
+                    "email": "jp@jpcaparas.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Interface with the Firecrawl API using Laravel",
+            "homepage": "https://github.com/jpcaparas/laravel-firecrawl",
+            "keywords": [
+                "crawl",
+                "extract",
+                "firecrawl",
+                "laravel",
+                "llm",
+                "scrape",
+                "web scraping"
+            ],
+            "support": {
+                "issues": "https://github.com/jpcaparas/laravel-firecrawl/issues",
+                "source": "https://github.com/jpcaparas/laravel-firecrawl/tree/v0.1"
+            },
+            "time": "2025-05-01T05:44:20+00:00"
         },
         {
             "name": "knackline/excel-to-x",

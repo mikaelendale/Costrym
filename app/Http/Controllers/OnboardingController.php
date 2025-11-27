@@ -571,6 +571,7 @@ class OnboardingController extends Controller
         $request->validate([
             'understanding' => 'nullable|string',
             'organized_content' => 'nullable|string',
+            'json_file' => 'nullable|string',
         ]);
 
         try {
@@ -600,12 +601,48 @@ class OnboardingController extends Controller
             $user->onboarding_status = true;
             $user->save();
 
+            // Check for uploaded JSON file
+            $jsonFilePath = null;
+            if ($request->input('json_file')) {
+                // Security: ensure filename is just a basename to prevent traversal
+                $filename = basename($request->input('json_file'));
+                $potentialPath = 'financial_data/'.$user->id.'/'.$filename;
+                
+                Log::info('Onboarding completion: Checking for JSON file', [
+                    'user_id' => $user->id,
+                    'json_file_input' => $request->input('json_file'),
+                    'filename' => $filename,
+                    'potential_path' => $potentialPath,
+                ]);
+                
+                if (Storage::disk('local')->exists($potentialPath)) {
+                    $jsonFilePath = $potentialPath;
+                    Log::info('Onboarding completion: JSON file found', [
+                        'user_id' => $user->id,
+                        'path' => $jsonFilePath,
+                    ]);
+                } else {
+                    Log::warning('Onboarding completion: JSON file specified but not found', [
+                        'user_id' => $user->id,
+                        'path' => $potentialPath,
+                        'all_storage_files' => Storage::disk('local')->files('financial_data/'.$user->id),
+                    ]);
+                }
+            } else {
+                Log::info('Onboarding completion: No JSON file in request', [
+                    'user_id' => $user->id,
+                    'all_inputs' => $request->all(),
+                ]);
+            }
+
             // Dispatch DataIngestionJob to fetch financial data from connected integrations
             // MasterOrchestratorJob will be dispatched automatically after ingestion completes
-            DataIngestionJob::dispatch($user->id, isInitialSync: true);
+            DataIngestionJob::dispatch($user->id, isInitialSync: true, jsonFilePath: $jsonFilePath);
 
             Log::info('Onboarding completed, DataIngestionJob dispatched', [
                 'user_id' => $user->id,
+                'has_json_file' => ! is_null($jsonFilePath),
+                'json_file_path' => $jsonFilePath,
                 'note' => 'MasterOrchestratorJob will run after data ingestion completes',
             ]);
 

@@ -59,12 +59,13 @@ Returns only the final JSON output from the simulator, with no modification or c
     - `SolutionGeneratorAgent` (class: `App\Agents\CostOptomizerAgent\SolutionGeneratorAgent`):
         - **Purpose:** Generates actionable cost-cutting solutions based on diagnosed root causes. Invoked second.
     - `SearchAgent` (class: `App\Agents\CostOptomizerAgent\SearchAgent`):
-        - **Purpose:** Runs targeted web searches using `SearchTool` based on solution outputs to gather alternatives, pricing, and implementation insights. Used as needed by other agents.
+        - **Purpose:** Runs targeted web searches using `FirecrawlTool` (web-related_operations) based on solution outputs to gather alternatives, pricing, and implementation insights. Used as needed by other agents.
     - `CostImpactSimulatorAgent` (class: `App\Agents\CostOptomizerAgent\CostImpactSimulatorAgent`):
         - **Purpose:** Simulates and quantifies the impact of each solution, filtering for the most effective strategies. Invoked last.
 
 - **Tools:**
-    - `SearchTool` (class: `App\Tools\SearchTool`):
-        - **Purpose:** Used by `SearchAgent` and `CostImpactSimulatorAgent` to perform targeted searches for alternatives, pricing, and implementation data.
+    - `FirecrawlTool` (class: `App\Tools\FirecrawlTool`):
+        - **Purpose:** Used by `SearchAgent` and `CostImpactSimulatorAgent` to perform web scraping, crawling, and search operations for gathering alternatives, pricing, and implementation data.
+        - **Operations:** Supports map, extract, crawl, scrape, and search operations via Firecrawl API.
 
 - **External Services:** None. All dependencies are internal sub-agents or tools.

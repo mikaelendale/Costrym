@@ -22,7 +22,16 @@ interface Automation {
     } | null;
 }
 
-export default function Index({ automations, filters, typeCounts }: { automations: Automation[], filters: { type: string, search: string }, typeCounts: Record<string, number> }) {
+interface PaginatedAutomations {
+    data: Automation[];
+    links: Array<{
+        url: string | null;
+        label: string;
+        active: boolean;
+    }>;
+}
+
+export default function Index({ automations, filters, typeCounts }: { automations: PaginatedAutomations, filters: { type: string, search: string }, typeCounts: Record<string, number> }) {
     const [search, setSearch] = useState(filters.search);
     const [selectedType, setSelectedType] = useState(filters.type);
 
@@ -46,6 +55,8 @@ export default function Index({ automations, filters, typeCounts }: { automation
                 return '🔄';
             case 'pipeline_complete':
                 return '✅';
+            case 'first_time_cost_analysis':
+                return '📊';
             default:
                 return '📄';
         }
@@ -61,6 +72,8 @@ export default function Index({ automations, filters, typeCounts }: { automation
                 return 'bg-purple-500';
             case 'pipeline_complete':
                 return 'bg-emerald-500';
+            case 'first_time_cost_analysis':
+                return 'bg-orange-500';
             default:
                 return 'bg-gray-500';
         }
@@ -93,9 +106,9 @@ export default function Index({ automations, filters, typeCounts }: { automation
                             View all generated reports, analysis, and automation workflows
                         </p>
                     </div>
-
+ 
                     {/* Stats Cards */}
-                    <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
                         <Card
                             className={`cursor-pointer transition-all hover:shadow-lg ${
                                 selectedType === 'all' ? 'ring-2 ring-blue-500' : ''
@@ -163,6 +176,20 @@ export default function Index({ automations, filters, typeCounts }: { automation
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{typeCounts.pipeline_complete || 0}</div>
+                            </CardContent>
+                        </Card>
+
+                        <Card
+                            className={`cursor-pointer transition-all hover:shadow-lg ${
+                                selectedType === 'first_time_cost_analysis' ? 'ring-2 ring-orange-500' : ''
+                            }`}
+                            onClick={() => handleTypeFilter('first_time_cost_analysis')}
+                        >
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium">📊 Cost Analysis</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{typeCounts.first_time_cost_analysis || 0}</div>
                             </CardContent>
                         </Card>
                     </div>
@@ -299,4 +326,3 @@ export default function Index({ automations, filters, typeCounts }: { automation
         </AppLayout>
     );
 }
-

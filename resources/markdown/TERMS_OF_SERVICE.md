@@ -1,71 +1,205 @@
-# Razory - Terms of Service
+# Costrym - Terms and Conditions
 
-**Last Updated: August 24, 2025**
+**Last Updated: November 21, 2025**
 
-Welcome to Razory! These Terms of Service ("Terms") govern your access to and use of the Razory Chrome Extension, website, and related services (collectively, the "Service"). By accessing or using the Service, you agree to be bound by these Terms. If you do not agree, please do not use Razory.
+## 1. Application of Terms
 
-## 1. Acceptance of Terms
+These Terms apply to your use of the Service (as defined below). By clicking **I agree**:
 
-Razory is provided by \[Founder/Company Name]. By using the Service, you confirm that you are at least 18 years old (or the age of majority in your jurisdiction) and that you agree to these Terms. If you are using Razory on behalf of an organization, you represent that you have the authority to bind that organization to these Terms.
+- You agree to these Terms; and
+- Where your access and use is on behalf of another person (e.g., a company), you confirm that you are authorised to, and do in fact, agree to these Terms on that person's behalf and that, by agreeing to these Terms on that person's behalf, that person is bound by these Terms.
 
-## 2. Changes to Terms
+If you do not agree to these Terms, you are not authorised to access and use the Service, and you must immediately stop doing so.
 
-We may update these Terms from time to time. If we make material changes, we will notify you by posting an updated version or through other communication. Continued use of the Service after changes means you accept the revised Terms.
+---
 
-## 3. Your Account
+## 2. Changes
 
-Some features may require an account. You agree to provide accurate and complete information when registering and to keep your login credentials secure. You are responsible for all activities under your account.
+We may change these Terms at any time by notifying you of the change by email or by posting a notice on the Website. Unless stated otherwise, any change takes effect from the date set out in the notice. You are responsible for ensuring you are familiar with the latest Terms. By continuing to access and use the Service from the date on which the Terms are changed, you agree to be bound by the changed Terms.
 
-## 4. Use of the Service
+These Terms were last updated on **November 21, 2025**.
 
-### 4.1 License to Use
+---
 
-Subject to compliance with these Terms, Razory grants you a limited, non-exclusive, non-transferable license to install and use the Extension for personal productivity and focus tracking.
+## 3. Interpretation
 
-### 4.2 Prohibited Conduct
+**Costrym** means the software owned by us that is used to provide the Service.  
+**Confidential Information** means any non-public information obtained from the other party in connection with the Service. Our Confidential Information includes the underlying Software and IP. Your Confidential Information includes the Data.  
+**Data** means all data, content, and information (including personal information) owned, held, used, or created by you that is inputted into or stored using the Service.  
+**Fees** means the applicable fees set out on the pricing page at www.costrym.app or otherwise agreed in writing.  
+**Force Majeure** means an event beyond reasonable control, excluding events avoidable by reasonable care or lack of funds.  
+**Intellectual Property Rights** include all rights related to inventions, trademarks, designs, data, confidential information, and other rights resulting from intellectual activity.  
+**Objectionable** includes defamatory, obscene, harassing, threatening, harmful, or unlawful content.  
+**Personal information** means information about an identifiable living person.  
+**Personnel** includes officers, employees, contractors, and agents.  
+**Service** means the functionality provided through the Website.  
+**Start Date** means the date that you set up an account.  
+**Underlying Systems** means the Costrym software and related systems used to provide the Service.  
+**We**, **us**, or **our** means the administrators of the Costrym software.  
+**Website** means app.costrym.com.  
+**Year** means a 12-month period starting on the Start Date.  
+**You** or **your** means you and, where applicable, the entity on whose behalf you are acting.
 
-You agree not to:
+---
 
-* Use Razory for unlawful purposes.
-* Attempt to reverse-engineer, copy, or exploit the Service.
-* Interfere with or disrupt the Service’s operation.
-* Misuse data or attempt to gain unauthorized access to our systems.
+## 4. Provision of the Service
 
-## 5. Data & Privacy
+We will use reasonable efforts to provide the Service:
 
-Razory tracks active tab usage and related metadata to provide focus reports. We do not sell your personal data. Data handling is described in our \[Privacy Policy].
+- In accordance with these Terms and Singaporean law
+- With reasonable care and skill
+- Using suitably qualified personnel
 
-## 6. Intellectual Property
+Provision of the Service is non-exclusive. We may provide the Service to others.
 
-All intellectual property rights in the Service (excluding your data) are owned by Razory or its licensors. You may not use our trademarks, branding, or proprietary assets without permission.
+We will use reasonable efforts to ensure 24/7 availability, except for maintenance, development, or Force Majeure events. We will attempt to notify you in advance of any downtime.
 
-## 7. Fees
+The Service interoperates with third-party features. If a third-party provider stops offering a feature, we may remove it. No refunds or compensation apply.
 
-Razory may offer both free and paid features. If you purchase a paid plan, you agree to pay the applicable fees. Payments are non-refundable unless otherwise stated.
+---
 
-## 8. Termination
+## 5. Your Obligations
 
-We may suspend or terminate your access at any time if you violate these Terms or misuse the Service. Upon termination, your right to use Razory immediately ends.
+You and your personnel must:
 
-## 9. Disclaimer of Warranties
+- Use the Service only for internal business and lawful purposes
+- Not resell or commercially exploit the Service
 
-Razory is provided on an "AS IS" and "AS AVAILABLE" basis. We make no guarantees about accuracy, reliability, or availability.
+When accessing the Service, you must:
 
-## 10. Limitation of Liability
+- Not impersonate others
+- Not undermine security or integrity
+- Not impair system functionality
+- Not access unauthorised data
+- Not store or transmit Objectionable or infringing data
 
-To the maximum extent permitted by law, Razory and its team shall not be liable for indirect, incidental, or consequential damages arising from your use of the Service.
+You are responsible for ensuring your personnel comply with the Terms.
 
-## 11. Indemnification
+You are responsible for all required licences, permissions, and consents related to your use of the Service and Data.
 
-You agree to indemnify and hold harmless Razory, its team, and partners against any claims, damages, or liabilities arising from your misuse of the Service or violation of these Terms.
+---
 
-## 12. Governing Law
+## 6. Data
 
-These Terms shall be governed by and construed under the laws of \[Your Country/State], without regard to conflict of law rules.
+You acknowledge that we may require access to Data to perform obligations under these Terms.
 
-## 13. Contact Us
+You must arrange consents required for us to access Data.
 
-If you have questions about these Terms, please contact us at:
+You agree that:
 
-Razory
-Email: [support@razory.app](mailto:support@razory.app)
+- We may generate anonymised statistical and analytical data
+- We may use this for research and development
+- All Intellectual Property Rights in Analytical Data belong to us
+
+Where Data contains personal information, we act as your data processor. You must obtain necessary consents.
+
+You agree to maintain your own backup copies of Data.
+
+You indemnify us against claims relating to infringement or misuse of Data.
+
+---
+
+## 7. Subscription Fees
+
+You must pay the Fees as agreed.
+
+We will provide invoices on a monthly or annual basis.
+
+Subscription fees are due:
+
+- Every 30 days (monthly plans)
+- Every 360 days (annual plans)
+
+We may increase Fees with 30 days' notice. You may terminate before the increase effective date.
+
+---
+
+## 8. Intellectual Property
+
+All Intellectual Property Rights in the Service, Website, and Underlying Systems belong to us.
+
+All Intellectual Property Rights in your Data remain yours. You grant us a licence to use Data to perform obligations.
+
+Feedback you provide becomes our property.
+
+The Service may link to third-party sites; we are not liable for their content.
+
+---
+
+## 9. Confidentiality
+
+Each party must keep the other's Confidential Information secure and only disclose on a need-to-know basis.
+
+Confidentiality does not apply where disclosure is:
+
+- Required by law
+- Publicly available
+- Rightfully received from a third party
+- Required for a bona fide business sale
+
+---
+
+## 10. Warranties
+
+Each party warrants it has authority to enter this agreement.
+
+All warranties not expressly stated are excluded to the extent permitted by law.
+
+You agree you are acquiring the Service for business purposes.
+
+If a non-excludable warranty is implied, our liability is limited to resupply or cost of resupply.
+
+---
+
+## 11. Liability
+
+Neither party is liable for:
+
+- Loss of profits, revenue, savings, data, or goodwill
+- Consequential or indirect loss
+
+Limitations do not apply to:
+
+- Personal injury or death
+- Fraud or wilful misconduct
+- Breach of confidentiality
+
+You remain liable for Fees and indemnities.
+
+Each party must mitigate its losses.
+
+---
+
+## 12. Term, Termination, and Suspension
+
+These Terms continue until terminated by notice (minimum 30 days unless otherwise stated).
+
+Either party may terminate immediately for material breach or insolvency.
+
+Termination does not affect prior rights or obligations.
+
+No refunds are payable upon termination.
+
+Within one month of termination, you may request:
+
+- A copy of your Data (fees may apply)
+- Deletion of your Data
+
+We may suspend access if you breach the Terms or compromise system integrity.
+
+---
+
+## 13. Governing Law and Dispute Resolution
+
+These Terms are governed by Singaporean law.
+
+Any dispute shall be first subject to good faith negotiations between the parties.
+
+---
+
+## 14. Contact Us
+
+If you have questions about these Terms and Conditions, contact us at:
+
+**Costrym**  
+**Email:** accounts@budera.ai

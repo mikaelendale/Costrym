@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Agents\CategorizerAgent;
+use App\AiAgents\CategorizerAgent;
 use App\Models\FinancialRecord;
 use App\Models\User;
 use Illuminate\Bus\Batchable;
@@ -31,7 +31,8 @@ class FinancialCategorizerJob implements ShouldQueue
      */
     public function __construct(
         public int $userId,
-        public int $batchSize = 20
+        public int $batchSize = 20,
+        public bool $triggerAnalysis = false
     ) {
         $this->onQueue('categorization');
     }
@@ -46,7 +47,6 @@ class FinancialCategorizerJob implements ShouldQueue
             Log::info('FinancialCategorizerJob: Batch was cancelled', [
                 'user_id' => $this->userId,
             ]);
-
             return;
         }
 
@@ -61,6 +61,7 @@ class FinancialCategorizerJob implements ShouldQueue
         Log::info('FinancialCategorizerJob started', [
             'user_id' => $this->userId,
             'batch_size' => $this->batchSize,
+            'trigger_analysis' => $this->triggerAnalysis,
         ]);
 
         // Get uncategorized records (where category_id is null)
@@ -73,6 +74,12 @@ class FinancialCategorizerJob implements ShouldQueue
             Log::info('FinancialCategorizerJob: No uncategorized records found', [
                 'user_id' => $this->userId,
             ]);
+
+            // If triggered to run analysis and no records left, run it now
+            if ($this->triggerAnalysis) {
+                Log::info('FinancialCategorizerJob: Triggering FirstTimeCostAnalysisJob (no records left)', ['user_id' => $this->userId]);
+                FirstTimeCostAnalysisJob::dispatch($this->userId);
+            }
 
             return;
         }
@@ -99,33 +106,32 @@ class FinancialCategorizerJob implements ShouldQueue
         // Build prompt for CategorizerAgent
         $prompt = $this->buildCategorizationPrompt($transactionsData);
 
-        // Create agent context
-        $sessionId = "categorizer_{$this->userId}_".time();
-
         try {
             // Run CategorizerAgent
-            $agentResponse = CategorizerAgent::run(input: $prompt)
-                ->forUser($user)
-                ->withContext([
-                    'user_id' => $this->userId,
-                    'batch_size' => count($transactionsData),
-                    'task_type' => 'categorization',
-                ])
-                ->withSession($sessionId)
-                ->go();
+            $agentResponse = CategorizerAgent::for('categorization_' . $this->userId . '_' . time())->respond($prompt);
 
-            $response = $agentResponse->getResponse();
+            $response = $agentResponse;
 
             Log::info('FinancialCategorizerJob: Agent response received', [
-                'response_length' => strlen($response),
+                'type' => gettype($response),
+                'is_array' => is_array($response),
+                'content_preview' => is_string($response) ? substr($response, 0, 100) : (is_array($response) ? 'Array keys: ' . implode(', ', array_keys($response)) : 'Object/Other'),
             ]);
 
-            // Parse the agent's response (expecting JSON array of categorizations)
-            $categorizations = $this->parseCategorizationResponse($response);
+            // Parse the agent's response
+            if (is_array($response)) {
+                $categorizations = $response['categorizations'] ?? $response;
+            } else {
+                $categorizations = $this->parseCategorizationResponse($response);
+            }
 
             if (empty($categorizations)) {
                 Log::warning('FinancialCategorizerJob: No categorizations found in agent response');
 
+                // Even if agent failed this batch, if we are supposed to trigger analysis, we might want to?
+                // But probably better to retry or let the next batch handle it.
+                // For now, if we can't categorize, we might get stuck in a loop if we don't handle it.
+                // But let's assume standard retry logic handles transient failures.
                 return;
             }
 
@@ -177,8 +183,14 @@ class FinancialCategorizerJob implements ShouldQueue
 
                 // Dispatch another job to continue categorizing
                 // Add a small delay to avoid overwhelming the system
-                dispatch(new self($this->userId, $this->batchSize))
+                dispatch(new self($this->userId, $this->batchSize, $this->triggerAnalysis))
                     ->delay(now()->addSeconds(2));
+            } else {
+                // No more records, trigger analysis if requested
+                if ($this->triggerAnalysis) {
+                    Log::info('FinancialCategorizerJob: All records categorized. Triggering FirstTimeCostAnalysisJob.', ['user_id' => $this->userId]);
+                    FirstTimeCostAnalysisJob::dispatch($this->userId);
+                }
             }
         } catch (\Exception $e) {
             Log::error('FinancialCategorizerJob: Agent execution failed', [

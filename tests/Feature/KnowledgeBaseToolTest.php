@@ -1,6 +1,6 @@
 <?php
 
-use App\Agents\MasterOrchestrator;
+use App\AiAgents\MasterOrchestrator;
 use App\Models\KnowledgeBase;
 use App\Models\User;
 use App\Tools\KnowledgeBaseTool;

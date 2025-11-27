@@ -20,6 +20,15 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                     {/* <div className="block xl:hidden">
                         <HeaderStatsMini />
                     </div> */}
+                    {/* <div className=""> 
+                        <div className="text-sm text-primary">
+                            <p className="flex items-center gap-2 text-xl bg-primary-foreground rounded-md px-2 py-1 text-primary border 
+                            ">
+                                <span className="font-normal ">$10,000/mo</span>
+                                <span className="font-normal">Saved</span>
+                            </p>
+                        </div>
+                    </div> */}
                     <NotificationsDropdown />
                     <ModeToggle className="" />
                 </div>

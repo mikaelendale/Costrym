@@ -14,7 +14,8 @@ class CheckDailyTasks extends Command
      */
     protected $signature = 'tasks:check-daily 
                             {--dispatch : Dispatch tasks immediately instead of showing summary}
-                            {--user= : Check tasks for specific user ID}';
+                            {--user= : Check tasks for specific user ID}
+                            {--first= : Execute only the first N tasks (default: 3)}';
 
     /**
      * The console command description.
@@ -52,13 +53,24 @@ class CheckDailyTasks extends Command
         $this->displayTasksSummary($todaysTasks);
 
         // Dispatch if requested
-        if ($this->option('dispatch')) {
+        if ($this->option('dispatch') || $this->option('first')) {
             $this->newLine();
-            $this->info('🚀 Dispatching tasks for execution...');
+            
+            // Limit to first N tasks if --first option is used
+            $limit = $this->option('first') ? (int) $this->option('first') : ($this->option('dispatch') ? null : 3);
+            
+            if ($limit) {
+                $tasksToDispatch = $todaysTasks->take($limit);
+                $this->info("🚀 Dispatching first {$limit} task(s) for execution...");
+            } else {
+                $tasksToDispatch = $todaysTasks;
+                $this->info('🚀 Dispatching all tasks for execution...');
+            }
+            
             $this->newLine();
 
             $dispatched = 0;
-            foreach ($todaysTasks as $queueEntry) {
+            foreach ($tasksToDispatch as $queueEntry) {
                 try {
                     ProcessTaskQueue::dispatch($queueEntry->id)
                         ->onQueue('task_execution');
@@ -82,9 +94,14 @@ class CheckDailyTasks extends Command
 
             $this->newLine();
             $this->info("✅ Dispatched {$dispatched} task(s) for execution");
+            
+            if ($limit && $todaysTasks->count() > $limit) {
+                $remaining = $todaysTasks->count() - $limit;
+                $this->comment("💡 {$remaining} task(s) remaining. Use --dispatch to execute all.");
+            }
         } else {
             $this->newLine();
-            $this->comment('💡 Use --dispatch flag to execute these tasks');
+            $this->comment('💡 Use --first=3 to execute first 3 tasks or --dispatch to execute all');
         }
 
         return self::SUCCESS;

@@ -107,59 +107,195 @@ class ProcessTaskQueue implements ShouldQueue
     }
 
     /**
-     * Execute task using MasterOrchestratorExecutor
+     * Execute task using Laragent TaskExecutorAgent with structured output
      */
     protected function executeWithMasterOrchestrator(TaskQueue $queueEntry): string
     {
-        Log::info('Executing task with MasterOrchestratorExecutor', [
+        Log::info('Executing task with Laragent TaskExecutorAgent', [
             'queue_id' => $queueEntry->id,
             'task_id' => $queueEntry->task_id,
         ]);
 
-        // Update queue entry to show it's using MasterOrchestratorExecutor
-        $queueEntry->update(['agent_name' => 'master_orchestrator_executor']);
+        // Update queue entry to show it's using TaskExecutorAgent
+        $queueEntry->update(['agent_name' => 'task_executor_agent']);
 
-        // Get available agents for executor
+        // Get task data
+        $taskData = $queueEntry->payload['task_data'] ?? [];
+        $taskName = $taskData['name'] ?? 'Task Execution';
+        $taskDescription = $taskData['description'] ?? '';
+        $estimatedSavings = $taskData['estimated_savings'] ?? 'N/A';
+
+        // Get available agents info for context
         $availableAgents = config('agents.available_agents', []);
         $enabledAgents = collect($availableAgents)
             ->filter(fn ($agent) => $agent['enabled'] ?? true)
             ->map(fn ($agent, $key) => [
                 'name' => $key,
                 'description' => $agent['description'] ?? '',
-                'capabilities' => $agent['capabilities'] ?? [],
+                'capabilities' => implode(', ', array_slice($agent['capabilities'] ?? [], 0, 5)),
             ])
             ->values()
             ->toArray();
 
-        // Get task data
-        $taskData = $queueEntry->payload['task_data'] ?? [];
+        // Build execution prompt
+        $executionPrompt = $this->buildExecutionPrompt($taskName, $taskDescription, $estimatedSavings, $enabledAgents);
 
-        // Build context for executor
-        $taskName = $taskData['name'] ?? 'Task Execution';
-        $taskDescription = $taskData['description'] ?? '';
-        $estimatedSavings = $taskData['estimated_savings'] ?? 'N/A';
-
-        // Execute with MasterOrchestratorExecutor
+        // Execute with Laragent TaskExecutorAgent (returns structured output)
         $user = $queueEntry->user;
         $sessionId = "task_execution_{$queueEntry->id}_".time();
 
-        $response = \App\Agents\MasterOrchestratorExecutor::run(input: "Execute the approved task: {$taskName}")
-            ->forUser($user)
-            ->withSession($sessionId)
-            ->withContext([
-                'task_execution' => true,
-                'queue_id' => $queueEntry->id,
-                'task_id' => $queueEntry->task_id,
-                'user_id' => $queueEntry->user_id,
-                'task_data' => $taskData,
-                'task_name' => $taskName,
-                'task_description' => $taskDescription,
-                'estimated_savings' => $estimatedSavings,
-                'available_agents' => $enabledAgents,
-            ])
-            ->go();
+        $agent = \App\AiAgents\TaskExecutorAgent::for($sessionId)
+            ->forUser($user) // Laragent expects user object
+            ->setUserId($user->id); // Set user ID for tools
+        
+        // Get structured response - Laragent will use the responseSchema
+        $structuredResponse = $agent->respond($executionPrompt);
 
-        return is_string($response) ? $response : json_encode($response);
+        // Process structured response through workflow chain
+        $result = $this->processStructuredResponse($structuredResponse, $queueEntry);
+
+        return $result;
+    }
+
+    /**
+     * Build execution prompt for the agent
+     */
+    protected function buildExecutionPrompt(string $taskName, string $taskDescription, string $estimatedSavings, array $availableAgents): string
+    {
+        $agentsList = '';
+        foreach ($availableAgents as $agent) {
+            $agentsList .= "- **{$agent['name']}**: {$agent['description']} (Capabilities: {$agent['capabilities']})\n";
+        }
+
+        return <<<PROMPT
+Execute the following approved task:
+
+**Task:** {$taskName}
+
+**Description:** {$taskDescription}
+
+**Estimated Savings:** {$estimatedSavings}
+
+**Available Agents:**
+{$agentsList}
+
+**Instructions:**
+1. Analyze the task requirements thoroughly
+2. Use available tools and data to perform the analysis
+3. Identify specific cost-saving opportunities
+4. Create actionable recommendations with savings estimates
+5. Generate a comprehensive markdown report
+
+**Important:**
+- Return structured data matching the response schema
+- Include specific numbers, amounts, and metrics
+- Be actionable - recommendations should be specific and implementable
+- Focus on measurable cost savings and business impact
+PROMPT;
+    }
+
+    /**
+     * Process structured response through workflow chain
+     */
+    protected function processStructuredResponse($structuredResponse, TaskQueue $queueEntry): string
+    {
+        // Convert structured response to array if it's an object
+        $data = is_object($structuredResponse) ? (array) $structuredResponse : $structuredResponse;
+
+        Log::info('Processing structured response from TaskExecutorAgent', [
+            'queue_id' => $queueEntry->id,
+            'execution_status' => $data['execution_status'] ?? 'unknown',
+            'findings_count' => count($data['key_findings'] ?? []),
+            'recommendations_count' => count($data['recommendations'] ?? []),
+        ]);
+
+        // Workflow chain: Use structured data to enhance the markdown report
+        $markdownReport = $data['markdown_report'] ?? '';
+
+        // If markdown report is missing or incomplete, build it from structured data
+        if (empty($markdownReport) || strlen($markdownReport) < 500) {
+            $markdownReport = $this->buildMarkdownFromStructuredData($data, $queueEntry);
+        }
+
+        // Store structured data in queue result for later use
+        $queueEntry->update([
+            'result' => json_encode([
+                'structured_data' => $data,
+                'markdown_report' => $markdownReport,
+            ]),
+        ]);
+
+        return $markdownReport;
+    }
+
+    /**
+     * Build markdown report from structured data
+     */
+    protected function buildMarkdownFromStructuredData(array $data, TaskQueue $queueEntry): string
+    {
+        $task = $queueEntry->task;
+        $taskName = $task->data['name'] ?? 'Task Execution';
+
+        $markdown = "# Task Execution Report: {$taskName}\n\n";
+        $markdown .= "**Status:** {$data['execution_status']}\n\n";
+        $markdown .= "## 📋 Executive Summary\n\n";
+        $markdown .= $data['analysis_summary'] ?? 'Analysis completed successfully.'."\n\n";
+
+        // Key Findings
+        if (!empty($data['key_findings'])) {
+            $markdown .= "## 🔍 Key Findings\n\n";
+            foreach ($data['key_findings'] as $finding) {
+                $priority = $finding['priority'] ?? 'medium';
+                $markdown .= "### {$finding['finding']} (Priority: {$priority})\n\n";
+                $markdown .= "**Impact:** {$finding['impact']}\n\n";
+            }
+        }
+
+        // Recommendations
+        if (!empty($data['recommendations'])) {
+            $markdown .= "## 💡 Recommendations\n\n";
+            foreach ($data['recommendations'] as $rec) {
+                $markdown .= "### {$rec['title']}\n\n";
+                $markdown .= "{$rec['description']}\n\n";
+                $markdown .= "- **Estimated Savings:** {$rec['estimated_savings']}\n";
+                $markdown .= "- **Effort:** {$rec['effort']}\n";
+                $markdown .= "- **Risk:** {$rec['risk']}\n\n";
+            }
+        }
+
+        // Metrics
+        if (!empty($data['metrics'])) {
+            $markdown .= "## 📊 Metrics\n\n";
+            $metrics = $data['metrics'];
+            $monthlySavings = $metrics['potential_savings_monthly'] ?? 0;
+            $annualSavings = $metrics['potential_savings_annual'] ?? 0;
+            $itemsAnalyzed = $metrics['items_analyzed'] ?? 0;
+            $issuesFound = $metrics['issues_found'] ?? 0;
+            $markdown .= "- **Potential Monthly Savings:** \${$monthlySavings}\n";
+            $markdown .= "- **Potential Annual Savings:** \${$annualSavings}\n";
+            $markdown .= "- **Items Analyzed:** {$itemsAnalyzed}\n";
+            $markdown .= "- **Issues Found:** {$issuesFound}\n\n";
+        }
+
+        // Agents Utilized
+        if (!empty($data['agents_utilized'])) {
+            $markdown .= "## 🤖 Agents Utilized\n\n";
+            foreach ($data['agents_utilized'] as $agent) {
+                $markdown .= "- **{$agent['agent_name']}**: {$agent['contribution']}\n";
+            }
+            $markdown .= "\n";
+        }
+
+        // Next Steps
+        if (!empty($data['next_steps'])) {
+            $markdown .= "## ✅ Next Steps\n\n";
+            foreach ($data['next_steps'] as $index => $step) {
+                $markdown .= ($index + 1).". {$step}\n";
+            }
+            $markdown .= "\n";
+        }
+
+        return $markdown;
     }
 
     /**
@@ -201,11 +337,18 @@ class ProcessTaskQueue implements ShouldQueue
         // Build prompt from task data
         $prompt = $this->buildPrompt($taskData);
 
-        // Execute the agent
-        $executor = AgentExecutor::for($agent)
-            ->withContext($context->all());
-
-        $response = $executor->run($prompt);
+        // Execute the agent (legacy VizraADK - deprecated, use Laragent instead)
+        // This method is kept for backward compatibility
+        $response = $agent::run(input: $prompt)
+            ->forUser($queueEntry->user)
+            ->withSession("legacy_task_{$queueEntry->id}")
+            ->withContext([
+                'user_id' => $queueEntry->user_id,
+                'task_id' => $queueEntry->task_id,
+                'queue_id' => $queueEntry->id,
+                'task_data' => $queueEntry->payload['task_data'] ?? [],
+            ])
+            ->go();
 
         // Extract response
         return is_string($response) ? $response : json_encode($response);

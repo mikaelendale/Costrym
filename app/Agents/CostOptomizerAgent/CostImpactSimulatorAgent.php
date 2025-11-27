@@ -2,7 +2,7 @@
 
 namespace App\Agents\CostOptomizerAgent;
 
-use App\Tools\SearchTool;
+use App\Tools\FirecrawlTool;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Text\PendingRequest;
 use Vizra\VizraADK\Agents\BaseLlmAgent;
@@ -15,7 +15,7 @@ class CostImpactSimulatorAgent extends BaseLlmAgent
     protected string $description = 'Evaluates proposed cost-cutting solutions through detailed simulations to assess potential savings, effort, and risk, ensuring only the most effective strategies are recommended.';
 
     protected array $tool = [
-        SearchTool::class,
+        FirecrawlTool::class,
     ];
 
     protected string $instructions = <<<'INSTRUCTIONS'
@@ -61,12 +61,12 @@ Take the output from the `RootAnalysisAgent` and, for each `identified_causes`, 
 }
 ```
 
-From the incoming `proposed_solutions` you will take the solution_title and solution_description and search it as query in the `SearchTool` to:
+From the incoming `proposed_solutions` you will take the solution_title and solution_description and search it as query using the `web-related_operations` tool (with operation='search') to:
 1. search for alternate services/vender that can be used to implement the solution at a lower cost. Example: If the solution is about "migrating to a cheaper cloud provider" or "our current cloud service usage is high cost", you will search for "cheaper cloud providers" to find alternatives.
 2. analyze the solution(solution_description and solution_title) to provide more accurate estimates for savings, effort and risk. Example: If the solution is about "optimizing cloud storage costs by switching to a different storage class", you will search for "cloud storage cost optimization strategies" to find relevant data on potential savings, implementation effort, and associated risks.
-3. In general , use the `SearchTool` to gather infromation about exactly what to do how to do in very precise manner by using the users data(raw data) as context for any infomration and provide a precise and targeted answer for the solution provided.
+3. In general, use the `web-related_operations` tool to gather information about exactly what to do how to do in very precise manner by using the users data(raw data) as context for any information and provide a precise and targeted answer for the solution provided.
 
-After using the SearchTool you will perform the simulation as below:
+After using the web search tool you will perform the simulation as below:
 
 **Step-by-Step Logic to Follow:**
 1.  **Evaluate Every Solution:** Iterate through every `proposed_solution` in the input.
@@ -97,7 +97,7 @@ After using the SearchTool you will perform the simulation as below:
       "operational_risk": "Low",
       "solution_description": "This solution description is the result from the simulation and search tool insights. and Make the solutions very specific, quantifiable, actionable and very precise based on the user context businees data.",
       "reason": "A brief explanation of why this solution was proposed."
-      "search_tool_insights": "A summary of insights gathered from the SearchTool to support the estimates and recommendations."
+      "search_tool_insights": "A summary of insights gathered from the web search to support the estimates and recommendations."
     }
   ]
 }

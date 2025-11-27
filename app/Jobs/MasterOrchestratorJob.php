@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Agents\MasterOrchestrator;
+use App\AiAgents\MasterOrchestrator;
 use App\Models\KnowledgeBase;
 use App\Models\Task;
 use App\Models\User;
@@ -23,7 +23,6 @@ class MasterOrchestratorJob implements ShouldQueue
      */
     public function __construct(
         public int $userId,
-        public string $scenario = 'first_onboarding',
         public ?array $additionalContext = null
     ) {
         $this->onQueue('master_orchestrator');
@@ -36,47 +35,39 @@ class MasterOrchestratorJob implements ShouldQueue
     {
         Log::info('MasterOrchestratorJob started', [
             'user_id' => $this->userId,
-            'scenario' => $this->scenario,
         ]);
 
         try {
             $user = User::findOrFail($this->userId);
 
-            // Build dynamic prompt based on scenario
-            $prompt = $this->buildPromptForScenario($user);
+            // Build prompt for task generation
+            $prompt = $this->buildPrompt($user);
 
             Log::info('MasterOrchestratorJob: Running agent', [
-                'scenario' => $this->scenario,
                 'prompt_length' => strlen($prompt),
             ]);
 
-            // Run MasterOrchestrator agent
-            $sessionId = "master_orchestrator_{$this->userId}_{$this->scenario}_".time();
-            $agentResponse = MasterOrchestrator::run(input: $prompt)
-                ->forUser($user)
-                ->withSession($sessionId)
-                ->withContext([
-                    'scenario' => $this->scenario,
-                    'user_id' => $this->userId,
-                ])
-                ->go();
+            // Run MasterOrchestrator agent (Laragent)
+            $sessionId = "master_orchestrator_{$this->userId}_".time();
+            $agent = MasterOrchestrator::for($sessionId)
+                ->forUser($user);
+
+            $agentResponse = $agent->respond($prompt);
 
             Log::info('MasterOrchestratorJob: Agent response received', [
                 'response_length' => strlen($agentResponse),
             ]);
 
-            // Process response based on scenario
-            $this->processResponse($agentResponse, $user);
+            // Process response and create tasks
+            $this->createTasks($agentResponse, $user);
 
             Log::info('MasterOrchestratorJob completed', [
                 'user_id' => $this->userId,
-                'scenario' => $this->scenario,
             ]);
 
         } catch (\Exception $e) {
             Log::error('MasterOrchestratorJob failed', [
                 'user_id' => $this->userId,
-                'scenario' => $this->scenario,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -86,9 +77,9 @@ class MasterOrchestratorJob implements ShouldQueue
     }
 
     /**
-     * Build dynamic prompt based on scenario
+     * Build prompt for task generation
      */
-    protected function buildPromptForScenario(User $user): string
+    protected function buildPrompt(User $user): string
     {
         // Get user context from knowledge base
         $knowledgeBase = KnowledgeBase::where('user_id', $user->id)->first();
@@ -97,11 +88,10 @@ class MasterOrchestratorJob implements ShouldQueue
         // Get existing tasks count
         $existingTasksCount = Task::where('user_id', $user->id)->count();
 
-        // Prepare common data
+        // Prepare prompt data
         $promptData = [
             'user' => $user,
             'user_context' => $userContext,
-            'scenario' => $this->scenario,
             'existing_tasks_count' => $existingTasksCount,
             'company_name' => $userContext['company_name'] ?? 'the company',
             'industry' => $userContext['industry'] ?? 'their industry',
@@ -111,46 +101,23 @@ class MasterOrchestratorJob implements ShouldQueue
             'additional_context' => $this->additionalContext ?? [],
         ];
 
-        // Render scenario-specific prompt
-        $promptPath = match ($this->scenario) {
-            'first_onboarding' => 'prompts/master_orchestrator/first_onboarding.blade.php',
-            'task_generation' => 'prompts/master_orchestrator/task_generation.blade.php',
-            'task_review' => 'prompts/master_orchestrator/task_review.blade.php',
-            'cost_analysis' => 'prompts/master_orchestrator/cost_analysis.blade.php',
-            default => 'prompts/master_orchestrator/default.blade.php',
-        };
+        // Use first_onboarding prompt (or default if not found)
+        $promptPath = resource_path('prompts/master_orchestrator/first_onboarding.blade.php');
 
-        $fullPath = resource_path($promptPath);
-
-        if (! file_exists($fullPath)) {
+        if (! file_exists($promptPath)) {
             Log::warning('MasterOrchestratorJob: Prompt file not found, using default', [
-                'scenario' => $this->scenario,
                 'path' => $promptPath,
             ]);
-            $fullPath = resource_path('prompts/master_orchestrator/default.blade.php');
+            $promptPath = resource_path('prompts/master_orchestrator/default.blade.php');
         }
 
-        return view()->file($fullPath, $promptData)->render();
+        return view()->file($promptPath, $promptData)->render();
     }
 
     /**
-     * Process agent response based on scenario
+     * Create tasks from agent response
      */
-    protected function processResponse(string $response, User $user): void
-    {
-        match ($this->scenario) {
-            'first_onboarding' => $this->processTaskGeneration($response, $user),
-            'task_generation' => $this->processTaskGeneration($response, $user),
-            'task_review' => $this->processTaskReview($response, $user),
-            'cost_analysis' => $this->processCostAnalysis($response, $user),
-            default => Log::info('No specific processing for scenario', ['scenario' => $this->scenario]),
-        };
-    }
-
-    /**
-     * Process task generation response
-     */
-    protected function processTaskGeneration(string $response, User $user): void
+    protected function createTasks(string $response, User $user): void
     {
         try {
             // Extract JSON from response
@@ -166,7 +133,6 @@ class MasterOrchestratorJob implements ShouldQueue
 
             // Create tasks (agent will be selected dynamically when approved)
             $createdTasks = [];
-            $createdCount = 0;
             foreach ($tasksData as $index => $taskData) {
                 $task = Task::create([
                     'user_id' => $user->id,
@@ -186,19 +152,18 @@ class MasterOrchestratorJob implements ShouldQueue
                 ]);
 
                 $createdTasks[] = $task;
-                $createdCount++;
             }
 
             Log::info('Tasks created from agent response', [
                 'user_id' => $user->id,
-                'count' => $createdCount,
+                'count' => count($createdTasks),
             ]);
 
             // Save task generation summary as MD
             $this->saveTaskGenerationSummary($response, $user, $createdTasks);
 
         } catch (\Exception $e) {
-            Log::error('Failed to process task generation', [
+            Log::error('Failed to create tasks', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
@@ -227,7 +192,6 @@ class MasterOrchestratorJob implements ShouldQueue
 # 📋 Task Generation Report
 
 **Date:** {$this->getFormattedDate()}
-**Scenario:** {$this->scenario}
 **User:** {$user->name}
 
 ---
@@ -258,11 +222,10 @@ MD;
             \App\Models\Automation::create([
                 'user_id' => $user->id,
                 'type' => 'task_generation',
-                'name' => "Task Generation - {$this->scenario}",
+                'name' => 'Task Generation Report',
                 'description' => "Generated {$taskCount} tasks with estimated savings of \${$totalSavings}/month",
                 'markdown_content' => $mdContent,
                 'metadata' => [
-                    'scenario' => $this->scenario,
                     'task_count' => $taskCount,
                     'estimated_savings' => $totalSavings,
                     'task_ids' => collect($createdTasks)->pluck('id')->toArray(),
@@ -288,30 +251,6 @@ MD;
     protected function getFormattedDate(): string
     {
         return now()->format('Y-m-d H:i:s');
-    }
-
-    /**
-     * Process task review response
-     */
-    protected function processTaskReview(string $response, User $user): void
-    {
-        Log::info('Task review completed', [
-            'user_id' => $user->id,
-            'response_length' => strlen($response),
-        ]);
-        // Additional processing can be added here
-    }
-
-    /**
-     * Process cost analysis response
-     */
-    protected function processCostAnalysis(string $response, User $user): void
-    {
-        Log::info('Cost analysis completed', [
-            'user_id' => $user->id,
-            'response_length' => strlen($response),
-        ]);
-        // Additional processing can be added here
     }
 
     /**
@@ -343,7 +282,6 @@ MD;
     {
         Log::error('MasterOrchestratorJob permanently failed', [
             'user_id' => $this->userId,
-            'scenario' => $this->scenario,
             'error' => $exception->getMessage(),
         ]);
     }

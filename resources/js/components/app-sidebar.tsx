@@ -5,7 +5,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { ChatTeardropTextIcon, CreditCard, HouseIcon, NetworkIcon, TrendUpIcon } from '@phosphor-icons/react';
-import { BrickWall, GitPullRequestDraft, UserCheck } from 'lucide-react';
+import { BrickWall, GitPullRequestDraft, UserCheck, WorkflowIcon } from 'lucide-react';
 import AppLogo from './app-logo';
 const NavFooterBudNetCardItems: NavItem[] = [
     {
@@ -29,19 +29,12 @@ const mainNavItems: NavItem[] = [
     //     icon: GiftIcon,
     //     // roles: ['user'],
     // },
-
     {
-        title: 'Optimization Cost',
-        href: '/optimization-costs',
-        icon: CreditCard,
+        title: 'Automations',
+        href: '/automations',
+        icon: WorkflowIcon,
         // roles: ['user'],
-    },
-    {
-        title: 'Strategy',
-        href: '/strategy-overview',
-        icon: TrendUpIcon,
-        roles: ['user', 'admin'],
-    },
+    }, 
     {
         title: 'Admin Panel',
         href: '/admin/dashboard',

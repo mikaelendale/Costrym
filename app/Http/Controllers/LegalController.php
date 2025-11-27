@@ -43,4 +43,23 @@ class LegalController extends Controller
             'pageType' => 'terms',
         ]);
     }
+
+    public function refundPolicy()
+    {
+        try {
+            $refundPolicyContent = file_get_contents(
+                resource_path('markdown/REFUND_POLICY.md')
+            );
+        } catch (\Exception $e) {
+            $refundPolicyContent = "# Refund Policy\n\nRefund policy content could not be loaded.";
+        }
+
+        return Inertia::render('Legal/Refund', [
+            'content' => $refundPolicyContent,
+            'pageTitle' => 'Refund Policy – BlazeMail',
+            'pageDescription' => 'Read the refund policy for using BlazeMail services',
+            'lastUpdated' => 'January 15, 2024',
+            'pageType' => 'refund-policy',
+        ]);
+    }
 }

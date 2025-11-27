@@ -32,6 +32,9 @@ export default function FooterSection() {
                             <Link href="/changelog" className="hover:text-primary transition-colors">
                                 Changelog
                             </Link>
+                            <Link href="/refund-policy" className="hover:text-primary transition-colors">
+                                Refund Policy
+                            </Link>
                         </div>
                     </div>
                     <div className="items-center gap-2 hidden sm:flex text-sm text-muted-foreground">

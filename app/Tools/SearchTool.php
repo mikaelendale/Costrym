@@ -5,49 +5,29 @@ namespace App\Tools;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Vizra\VizraADK\Contracts\ToolInterface;
-use Vizra\VizraADK\Memory\AgentMemory;
-use Vizra\VizraADK\System\AgentContext;
+use LarAgent\Tool;
 
-class SearchTool implements ToolInterface
+/**
+ * @deprecated This tool is deprecated. Use FirecrawlTool with operation='search' instead.
+ * @see \App\Tools\FirecrawlTool
+ */
+class SearchTool extends Tool
 {
-    /**
-     * Get the tool's definition for the LLM.
-     * This structure should be JSON schema compatible.
-     */
-    public function definition(): array
-    {
-        return [
-            'name' => 'search',
-            'description' => 'Search for information or product online using a search tool.',
-            'parameters' => [
-                'type' => 'object',
-                'properties' => [
-                    'query' => [
-                        'type' => 'string',
-                        'description' => 'The search query to look up online.',
-                    ],
-                ],
-                'required' => ['query'],
+    public string $name = 'search';
+    public string $description = 'Search for information or product online using a search tool.';
+    public array $schema = [
+        'type' => 'object',
+        'properties' => [
+            'query' => [
+                'type' => 'string',
+                'description' => 'The search query to look up online.',
             ],
-        ];
-    }
+        ],
+        'required' => ['query'],
+    ];
 
-    /**
-     * Execute the tool's logic.
-     *
-     * @param  array  $arguments  Arguments provided by the LLM, matching the parameters defined above.
-     * @param  AgentContext  $context  The current agent context, providing access to session state etc.
-     * @return string JSON string representation of the tool's result.
-     */
-    public function execute(array $arguments, AgentContext $context, AgentMemory $memory): string
+    public function execute(array $arguments): string
     {
-        // Access arguments: $location = $arguments['location'] ?? null;
-        // Access context: $sessionId = $context->getSessionId();
-        // Access state: $previousValue = $context->getState('some_key');
-
-        // Access arguments: $query = $arguments['query'] ?? null;
-
         Log::info('SearchTool called with arguments', $arguments);
         $query = $arguments['query'] ?? null;
         if (! $query) {
@@ -63,8 +43,6 @@ class SearchTool implements ToolInterface
                 'limit' => 5,
             ];
 
-            // Note: We intentionally avoid scrapeOptions here because many sites (e.g., YouTube)
-            // can fail scraping; we only need the search metadata for the LLM.
             $result = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Bearer '.config('services.firecrawl.key'),

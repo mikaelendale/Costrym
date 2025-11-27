@@ -1,9 +1,11 @@
-import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Archive, Calendar, Tag } from 'lucide-react';
+'use client';
+
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import AppLayout from '@/layouts/app-layout';
+import { BreadcrumbItem } from '@/types';
+import { Head, Link } from '@inertiajs/react';
+import { ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -34,40 +36,35 @@ interface Automation {
     } | null;
 }
 
-export default function Show({ automation }: Automation) {
-    const getTypeIcon = (type: string) => {
+export default function Show({ automation }: { automation: Automation }) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Automations',
+            href: '/automations',
+        },
+        {
+            title: automation.name,
+            href: `/automations/${automation.id}`,
+        },
+    ];
+    const getTypeBadgeVariant = (type: string) => {
         switch (type) {
             case 'task_generation':
-                return '📋';
+                return 'default';
             case 'execution_report':
-                return '🎯';
+                return 'secondary';
             case 'pipeline_stage':
-                return '🔄';
+                return 'outline';
             case 'pipeline_complete':
-                return '✅';
+                return 'default';
             default:
-                return '📄';
-        }
-    };
-
-    const getTypeBadgeColor = (type: string) => {
-        switch (type) {
-            case 'task_generation':
-                return 'bg-blue-500';
-            case 'execution_report':
-                return 'bg-green-500';
-            case 'pipeline_stage':
-                return 'bg-purple-500';
-            case 'pipeline_complete':
-                return 'bg-emerald-500';
-            default:
-                return 'bg-gray-500';
+                return 'outline';
         }
     };
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString('en-US', {
-            month: 'long',
+            month: 'short',
             day: 'numeric',
             year: 'numeric',
             hour: '2-digit',
@@ -76,120 +73,204 @@ export default function Show({ automation }: Automation) {
     };
 
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={automation.name} />
 
-            <div className="py-12">
-                <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-                    {/* Back Button */}
-                    <Link href="/automations" className="mb-6 inline-flex items-center text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Automations
-                    </Link>
+            <div className="flex h-screen flex-col bg-background">
 
-                    {/* Header Card */}
-                    <Card className="mb-6">
-                        <CardContent className="pt-6">
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-3xl">{getTypeIcon(automation.type)}</span>
-                                        <div>
-                                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                                {automation.name}
-                                            </h1>
-                                            {automation.description && (
-                                                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                                    {automation.description}
-                                                </p>
-                                            )}
-                                        </div>
+                {/* Two Column Layout */}
+                <div className="flex-1 overflow-hidden">
+                    <div className="mx-auto flex h-full max-w-[1600px] gap-6 py-6">
+
+                        {/* Right Column - Metrics & Info (1/3 width) */}
+                        <div className="flex-1 space-y-4 overflow-y-auto">
+                            {/* Status Card */}
+
+                            {/* Header */}
+                            <div className="flex-shrink-0">
+                                <div className="mx-auto max-w-[1600px] px-6 py-3">
+                                    <div className="flex items-center gap-4"> 
+                                        <div className="h-6 w-px bg-border" />
+                                        <h1 className="text-xl font-semibold">{automation.name}</h1>
                                     </div>
-
-                                    {/* Metadata */}
-                                    <div className="mt-4 flex flex-wrap gap-4">
-                                        <Badge className={`${getTypeBadgeColor(automation.type)} text-white`}>
-                                            {automation.type.replace('_', ' ')}
+                                </div>
+                            </div>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">Status</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-muted-foreground">Type</span>
+                                        <Badge variant={getTypeBadgeVariant(automation.type)}>
+                                            {automation.type.replace(/_/g, ' ')}
                                         </Badge>
-                                        
-                                        <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
-                                            <Calendar className="h-4 w-4" />
-                                            {formatDate(automation.created_at)}
-                                        </div>
-
-                                        {automation.metadata?.pipeline && (
-                                            <Badge variant="outline">
-                                                <Tag className="mr-1 h-3 w-3" />
-                                                {automation.metadata.pipeline}
-                                            </Badge>
-                                        )}
-
-                                        {automation.metadata?.task_count && (
-                                            <Badge variant="outline">
-                                                📋 {automation.metadata.task_count} tasks
-                                            </Badge>
-                                        )}
-
-                                        {automation.metadata?.estimated_savings && (
-                                            <Badge className="bg-green-600 text-white">
-                                                💰 ${automation.metadata.estimated_savings}/month
-                                            </Badge>
-                                        )}
-
-                                        {automation.metadata?.stage && (
-                                            <Badge variant="outline">
-                                                Stage {automation.metadata.stage}
-                                            </Badge>
-                                        )}
-
-                                        {automation.metadata?.successful_stages !== undefined && (
-                                            <Badge variant="outline">
-                                                ✅ {automation.metadata.successful_stages} / {automation.metadata.successful_stages + (automation.metadata.failed_stages || 0)} stages
-                                            </Badge>
-                                        )}
                                     </div>
-                                </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-muted-foreground">Created</span>
+                                        <span className="text-sm">{formatDate(automation.created_at)}</span>
+                                    </div>
+                                    {automation.metadata?.pipeline && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-muted-foreground">Pipeline</span>
+                                            <Badge variant="outline">{automation.metadata.pipeline}</Badge>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
 
-                                {/* Actions */}
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => router.get(`/automations/${automation.id}/download`)}
-                                    >
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                            if (confirm('Archive this automation?')) {
-                                                router.post(`/automations/${automation.id}/archive`, {}, {
-                                                    onSuccess: () => router.visit('/automations'),
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        <Archive className="mr-2 h-4 w-4" />
-                                        Archive
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            {/* Metrics Card */}
+                            {(automation.metadata?.task_count || automation.metadata?.estimated_savings) && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Metrics</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        {automation.metadata?.estimated_savings && (
+                                            <div>
+                                                <div className="text-xs text-muted-foreground">Estimated Savings</div>
+                                                <div className="mt-1 text-2xl font-bold text-green-600 dark:text-green-500">
+                                                    ${automation.metadata.estimated_savings}
+                                                    <span className="text-sm font-normal text-muted-foreground">/month</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {automation.metadata?.task_count && (
+                                            <div>
+                                                <div className="text-xs text-muted-foreground">Total Tasks</div>
+                                                <div className="mt-1 text-2xl font-bold">{automation.metadata.task_count}</div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            )}
 
-                    {/* Markdown Content */}
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="prose prose-slate max-w-none dark:prose-invert prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-a:text-blue-600 prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-pink-600 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-th:border prose-th:border-gray-300 dark:prose-th:border-gray-700 prose-th:bg-gray-100 dark:prose-th:bg-gray-800 prose-th:p-2 prose-td:border prose-td:border-gray-300 dark:prose-td:border-gray-700 prose-td:p-2">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {automation.markdown_content}
-                                </ReactMarkdown>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            {/* Pipeline Progress Card */}
+                            {(automation.metadata?.stage || automation.metadata?.successful_stages !== undefined) && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Pipeline Progress</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        {automation.metadata?.stage && (
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm text-muted-foreground">Current Stage</span>
+                                                <Badge variant="outline">Stage {automation.metadata.stage}</Badge>
+                                            </div>
+                                        )}
+                                        {automation.metadata?.successful_stages !== undefined && (
+                                            <>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm text-muted-foreground">Successful</span>
+                                                    <span className="font-semibold">{automation.metadata.successful_stages}</span>
+                                                </div>
+                                                {automation.metadata?.failed_stages !== undefined && automation.metadata.failed_stages > 0 && (
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm text-muted-foreground">Failed</span>
+                                                        <span className="font-semibold">{automation.metadata.failed_stages}</span>
+                                                    </div>
+                                                )}
+                                                <div className="pt-2">
+                                                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                                                        <div
+                                                            className="h-full bg-primary transition-all"
+                                                            style={{
+                                                                width: `${(automation.metadata.successful_stages /
+                                                                    (automation.metadata.successful_stages +
+                                                                        (automation.metadata.failed_stages || 0))) *
+                                                                    100
+                                                                    }%`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Related Task Card */}
+                            {automation.task && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Related Task</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Link
+                                            href={`/tasks/${automation.task.id}`}
+                                            className="block text-sm text-primary hover:underline"
+                                        >
+                                            {automation.task.data.name}
+                                        </Link>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+                        {/* Left Column - Markdown Content (2/3 width) */}
+                        <div className="flex-[2]">
+                            <Card className="flex h-full flex-col rounded-lg bg-primary-foreground "> 
+                                <CardContent className="flex-1 overflow-y-auto">
+                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                h1: ({ children }) => (
+                                                    <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground">{children}</h1>
+                                                ),
+                                                h2: ({ children }) => {
+                                                    const text = children?.toString() || '';
+                                                    const slug = text
+                                                        .toLowerCase()
+                                                        .replace(/[^a-z0-9]+/g, '-')
+                                                        .replace(/(^-|-$)/g, '');
+                                                    return (
+                                                        <h2 id={slug} className="mb-4 mt-12 scroll-mt-20 text-2xl font-bold text-foreground first:mt-0">
+                                                            {children}
+                                                        </h2>
+                                                    );
+                                                },
+                                                h3: ({ children }) => <h3 className="mb-4 mt-8 text-xl font-semibold text-foreground">{children}</h3>,
+                                                h4: ({ children }) => <h4 className="mb-3 mt-6 text-lg font-semibold text-foreground">{children}</h4>,
+                                                p: ({ children }) => <p className="mb-4 leading-relaxed text-muted-foreground">{children}</p>,
+                                                ul: ({ children }) => <ul className="mb-6 space-y-2 pl-6">{children}</ul>,
+                                                li: ({ children }) => (
+                                                    <li className="flex items-start">
+                                                        <span className="mr-3 mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
+                                                        <span className="leading-relaxed text-muted-foreground">{children}</span>
+                                                    </li>
+                                                ),
+                                                strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                                                code: ({ children }) => (
+                                                    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm text-foreground">{children}</code>
+                                                ),
+                                                pre: ({ children }) => (
+                                                    <pre className="mb-6 overflow-x-auto rounded-lg bg-muted p-4">
+                                                        <code className="font-mono text-sm text-foreground">{children}</code>
+                                                    </pre>
+                                                ),
+                                                a: ({ href, children }) => (
+                                                    <a href={href} className="text-primary underline-offset-4 hover:underline" target="_blank" rel="noopener noreferrer">
+                                                        {children}
+                                                    </a>
+                                                ),
+                                                blockquote: ({ children }) => (
+                                                    <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground">{children}</blockquote>
+                                                ),
+                                                table: ({ children }) => <table className="w-full border-collapse border border-border">{children}</table>,
+                                                th: ({ children }) => <th className="border border-border bg-muted p-2 text-left">{children}</th>,
+                                                td: ({ children }) => <td className="border border-border p-2">{children}</td>,
+                                            }}
+                                        >
+                                            {automation.markdown_content}
+                                        </ReactMarkdown>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
                 </div>
             </div>
         </AppLayout>
     );
 }
-

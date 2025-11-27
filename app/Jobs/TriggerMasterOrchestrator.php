@@ -2,13 +2,12 @@
 
 namespace App\Jobs;
 
-use App\Agents\MasterOrchestrator;
+use App\AiAgents\MasterOrchestrator;
 use App\Models\KnowledgeBase;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
-use Vizra\VizraADK\System\AgentContext;
 
 /**
  * Job to trigger the MasterOrchestrator agent after user onboarding
@@ -86,23 +85,11 @@ class TriggerMasterOrchestrator implements ShouldQueue
             $prompt .= "\n3. Coordinate the appropriate agents to begin their cost analysis";
             $prompt .= "\n4. Provide a clear summary of what has been set up";
 
-            // Create agent context with user information
-            $context = new AgentContext($sessionId);
-            $context->setState('user_id', $this->userId);
-            $context->setState('onboarding_complete', true);
-            $context->setState('onboarding_context', $onboardingContext);
-            $context->setState('workflow_state', [
-                'triggered_at' => now()->toIso8601String(),
-                'triggered_by' => 'onboarding_completion',
-            ]);
+            // Execute the MasterOrchestrator agent (Laragent)
+            $agent = MasterOrchestrator::for($sessionId)
+                ->forUser($user);
 
-            // Execute the MasterOrchestrator agent
-            // Since we're already in a queued job, we can execute synchronously
-            // The agent will handle its own sub-agent delegations
-            $response = MasterOrchestrator::run($prompt)
-                ->forUser($user)
-                ->withSession($sessionId)
-                ->go();
+            $response = $agent->respond($prompt);
 
             Log::info('TriggerMasterOrchestrator: Orchestration completed', [
                 'user_id' => $this->userId,

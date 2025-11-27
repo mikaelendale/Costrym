@@ -15,7 +15,7 @@ const OptomizedCost = () => {
 
     return (
         <div className="flex flex-col gap-6">
-            <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-4xl">Optimized Costs</h2>
+            <h2 className=" text-2xl font-normal tracking-tight ">Optimized Costs</h2>
             <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {optimizedCosts.slice(0, 6).map((item) => (
                     <Card
@@ -23,34 +23,18 @@ const OptomizedCost = () => {
                         className="group glass-card relative h-full cursor-pointer overflow-hidden rounded-2xl p-1 pb-3 text-foreground transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     >
                         <div className="glass-sheen" />
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[var(--glass-border)]" />
-                        <div className="relative flex items-center justify-between border-b border-[var(--glass-border)] p-3">
+                        <div className="relative flex items-center justify-between border-b border-accent p-3">
                             <div className="flex items-center gap-3">
-                                <span
-                                    className="inline-flex h-7 w-7 items-center justify-center rounded-full"
-                                    style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.06), transparent)' }}
-                                >
-                                    <svg
-                                        width="12"
-                                        height="12"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        style={{ color: 'var(--color-primary)' }}
-                                    >
-                                        <circle cx="12" cy="12" r="5" fill="currentColor" />
-                                    </svg>
-                                </span>
-                                <h3 className="truncate text-base font-semibold drop-shadow-sm" title={item.name}>
+                                <h3 className="truncate text-base font-normal" title={item.name}>
                                     {item.name}
                                 </h3>
                             </div>
-                            <span className="glass-badge rounded-md px-2.5 py-1 text-[10px] font-medium text-foreground/80">Optimized</span>
+                            <span className={`rounded-md  px-2.5 py-1 text-[10px] font-medium ${item.status === 'In Progress' ? 'bg-accent/15 text-primary ring-1 ring-accent/30' : 'bg-accent/25 text-primary ring-1 ring-accent/20'}`}>{item.status}</span>
                         </div>
-                        <div className="relative px-4 text-sm text-foreground/70">
+                        <div className="relative px-4 text-sm text-muted-foreground">
                             <p className="">{item.costDescription}</p>
                         </div>
-                        <div className="relative flex items-center justify-between px-4 text-xs text-foreground/60">
+                        <div className="relative flex items-center justify-between px-4 text-xs text-muted-foreground">
                             <span>Details</span>
                             <span className="opacity-0 transition-opacity group-hover:opacity-100">View details →</span>
                         </div>

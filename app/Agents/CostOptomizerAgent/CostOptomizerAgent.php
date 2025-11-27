@@ -118,7 +118,7 @@ INSTRUCTIONS;
             return 'Configuration error: sub-agent "search" not found.';
         }
 
-        $searchInput = "SOLUTIONS_INPUT_JSON:\n".$solutionResultProcessed."\nTASK: For each solution, if its description begins with 'search for this:' extract the query and call the SearchTool; otherwise construct a precise query from the title/description. RETURN_JSON: search_insights only";
+        $searchInput = "SOLUTIONS_INPUT_JSON:\n".$solutionResultProcessed."\nTASK: For each solution, if its description begins with 'search for this:' extract the query and call the web-related_operations tool with operation='search'; otherwise construct a precise query from the title/description. RETURN_JSON: search_insights only";
         $contextSummary3 = 'Run targeted web searches to support solution estimates.';
         [$subName3, $task3, $summary3] = $this->beforeSubAgentDelegation('search', $searchInput, $contextSummary3, $context);
 

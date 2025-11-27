@@ -216,7 +216,7 @@ return [
 
     'master_orchestrator' => [
         'enabled' => true,
-        'class' => \App\Agents\MasterOrchestrator::class,
+        'class' => \App\AiAgents\MasterOrchestrator::class,
         'description' => 'Central coordinator that can delegate to any available agent',
         'max_delegation_depth' => 3, // Prevent infinite delegation loops
     ],

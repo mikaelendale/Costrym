@@ -2,50 +2,32 @@
 
 namespace App\Tools;
 
-use Vizra\VizraADK\Contracts\ToolInterface;
-use Vizra\VizraADK\Memory\AgentMemory;
-use Vizra\VizraADK\System\AgentContext;
+use LarAgent\Tool;
 
-class CERCalculator implements ToolInterface
+class CERCalculator extends Tool
 {
-    /**
-     * Get the tool's definition for the LLM.
-     * This structure should be JSON schema compatible.
-     */
-    public function definition(): array
-    {
-        return [
-            'name' => 'c_e_r_calculator',
-            'description' => 'Looks up actual OPEX percent per category (mock DB for now) and returns a normalized ratio = actual% / benchmark% for each provided benchmark category. If a category is new/unknown or the benchmark is 0, the normalized value is 0.',
-            'parameters' => [
+    public string $name = 'c_e_r_calculator';
+    public string $description = 'Looks up actual OPEX percent per category (mock DB for now) and returns a normalized ratio = actual% / benchmark% for each provided benchmark category. If a category is new/unknown or the benchmark is 0, the normalized value is 0.';
+    public array $schema = [
+        'type' => 'object',
+        'properties' => [
+            'should_cost_opex' => [
                 'type' => 'object',
-                'properties' => [
-                    'should_cost_opex' => [
-                        'type' => 'object',
-                        'description' => 'Map of category name => numeric benchmark (should-cost) as OPEX percent values (0-100). The tool will fetch actual OPEX% and compute actual%/benchmark%. Example: {"Marketing": 10, "Sales": 15}',
-                        'additionalProperties' => ['type' => ['number', 'string']],
-                    ],
-                    'categories' => [
-                        'type' => 'array',
-                        'description' => 'Optional: list of category names to limit computation. Defaults to the keys of should_cost_opex.',
-                        'items' => [
-                            'type' => 'string',
-                        ],
-                    ],
-                ],
-                'required' => ['should_cost_opex'],
+                'description' => 'Map of category name => numeric benchmark (should-cost) as OPEX percent values (0-100). The tool will fetch actual OPEX% and compute actual%/benchmark%. Example: {"Marketing": 10, "Sales": 15}',
+                'additionalProperties' => ['type' => ['number', 'string']],
             ],
-        ];
-    }
+            'categories' => [
+                'type' => 'array',
+                'description' => 'Optional: list of category names to limit computation. Defaults to the keys of should_cost_opex.',
+                'items' => [
+                    'type' => 'string',
+                ],
+            ],
+        ],
+        'required' => ['should_cost_opex'],
+    ];
 
-    /**
-     * Execute the tool's logic.
-     *
-     * @param  array  $arguments  Arguments provided by the LLM, matching the parameters defined above.
-     * @param  AgentContext  $context  The current agent context, providing access to session state etc.
-     * @return string JSON string representation of the tool's result.
-     */
-    public function execute(array $arguments, AgentContext $context, AgentMemory $memory): string
+    public function execute(array $arguments): string
     {
         // Validate should_cost_opex (accept array or JSON string)
         $shouldCost = $arguments['should_cost_opex'] ?? null;
@@ -84,7 +66,7 @@ class CERCalculator implements ToolInterface
         }
 
         // Fetch actual costs per category (mock DB for now)
-        $actuals = $this->getActualCategoryCosts($categories, $context);
+        $actuals = $this->getActualCategoryCosts($categories);
 
         // Build normalized result: normalized = actual% / benchmark%; if unknown/new or benchmark<=0 -> 0
         $normalized = [];
@@ -126,20 +108,17 @@ class CERCalculator implements ToolInterface
             'note' => 'Normalized values are actual OPEX% / benchmark OPEX% using mock DB actuals. Unknown categories or zero benchmarks result in 0.',
         ];
 
-        $context->setState('cer_calculation_result', $result);
-
         return json_encode($result);
     }
 
     /**
      * Mock database lookup for actual category costs.
-     * In the future, replace with real DB queries using your models/services and AgentContext.
+     * In the future, replace with real DB queries using your models/services.
      *
      * @param  array  $categories  List of category names to fetch
-     * @param  AgentContext  $context  Agent context (unused for now)
      * @return array<string,float> Map of category => actual numeric cost
      */
-    private function getActualCategoryCosts(array $categories, AgentContext $context): array
+    private function getActualCategoryCosts(array $categories): array
     {
         // Example mock data representing actual OPEX percent (0-100) in your database
         // The values are percentages of total OPEX and sum to ~100.

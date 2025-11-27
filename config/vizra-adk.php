@@ -110,6 +110,10 @@ return [
             'http_referer' => env('OPENROUTER_HTTP_REFERER', config('app.url')),
             'app_name' => env('OPENROUTER_APP_NAME', config('app.name')),
         ],
+        'anthropic' => [
+            'api_key' => env('ANTHROPIC_API_KEY'),
+            'base_url' => 'https://api.anthropic.com/v1',
+        ],
     ],
 
     /**

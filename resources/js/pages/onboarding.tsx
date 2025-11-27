@@ -106,11 +106,18 @@ interface OnboardingProps {
     checkout_error?: string;
 }
 
-// localStorage helper with user ID prefix
+// sessionStorage helper with user ID prefix (clears when browser tab/window closes)
 const getStorageKey = (key: string, userId: string) => `onboarding_${userId}_${key}`;
-const getStorage = (key: string, userId: string) => localStorage.getItem(getStorageKey(key, userId));
-const setStorage = (key: string, value: string, userId: string) => localStorage.setItem(getStorageKey(key, userId), value);
-const removeStorage = (key: string, userId: string) => localStorage.removeItem(getStorageKey(key, userId));
+const getStorage = (key: string, userId: string) => sessionStorage.getItem(getStorageKey(key, userId));
+const setStorage = (key: string, value: string, userId: string) => sessionStorage.setItem(getStorageKey(key, userId), value);
+const removeStorage = (key: string, userId: string) => sessionStorage.removeItem(getStorageKey(key, userId));
+
+// Helper to clear all onboarding storage for a user
+const clearAllOnboardingStorage = (userId: string) => {
+    const keys = ['step', 'organized', 'chat_messages', 'understanding', 'estimation', 'chat_complete'];
+    keys.forEach(key => removeStorage(key, userId));
+};
+
 
 export default function Onboarding({ checkout_data, checkout_plan, checkout_error }: OnboardingProps = {}) {
     const { auth, paddle, subscription, customer } = usePage<SharedData>().props;
@@ -130,12 +137,13 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
     const [pipedreamClient, setPipedreamClient] = useState<PipedreamClient | null>(null);
     const [isClientReady, setIsClientReady] = useState(false);
     const [isFetchingToken, setIsFetchingToken] = useState(false);
+    // Plan state derived from shared props (backend data), not storage
     const [selectedPlan, setSelectedPlan] = useState<string | null>(() => {
-        if (currentPlan && currentPlan !== 'free') return currentPlan;
-        return getStorage('selected_plan', userId) || null;
+        return (currentPlan && currentPlan !== 'free') ? currentPlan : null;
     });
     const [estimationContent, setEstimationContent] = useState<string>(() => getStorage('estimation', userId) || '');
     const [isLoadingEstimation, setIsLoadingEstimation] = useState(false);
+    const [uploadedJsonPath, setUploadedJsonPath] = useState<string | null>(null);
     const [isChatComplete, setIsChatComplete] = useState(() => {
         const saved = getStorage('chat_complete', userId);
         return saved === 'true';
@@ -184,7 +192,6 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
     useEffect(() => {
         if (currentPlan && currentPlan !== 'free') {
             setSelectedPlan(currentPlan);
-            setStorage('selected_plan', currentPlan, userId);
             if (isSubscribed && !prevSubscribedRef.current) {
                 setIsVerifyingPayment(false);
                 toast.success('🎉 Subscription activated! Welcome to Costrym!');
@@ -196,42 +203,107 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
     // Listen for live subscription status updates via Ably
     useEffect(() => {
         if (!auth.user?.id) {
+            console.log('❌ Echo setup skipped: No user ID');
             return;
         }
 
-        // Get Echo instance from window (configured globally in app.tsx)
-        const echo = (window as any).Echo;
-        if (!echo) {
-            return;
-        }
-
-        const channel = echo.private(`private-user.${auth.user.id}`);
-
-        channel.listen('.subscription.status.updated', (data: any) => {
-            const subscriptionData = data.subscription || {};
-            
-            // Update subscription status from broadcast
-            if (subscriptionData.subscribed && subscriptionData.current_plan) {
-                const newPlan = subscriptionData.current_plan;
-                
-                // Update local state
-                setSelectedPlan(newPlan);
-                setStorage('selected_plan', newPlan, userId);
-                setIsVerifyingPayment(false);
-                
-                // Show success message
-                if (!isSubscribed) {
-                    toast.success('🎉 Subscription activated! Welcome to Costrym!');
-                }
-                
-                // Reload subscription data to sync with backend
-                router.reload({ only: ['subscription', 'customer'] });
+        // Small delay to ensure Echo is fully initialized from app.tsx
+        const setupEcho = () => {
+            // Get Echo instance from window (configured globally in app.tsx)
+            const echo = (window as any).Echo;
+            if (!echo) {
+                console.warn('⚠️ Echo not ready yet, retrying...');
+                return false;
             }
-        });
+
+            console.log('✅ Setting up Echo listener for user:', auth.user.id);
+            
+            const channelName = `private-user.${auth.user.id}`;
+            console.log('📡 Subscribing to channel:', channelName);
+            
+            const channel = echo.private(channelName);
+
+            // Listen for connection events
+            channel.subscribed(() => {
+                console.log('✅ Successfully subscribed to channel:', channelName);
+            });
+
+            channel.error((error: any) => {
+                console.error('❌ Channel subscription error:', error);
+            });
+
+            // Listen for subscription status updates
+            channel.listen('.subscription.status.updated', (data: any) => {
+                console.log('📨 Received subscription update:', data);
+                
+                const subscriptionData = data.subscription || {};
+                
+                // Update subscription status from broadcast
+                if (subscriptionData.subscribed && subscriptionData.current_plan) {
+                    const newPlan = subscriptionData.current_plan;
+                    
+                    console.log('✅ Subscription activated:', {
+                        plan: newPlan,
+                        subscribed: subscriptionData.subscribed,
+                        active: subscriptionData.active
+                    });
+                    
+                    // Update local state (will be synced with backend reload)
+                    setSelectedPlan(newPlan);
+                    setIsVerifyingPayment(false);
+                    setIsLoadingCheckout(false);
+                    
+                    // Show success message
+                    if (!isSubscribed) {
+                        toast.success('🎉 Subscription activated! Welcome to Costrym!');
+                    } else {
+                        toast.success('✅ Subscription updated!');
+                    }
+                    
+                    // Reload subscription data to sync with backend
+                    console.log('🔄 Reloading subscription data from backend...');
+                    router.reload({ only: ['subscription', 'customer'] });
+                } else {
+                    console.log('⚠️ Received update but subscription not active yet:', subscriptionData);
+                }
+            });
+
+            return channel;
+        };
+
+        // Try to setup immediately
+        let channel = setupEcho();
+        let retryTimeout: NodeJS.Timeout | null = null;
+
+        // If Echo not ready, retry with longer delay
+        if (!channel) {
+            retryTimeout = setTimeout(() => {
+                channel = setupEcho();
+                if (!channel) {
+                    // Try one more time with even longer delay
+                    retryTimeout = setTimeout(() => {
+                        channel = setupEcho();
+                        if (!channel) {
+                            console.warn('⚠️ Echo not available. Falling back to polling only.');
+                        }
+                    }, 1000);
+                }
+            }, 500);
+        }
 
         return () => {
-            channel.stopListening('.subscription.status.updated');
-            echo.leave(`private-user.${auth.user.id}`);
+            if (retryTimeout) {
+                clearTimeout(retryTimeout);
+            }
+            if (channel && auth.user?.id) {
+                console.log('🔌 Cleaning up Echo listener for user:', auth.user.id);
+                const channelName = `private-user.${auth.user.id}`;
+                channel.stopListening('.subscription.status.updated');
+                const echo = (window as any).Echo;
+                if (echo) {
+                    echo.leave(channelName);
+                }
+            }
         };
     }, [auth.user?.id, userId, isSubscribed]);
 
@@ -629,9 +701,13 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
             {
                 understanding: aiUnderstanding,
                 organized_content: organizedContent,
+                json_file: uploadedJsonPath,
             },
             {
                 onSuccess: () => {
+                    // Clear all onboarding storage data after successful completion
+                    clearAllOnboardingStorage(userId);
+                    
                     // toast.success('Onboarding completed!');
                 },
                 onError: () => {
@@ -760,6 +836,11 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
             const data = await response.json();
 
             if (data.success) {
+                // Save the JSON filename for later submission
+                if (data.file && data.file.json_file) {
+                    setUploadedJsonPath(data.file.json_file);
+                }
+
                 // Start polling for progress updates
                 const sessionId = data.session_id;
                 

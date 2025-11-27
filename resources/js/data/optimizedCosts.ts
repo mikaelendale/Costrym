@@ -5,7 +5,7 @@ export type OptCostItem = {
     estimatedSavings?: string;
     date: string;
     savings: string;
-    status: 'In Progress' | 'Completed';
+    status: 'In Progress' | 'Completed' | 'Pending';
     previousExpense: string;
     savedPerMonth: string;
     method: string;

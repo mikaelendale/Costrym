@@ -32,9 +32,9 @@ export default function Terms({ content, pageTitle, pageDescription, lastUpdated
                 <section className="pt-10 sm:pt-20 relative overflow-hidden ">
                     <div className="container relative mx-auto px-4 py-20 sm:px-6 lg:px-8">
                         <div className="mx-auto max-w-3xl text-center">
-                            <h1 className="mb-6 text-5xl font-bold tracking-tight text-primary sm:text-6xl">Terms of Service</h1>
-                            <p className="text-xl text-primary mb-8">
-                                The terms and conditions that govern your use of Razory services
+                            <h1 className="mb-6 text-5xl font-spirax tracking-tight text-primary sm:text-6xl">Terms of Service</h1>
+                            <p className="text-xl text-primary ">
+                                The terms and conditions that govern your use of Costrym services
                             </p>
                         </div>
                     </div>

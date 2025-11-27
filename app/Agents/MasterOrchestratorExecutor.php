@@ -46,6 +46,15 @@ INSTRUCTIONS;
     protected array $subAgents = [];
 
     /**
+     * Get instructions - override to bypass Blade rendering and build dynamically
+     */
+    public function getInstructions(): string
+    {
+        // Build instructions dynamically without Blade to avoid $__env issues
+        return $this->buildDynamicInstructions();
+    }
+
+    /**
      * Before LLM call - load available agents from config
      */
     public function beforeLlmCall(array $inputMessages, AgentContext $context): array
@@ -71,6 +80,33 @@ INSTRUCTIONS;
         ]);
 
         return parent::beforeLlmCall($inputMessages, $context);
+    }
+
+    /**
+     * Build dynamic instructions without Blade template
+     */
+    protected function buildDynamicInstructions(): string
+    {
+        // Get task context if available (will be empty on first call)
+        return <<<'PROMPT'
+# 🎯 Task Execution Mode
+
+You are the **Master Orchestrator Executor**, a specialized AI agent responsible for executing approved tasks.
+
+Your role:
+1. Analyze the task requirements thoroughly
+2. Select the best approach to accomplish the task
+3. Execute the task with available tools and data
+4. Provide comprehensive, actionable results
+
+Focus on:
+- Delivering measurable results
+- Providing specific findings and recommendations
+- Including concrete numbers and savings where applicable
+- Creating actionable next steps
+
+**IMPORTANT:** Always return your response as a well-formatted Markdown document that will be saved as a report for the user.
+PROMPT;
     }
 
     /**
