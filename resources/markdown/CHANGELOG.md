@@ -1,6 +1,6 @@
-# Razory - Changelog
+# Costrym - Changelog
 
-All notable changes to Razory are documented here.
+All notable changes to Costrym are documented here.
 
 ## \[v1.0.0] - 2025-08-24
 

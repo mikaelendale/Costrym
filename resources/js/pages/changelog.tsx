@@ -158,11 +158,11 @@ export default function Changelog({
                                     Version {currentVersion}
                                 </span>
                             </div>
-                            <h1 className="mb-6 text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-                                Razory Changelog
+                            <h1 className="mb-6 text-5xl font-normal font-spirax tracking-tight text-foreground sm:text-6xl">
+                                Costrym Changelog
                             </h1>
-                            <p className="sm:text-lg text-sm text-muted-foreground mb-8">
-                                Discover what's new, improved, and fixed in Razory
+                            <p className="text-sm text-muted-foreground mb-8">
+                                Discover what's new, improved, and fixed in Costrym
                             </p>
                             <div className="flex items-center justify-center text-sm text-muted-foreground ">
                                 <FolderSync className="mr-2 h-4 w-4" />
