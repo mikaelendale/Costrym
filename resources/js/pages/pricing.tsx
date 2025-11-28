@@ -97,11 +97,7 @@ export default function Pricing() {
                                     <li className="flex items-start gap-2">
                                         <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
                                         <span>All features included in the Monthly plan</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                        <span>Quarterly strategy sessions with a human cost expert (over $800M in savings delivered across industries)</span>
-                                    </li>
+                                    </li> 
                                     <li className="flex items-start gap-2">
                                         <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
                                         <span>Priority support and dedicated account management</span>
@@ -149,13 +145,7 @@ export default function Pricing() {
                                         <span>
                                             Begin saving thousands from day one — guaranteed.
                                         </span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                        <span>
-                                            Receive monthly cost audits led by seasoned experts.
-                                        </span>
-                                    </li>
+                                    </li> 
                                     <li className="flex items-start gap-2">
                                         <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
                                         <span>
