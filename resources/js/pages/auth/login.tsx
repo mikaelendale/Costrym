@@ -76,22 +76,18 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 Log in
                             </Button>
                         </div>
-
-                        <div className="text-center text-sm text-muted-foreground">
-                            Don't have an account?{' '}
-                            <TextLink href={route('register')} tabIndex={5}>
-                                Sign up
-                            </TextLink>
-                        </div>
-                        <div className="flex flex-col grid grid-cols-2 md:grid-cols-2 gap-4">
-                            <div
+                        {/* <div className="flex flex-col grid grid-cols-2 md:grid-cols-2 gap-4"> */}
+                        <div className="flex gap-4">
+                            <Button
                                 onClick={handleGoogleLogin}
-                                className="w-full cursor-pointer rounded-xl border border-dashed border-primary/20 bg-accent p-4"
+                                className="w-full cursor-pointer border-primary/20"
                                 tabIndex={0}
+                                size="lg"
+                                variant="secondary"
                                 role="button"
                                 onKeyDown={(e) => e.key === 'Enter' && handleGoogleLogin()}
                             >
-                                <div className="flex items-center space-x-3">
+                                <div className="flex items-center justify-center mx-auto space-x-3">
                                     <div className="flex-shrink-0">
                                         <svg className="h-6 w-6" viewBox="0 0 24 24">
                                             <path
@@ -112,14 +108,14 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                             />
                                         </svg>
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="text-sm font-medium text-gray-900 dark:text-white">Google</div>
+                                    <div className="">
+                                        <div className="text-sm font-medium text-primary">Google</div>
                                     </div>
                                 </div>
-                            </div>
+                            </Button>
 
                             {/* GitHub Login Card */}
-                            <div
+                            {/* <div
                                 onClick={handleGithubLogin}
                                 className="w-full cursor-pointer rounded-xl border border-dashed border-primary/20 bg-accent p-4"
                                 tabIndex={0}
@@ -136,7 +132,18 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                         <div className="text-sm font-medium text-gray-900 dark:text-white">GitHub</div>
                                     </div>
                                 </div>
-                            </div>
+                            </div> */}
+                        </div>
+
+                        <div className="text-center text-sm text-muted-foreground">
+                            Don't have an account?{' '}
+                            <TextLink href={route('register')} tabIndex={5}>
+                                Sign up
+                            </TextLink>
+                        </div>
+
+                        <div className="text-center text-xs text-muted-foreground">
+                            By continuing, you agree to our <TextLink href="/terms">Terms of Service</TextLink> and <TextLink href="/privacy">Privacy Policy</TextLink>.
                         </div>
                     </>
                 )}

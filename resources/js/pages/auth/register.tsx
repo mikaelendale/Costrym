@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 import { UserCheckIcon } from '@phosphor-icons/react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ReferralData {
     name: string;
@@ -31,7 +32,7 @@ export default function Register({ referralData }: RegisterPageProps) {
     return (
         <AuthLayout title="Create an account" description="Enter your details below to create your account">
             <Head title="Register" />
-            
+
             {/* Referral Information */}
             {referralData && (
                 <div className=" rounded-2xl border mt-2 bg-accent p-4">
@@ -47,7 +48,7 @@ export default function Register({ referralData }: RegisterPageProps) {
                                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground">
                                     <UserCheckIcon className="h-5 w-5 text-primary" />
                                 </div>
-                            )} 
+                            )}
                         </div>
                         <div className="flex-1">
                             <p className="text-sm font-normal text-primary">
@@ -60,7 +61,7 @@ export default function Register({ referralData }: RegisterPageProps) {
                     </div>
                 </div>
             )}
-            
+
             <Form
                 method="post"
                 action={route('register')}
@@ -119,24 +120,18 @@ export default function Register({ referralData }: RegisterPageProps) {
                                 Create account
                             </Button>
                         </div>
-
-                        <div className="text-center text-sm text-muted-foreground">
-                            Already have an account?{' '}
-                            <TextLink href={route('login')} tabIndex={6}>
-                                Log in
-                            </TextLink>
-                        </div>
-
-
-                        <div className="flex flex-col grid grid-cols-2 md:grid-cols-2 gap-4">
-                            <div
+                        {/* <div className="flex flex-col grid grid-cols-2 md:grid-cols-2 gap-4"> */}
+                        <div className="flex gap-4">
+                            <Button
                                 onClick={handleGoogleLogin}
-                                className="w-full cursor-pointer rounded-xl border border-dashed border-primary/20 bg-accent p-4"
+                                className="w-full cursor-pointer border-primary/20"
                                 tabIndex={0}
+                                size="lg"
+                                variant="secondary"
                                 role="button"
                                 onKeyDown={(e) => e.key === 'Enter' && handleGoogleLogin()}
                             >
-                                <div className="flex items-center space-x-3">
+                                <div className="flex items-center justify-center mx-auto space-x-3">
                                     <div className="flex-shrink-0">
                                         <svg className="h-6 w-6" viewBox="0 0 24 24">
                                             <path
@@ -157,14 +152,14 @@ export default function Register({ referralData }: RegisterPageProps) {
                                             />
                                         </svg>
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="text-sm font-normal text-gray-900 dark:text-white">Google</div>
+                                    <div className="">
+                                        <div className="text-sm font-medium text-primary">Google</div>
                                     </div>
                                 </div>
-                            </div>
+                            </Button>
 
                             {/* GitHub Login Card */}
-                            <div
+                            {/* <div
                                 onClick={handleGithubLogin}
                                 className="w-full cursor-pointer rounded-xl border border-dashed border-primary/20 bg-accent p-4"
                                 tabIndex={0}
@@ -178,11 +173,24 @@ export default function Register({ referralData }: RegisterPageProps) {
                                         </div>
                                     </div>
                                     <div className="flex-1">
-                                        <div className="text-sm font-normal text-gray-900 dark:text-white">GitHub</div>
+                                        <div className="text-sm font-medium text-gray-900 dark:text-white">GitHub</div>
                                     </div>
                                 </div>
-                            </div>
+                            </div> */}
                         </div>
+
+                        <div className="text-center text-sm text-muted-foreground">
+                            Already have an account?{' '}
+                            <TextLink href={route('login')} tabIndex={6}>
+                                Log in
+                            </TextLink>
+                        </div>
+
+                        <div className="text-center text-xs text-muted-foreground">
+                           By continuing, you agree to our <TextLink href="/terms">Terms of Service</TextLink> and <TextLink href="/privacy">Privacy Policy</TextLink>.
+                        </div>
+
+
                     </>
                 )}
             </Form>
