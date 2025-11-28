@@ -114,7 +114,7 @@ const removeStorage = (key: string, userId: string) => sessionStorage.removeItem
 
 // Helper to clear all onboarding storage for a user
 const clearAllOnboardingStorage = (userId: string) => {
-    const keys = ['step', 'organized', 'chat_messages', 'understanding', 'estimation', 'chat_complete'];
+    const keys = ['step', 'organized', 'chat_messages', 'understanding', 'estimation', 'chat_complete', 'user_message_count'];
     keys.forEach(key => removeStorage(key, userId));
 };
 
@@ -147,6 +147,10 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
     const [isChatComplete, setIsChatComplete] = useState(() => {
         const saved = getStorage('chat_complete', userId);
         return saved === 'true';
+    });
+    const [userMessageCount, setUserMessageCount] = useState(() => {
+        const saved = getStorage('user_message_count', userId);
+        return saved ? parseInt(saved, 10) : 0;
     });
 
     // Modal state for additional integrations
@@ -187,18 +191,25 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
         }
     }, [checkout_error]);
 
-    // Track subscription status changes
+    // Track subscription status changes (from polling or Ably broadcasts)
     const prevSubscribedRef = useRef(isSubscribed);
     useEffect(() => {
         if (currentPlan && currentPlan !== 'free') {
             setSelectedPlan(currentPlan);
             if (isSubscribed && !prevSubscribedRef.current) {
                 setIsVerifyingPayment(false);
-                toast.success('🎉 Subscription activated! Welcome to Costrym!');
+                toast.success('🎉 Subscription activated! Proceeding to integrations...');
+                
+                // Auto-proceed to next step (integrations) after payment verification
+                if (step === 4) {
+                    setTimeout(() => {
+                        handleStepChange(5);
+                    }, 1500);
+                }
             }
             prevSubscribedRef.current = isSubscribed;
         }
-    }, [currentPlan, isSubscribed, userId]);
+    }, [currentPlan, isSubscribed, userId, step]);
 
     // Listen for live subscription status updates via Ably
     useEffect(() => {
@@ -255,7 +266,12 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
                     
                     // Show success message
                     if (!isSubscribed) {
-                        toast.success('🎉 Subscription activated! Welcome to Costrym!');
+                        toast.success('🎉 Subscription activated! Proceeding to integrations...');
+                        
+                        // Auto-proceed to next step (integrations) after payment verification
+                        setTimeout(() => {
+                            handleStepChange(5);
+                        }, 1500);
                     } else {
                         toast.success('✅ Subscription updated!');
                     }
@@ -307,13 +323,14 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
         };
     }, [auth.user?.id, userId, isSubscribed]);
 
-    // Handle Paddle checkout completion - reduced polling since we have live updates
+    // Handle Paddle checkout completion with reliable polling
     useEffect(() => {
         let pollInterval: NodeJS.Timeout | null = null;
         let pollAttempts = 0;
-        const maxPollAttempts = 5; // Reduced since we have live updates
+        const maxPollAttempts = 30; // Poll for up to 90 seconds (30 * 3s)
 
         const checkSubscriptionStatus = () => {
+            console.log(`🔄 Checking subscription status (attempt ${pollAttempts + 1}/${maxPollAttempts})`);
             router.reload({ only: ['subscription', 'customer'] });
         };
 
@@ -324,26 +341,31 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
             pollAttempts = 0;
             
             // Immediate check
+            console.log('✅ Payment completed, starting verification...');
             setTimeout(() => checkSubscriptionStatus(), 1000);
             
-            // Reduced polling - live updates will handle most cases
+            // Continuous polling every 3 seconds
             pollInterval = setInterval(() => {
                 pollAttempts++;
                 checkSubscriptionStatus();
+                
                 if (pollAttempts >= maxPollAttempts) {
+                    console.warn('⚠️ Polling timeout reached');
                     if (pollInterval) {
                         clearInterval(pollInterval);
                         pollInterval = null;
-                        setIsVerifyingPayment(false);
                     }
+                    setIsVerifyingPayment(false);
+                    toast.error('Verification taking longer than expected. Please refresh the page.');
                 }
-            }, 2000);
+            }, 3000); // Poll every 3 seconds
         };
 
         const handleCheckoutClosed = () => {
             setShowCheckout(false);
             if (selectedPlan) {
                 setIsVerifyingPayment(true);
+                console.log('🔄 Checkout closed, verifying subscription...');
                 setTimeout(() => checkSubscriptionStatus(), 1000);
             }
         };
@@ -354,9 +376,20 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
         return () => {
             window.removeEventListener('paddle-checkout-complete', handleCheckoutComplete);
             window.removeEventListener('paddle-checkout-closed', handleCheckoutClosed);
-            if (pollInterval) clearInterval(pollInterval);
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                console.log('🛡️ Cleaned up polling interval');
+            }
         };
     }, [selectedPlan]);
+
+    // Stop polling when subscription is verified
+    useEffect(() => {
+        if (isSubscribed && isVerifyingPayment && step === 4) {
+            console.log('✅ Subscription verified via polling!');
+            setIsVerifyingPayment(false);
+        }
+    }, [isSubscribed, isVerifyingPayment, step]);
 
     // Chat state
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
@@ -533,6 +566,10 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
     }, [chatMessages, userId]);
 
     useEffect(() => {
+        setStorage('user_message_count', userMessageCount.toString(), userId);
+    }, [userMessageCount, userId]);
+
+    useEffect(() => {
         if (aiUnderstanding) {
             setStorage('understanding', aiUnderstanding, userId);
         }
@@ -625,6 +662,7 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
         setChatMessages((prev) => [...prev, userMessage]);
         setCurrentInput('');
         setIsSendingMessage(true);
+        setUserMessageCount((prev) => prev + 1);
 
         try {
             const response = await fetch(route('onboarding.chat'), {
@@ -772,10 +810,12 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
         setCurrentInput('');
         setEstimationContent('');
         setIsChatComplete(false);
+        setUserMessageCount(0);
         removeStorage('chat_messages', userId);
         removeStorage('understanding', userId);
         removeStorage('estimation', userId);
         removeStorage('chat_complete', userId);
+        removeStorage('user_message_count', userId);
 
         // Re-initialize with welcome message
         const welcomeMessage: ChatMessage = {
@@ -1162,6 +1202,11 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
                                         <div className="flex flex-shrink-0 items-center justify-between gap-1 p-2 sm:p-4">
                                             <h3 className="line-clamp-1 flex items-center gap-1.5 text-xs font-medium text-foreground sm:gap-2 sm:text-sm">
                                                 <span className="">Noted</span>
+                                                {userMessageCount > 0 && (
+                                                    <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-normal text-primary sm:text-xs">
+                                                        {userMessageCount} {userMessageCount === 1 ? 'message' : 'messages'}
+                                                    </span>
+                                                )}
                                             </h3>
                                             {(chatMessages.length > 1 || aiUnderstanding) && (
                                                 <>
@@ -1227,6 +1272,21 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
                                     <CaretLeftIcon className="size-3.5 flex-shrink-0 sm:size-4" />
                                     <span className="hidden sm:inline">Back</span>
                                 </Button>
+                                
+                                {/* Show skip button after 2 user messages */}
+                                {userMessageCount >= 2 && !isChatComplete && (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => handleStepChange(3)}
+                                        disabled={isSendingMessage}
+                                        variant="ghost"
+                                        className="h-8 flex-1 gap-1 text-xs sm:h-9 sm:flex-none sm:gap-2 sm:text-sm"
+                                    >
+                                        <span>Skip</span>
+                                        <CaretRightIcon className="size-3.5 flex-shrink-0 sm:size-4" />
+                                    </Button>
+                                )}
+                                
                                 <Button
                                     size="sm"
                                     onClick={handleProceedToIntegrations}

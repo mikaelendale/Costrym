@@ -111,8 +111,16 @@ class FirstTimeCostAnalysisJob implements ShouldQueue
 
             // STEP 4: Root Cause Analysis
             Log::info('Step 4: Running RootAnalysisAgent');
-            $rootCauseResult = $this->runRootCauseAnalysis($sessionId, $cerResult, $financialRecords);
-            $reportSections['root_cause'] = $rootCauseResult;
+            try {
+                $rootCauseResult = $this->runRootCauseAnalysis($sessionId, $cerResult, $financialRecords);
+                $reportSections['root_cause'] = $rootCauseResult;
+            } catch (\Exception $e) {
+                Log::error('Step 4 (RootAnalysisAgent) failed', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                throw $e;
+            }
 
             // STEP 5: Solution Generation
             Log::info('Step 5: Running SolutionGeneratorAgent');
@@ -143,7 +151,7 @@ class FirstTimeCostAnalysisJob implements ShouldQueue
                 'type' => 'first_time_cost_analysis',
                 'name' => 'First-Time Cost Analysis Report',
                 'description' => 'Comprehensive cost analysis performed after initial data ingestion',
-                'status' => 'completed',
+                'status' => 'active',
                 'markdown_content' => $finalReport,
                 'metadata' => [
                     'session_id' => $sessionId,
@@ -245,7 +253,11 @@ class FirstTimeCostAnalysisJob implements ShouldQueue
      */
     private function runRootCauseAnalysis(string $sessionId, string $cerData, $financialRecords): string
     {
+        // Sanitize CER data to prevent JSON parsing errors
+        $cerData = $this->sanitizePromptData($cerData);
+        
         $transactionData = $this->formatTransactionData($financialRecords);
+        $transactionData = $this->sanitizePromptData($transactionData);
         
         $prompt = "CER Analysis (High-Priority Issues):\n{$cerData}\n\n";
         $prompt .= "Transaction Data:\n{$transactionData}\n\n";
@@ -408,7 +420,30 @@ class FirstTimeCostAnalysisJob implements ShouldQueue
             $formatted .= "- {$record->date->format('Y-m-d')}: {$record->description} - \${$record->amount} ({$categoryName})\n";
         }
         
-        return $formatted;
+       return $formatted;
+    }
+
+     /**
+     * Sanitize prompt data to prevent JSON parsing errors
+     */
+    private function sanitizePromptData(string $data): string
+    {
+        // Remove any potential problematic characters that could break JSON parsing
+        // Replace smart quotes with regular quotes
+        $data = str_replace(["\u201C", "\u201D", "\u2018", "\u2019"], ['"', '"', "'", "'"], $data);
+        
+        // Remove any control characters except newlines and tabs
+        $data = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $data);
+        
+        // Limit excessive newlines
+        $data = preg_replace('/\n{4,}/', "\n\n\n", $data);
+        
+        // Truncate if too long (keep under 8000 chars to prevent token limits)
+        if (strlen($data) > 8000) {
+            $data = substr($data, 0, 8000) . "\n\n[...truncated for brevity]";
+        }
+        
+        return $data;
     }
 
     /**

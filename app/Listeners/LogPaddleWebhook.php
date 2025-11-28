@@ -98,19 +98,25 @@ class LogPaddleWebhook
             // Try to find user from customer ID or email
             $user = null;
 
+            // Look up user via the customers table relationship (Laravel Cashier Paddle)
             if (isset($data['customer_id'])) {
-                $user = User::where('paddle_id', $data['customer_id'])->first();
+                $user = User::whereHas('customer', function ($query) use ($data) {
+                    $query->where('paddle_id', $data['customer_id']);
+                })->first();
             }
 
-            if (! $user && isset($data['customer_email'])) {
-                $user = User::where('email', $data['customer_email'])->first();
+            // Fallback: try email lookup
+            if (! $user && isset($data['email'])) {
+                $user = User::where('email', $data['email'])->first();
             }
 
             // Also check subscription data for customer info
             if (! $user && isset($data['subscription'])) {
                 $subscriptionData = is_array($data['subscription']) ? $data['subscription'] : [];
                 if (isset($subscriptionData['customer_id'])) {
-                    $user = User::where('paddle_id', $subscriptionData['customer_id'])->first();
+                    $user = User::whereHas('customer', function ($query) use ($subscriptionData) {
+                        $query->where('paddle_id', $subscriptionData['customer_id']);
+                    })->first();
                 }
             }
 

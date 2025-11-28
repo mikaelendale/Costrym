@@ -21,8 +21,8 @@ class MasterOrchestrator extends Agent
 
     protected $tools = [
         \App\Tools\LarAgentKnowledgeBaseTool::class, // Access user business context
-        \App\Tools\QueryFinancialRecordsTool::class, // Query and analyze financial transactions
-        \App\Tools\ListFinancialCategoriesTool::class, // List all expense categories
+        \App\Tools\LarAgentQueryFinancialRecordsTool::class, // Query and analyze financial transactions
+        \App\Tools\LarAgentListFinancialCategoriesTool::class, // List all expense categories
     ];
 
     public function instructions()

@@ -30,6 +30,11 @@ Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
 Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
 Route::get('/refund-policy', [LegalController::class, 'refundPolicy'])->name('refund-policy');
 
+// Public Pricing Page
+Route::get('/pricing', function () {
+    return Inertia::render('pricing');
+})->name('pricing');
+
 Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('dashboard', function () {
         $pendingTasks = \App\Models\Task::where('user_id', auth()->id())

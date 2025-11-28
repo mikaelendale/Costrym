@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { GoogleDrive } from 'brand-logos';
+import { ArrowLeft, Sparkles, Zap, FileDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -83,41 +84,16 @@ export default function Show({ automation }: { automation: Automation }) {
                     <div className="mx-auto flex h-full max-w-[1600px] gap-6 py-6">
 
                         {/* Right Column - Metrics & Info (1/3 width) */}
-                        <div className="flex-1 space-y-4 overflow-y-auto">
-                            {/* Status Card */}
-
+                        <div className="flex-1 flex flex-col space-y-4 overflow-y-auto">
                             {/* Header */}
                             <div className="flex-shrink-0">
-                                <div className="mx-auto max-w-[1600px] px-6 py-3">
+                                <div className="mx-auto max-w-[1600px] py-3">
                                     <div className="flex items-center gap-4"> 
                                         <div className="h-6 w-px bg-border" />
-                                        <h1 className="text-xl font-semibold">{automation.name}</h1>
+                                        <h1 className="text-xl underline underline-offset-4 font-normal">{automation.name}</h1>
                                     </div>
                                 </div>
                             </div>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base">Status</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-muted-foreground">Type</span>
-                                        <Badge variant={getTypeBadgeVariant(automation.type)}>
-                                            {automation.type.replace(/_/g, ' ')}
-                                        </Badge>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-muted-foreground">Created</span>
-                                        <span className="text-sm">{formatDate(automation.created_at)}</span>
-                                    </div>
-                                    {automation.metadata?.pipeline && (
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm text-muted-foreground">Pipeline</span>
-                                            <Badge variant="outline">{automation.metadata.pipeline}</Badge>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
 
                             {/* Metrics Card */}
                             {(automation.metadata?.task_count || automation.metadata?.estimated_savings) && (
@@ -206,12 +182,103 @@ export default function Show({ automation }: { automation: Automation }) {
                                     </CardContent>
                                 </Card>
                             )}
+
+                            {/* Spacer to push bottom cards down */}
+                            <div className="flex-1" />
+
+
+                            {/* Status Card - Moved to bottom */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">Status</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-muted-foreground">Type</span>
+                                        <Badge variant={getTypeBadgeVariant(automation.type)}>
+                                            {automation.type.replace(/_/g, ' ')}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-muted-foreground">Created</span>
+                                        <span className="text-sm">{formatDate(automation.created_at)}</span>
+                                    </div>
+                                    {automation.metadata?.pipeline && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-muted-foreground">Pipeline</span>
+                                            <Badge variant="outline">{automation.metadata.pipeline}</Badge>
+                                        </div>
+                                    )}
+
+                                    {/* Export Options */}
+                                    <div className="space-y-3 border-t pt-4">
+                                        <div className="flex items-center gap-2">
+                                            <FileDown className="h-4 w-4 text-muted-foreground" />
+                                            <span className="text-sm font-medium text-foreground">Export to</span>
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                            {/* Notion */}
+                                            <button className="group flex w-full items-center gap-3 rounded-lg border border-border bg-background px-3 py-2 transition-all hover:border-primary/50 hover:bg-accent">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded bg-black dark:bg-white">
+                                                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path className="text-white dark:text-black" d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"/>
+                                                    </svg>
+                                                </div>
+                                                <span className="text-sm font-medium">Notion</span>
+                                            </button>
+
+                                            {/* Google Docs */}
+                                            <button className="group flex w-full items-center gap-3 rounded-lg border border-border bg-background px-3 py-2 transition-all hover:border-primary/50 hover:bg-accent">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded ">
+                                                    <GoogleDrive className="h-5 w-5" />
+                                                </div>
+                                                <span className="text-sm font-medium">Google Docs</span>
+                                            </button>
+
+                                            {/* Markdown */}
+                                            <button className="group flex w-full items-center gap-3 rounded-lg border border-border bg-background px-3 py-2 transition-all hover:border-primary/50 hover:bg-accent">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded bg-gradient-to-br from-gray-700 to-gray-900">
+                                                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path className="text-white" d="M22.27 19.385H1.73A1.73 1.73 0 0 1 0 17.655V6.345a1.73 1.73 0 0 1 1.73-1.73h20.54A1.73 1.73 0 0 1 24 6.345v11.308a1.73 1.73 0 0 1-1.73 1.731zM5.769 15.923v-4.5l2.308 2.885 2.307-2.885v4.5h2.308V8.077h-2.308l-2.307 2.885-2.308-2.885H3.46v7.846zm13.846-4.5H17.31v-1.5h-2.308v1.5h-2.307l3.461 4.5z"/>
+                                                    </svg>
+                                                </div>
+                                                <span className="text-sm font-medium">Markdown</span>
+                                            </button>
+
+                                            {/* PDF */}
+                                            <button className="group flex w-full items-center gap-3 rounded-lg border border-border bg-background px-3 py-2 transition-all hover:border-primary/50 hover:bg-accent">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded bg-[#F40F02]">
+                                                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path className="text-white" d="M8.267 14.68c-.184 0-.308.018-.372.036v1.178c.076.018.171.023.302.023.479 0 .774-.242.774-.651 0-.366-.254-.586-.704-.586zm3.487.012c-.2 0-.33.018-.407.036v2.61c.077.018.201.018.313.018.817.006 1.349-.444 1.349-1.396.006-.83-.479-1.268-1.255-1.268z"/>
+                                                        <path className="text-white" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM9.498 16.19c-.309.29-.765.42-1.296.42a2.23 2.23 0 0 1-.308-.018v1.426H7v-3.936A7.558 7.558 0 0 1 8.219 14c.557 0 .953.106 1.22.319.254.202.426.533.426.923-.001.392-.131.723-.367.948zm3.807 1.355c-.42.349-1.059.515-1.84.515-.468 0-.799-.03-1.024-.06v-3.917A7.947 7.947 0 0 1 11.66 14c.757 0 1.249.136 1.633.426.415.308.675.799.675 1.504 0 .763-.279 1.29-.663 1.615zM17 14.77h-1.532v.911H16.9v.734h-1.432v1.604h-.906V14.03H17v.74zM14 9h-1V4l5 5h-4z"/>
+                                                    </svg>
+                                                </div>
+                                                <span className="text-sm font-medium">PDF</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            {/* Execute Report Card */}
+                            <Card className="border-border">
+                                <CardContent className="py-0">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <p className="text-sm text-muted-foreground">
+                                            Apply the recommendations from this analysis
+                                        </p>
+                                        <button className="flex-shrink-0 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+                                            Execute
+                                        </button>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
                         {/* Left Column - Markdown Content (2/3 width) */}
                         <div className="flex-[2]">
-                            <Card className="flex h-full flex-col rounded-lg bg-primary-foreground "> 
+                            <Card className="flex h-full flex-col rounded-lg bg-primary-foreground shadow-none border-none"> 
                                 <CardContent className="flex-1 overflow-y-auto">
-                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                    <div className="prose prose-sm dark:prose-invert max-w-none px-15 py-10">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={{
