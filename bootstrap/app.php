@@ -9,8 +9,8 @@ use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
@@ -22,15 +22,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'social' => \App\Http\Middleware\CheckSocialLogin::class,
             'social.settings' => \App\Http\Middleware\CheckSocialSettingsAccess::class,
             'onboarding' => \App\Http\Middleware\CheckOnboardingStatus::class,
+            'subscribed' => \App\Http\Middleware\Subscribed::class,
         ]);
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
-
         $middleware->validateCsrfTokens(except: [
-            'paddle/*',
+            'stripe/*',  // Add this line
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

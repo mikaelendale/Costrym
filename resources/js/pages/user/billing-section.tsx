@@ -6,23 +6,23 @@ import type React from 'react';
 
 type BillingSectionProps = {
     subscription: any;
-    plans: any;
-    billingHistory: any;
-    currentPlan: any;
+    customer: any;
+    price: any;
+    billing: any;
 };
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Billing',
-        href: '/billing',
+        href: '/settings/billing',
     },
 ];
 
-const BillingSection: React.FC<BillingSectionProps> = () => {
-    // Destructure usage from props
+const BillingSection: React.FC<BillingSectionProps> = ({ subscription, customer, price, billing }) => {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <SettingsLayout>
-                <BillingPage /> {/* Pass the usage prop */}
+                <BillingPage />
             </SettingsLayout>
         </AppLayout>
     );

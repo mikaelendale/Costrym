@@ -10,6 +10,7 @@ use App\AiAgents\SolutionGeneratorAgent;
 use App\AiAgents\CostImpactSimulatorAgent;
 use App\AiAgents\ValueMapper;
 use App\AiAgents\SmartReducer;
+use App\Events\FirstTimeAnalysisStatusUpdated;
 use App\Models\Automation;
 use App\Models\FinancialRecord;
 use App\Models\User;
@@ -59,6 +60,15 @@ class FirstTimeCostAnalysisJob implements ShouldQueue
     {
         Log::info('FirstTimeCostAnalysisJob started', ['user_id' => $this->userId]);
 
+        // Broadcast started
+        Log::info('🚀 Broadcasting analysis STARTED', ['user_id' => $this->userId]);
+        broadcast(new FirstTimeAnalysisStatusUpdated(
+            $this->userId,
+            'started',
+            ['message' => 'Starting comprehensive cost analysis...']
+        ));
+        Log::info('✅ Broadcast sent: analysis STARTED', ['user_id' => $this->userId]);
+
         $user = User::find($this->userId);
 
         if (!$user) {
@@ -96,21 +106,57 @@ class FirstTimeCostAnalysisJob implements ShouldQueue
         try {
             // STEP 1: Cost Decomposition
             Log::info('Step 1: Running CostDecompositionAgent');
+            broadcast(new FirstTimeAnalysisStatusUpdated(
+                $this->userId,
+                'analyzing',
+                [
+                    'message' => 'Step 1/8: Cost Decomposition',
+                    'current_step' => 1,
+                    'total_steps' => 8,
+                ]
+            ));
             $decompositionResult = $this->runCostDecomposition($sessionId, $financialRecords, $companyContext);
             $reportSections['decomposition'] = $decompositionResult;
 
             // STEP 2: Benchmark Analysis
             Log::info('Step 2: Running BenchmarkAgent');
+            broadcast(new FirstTimeAnalysisStatusUpdated(
+                $this->userId,
+                'analyzing',
+                [
+                    'message' => 'Step 2/8: Benchmark Analysis',
+                    'current_step' => 2,
+                    'total_steps' => 8,
+                ]
+            ));
             $benchmarkResult = $this->runBenchmarkAnalysis($sessionId, $companyContext, $decompositionResult);
             $reportSections['benchmark'] = $benchmarkResult;
 
             // STEP 3: CER Analysis
             Log::info('Step 3: Running CERAgent');
+            broadcast(new FirstTimeAnalysisStatusUpdated(
+                $this->userId,
+                'analyzing',
+                [
+                    'message' => 'Step 3/8: Cost Efficiency Analysis',
+                    'current_step' => 3,
+                    'total_steps' => 8,
+                ]
+            ));
             $cerResult = $this->runCERAnalysis($sessionId, $benchmarkResult, $financialRecords);
             $reportSections['cer'] = $cerResult;
 
             // STEP 4: Root Cause Analysis
             Log::info('Step 4: Running RootAnalysisAgent');
+            broadcast(new FirstTimeAnalysisStatusUpdated(
+                $this->userId,
+                'analyzing',
+                [
+                    'message' => 'Step 4/8: Root Cause Analysis',
+                    'current_step' => 4,
+                    'total_steps' => 8,
+                ]
+            ));
             try {
                 $rootCauseResult = $this->runRootCauseAnalysis($sessionId, $cerResult, $financialRecords);
                 $reportSections['root_cause'] = $rootCauseResult;
@@ -124,21 +170,57 @@ class FirstTimeCostAnalysisJob implements ShouldQueue
 
             // STEP 5: Solution Generation
             Log::info('Step 5: Running SolutionGeneratorAgent');
+            broadcast(new FirstTimeAnalysisStatusUpdated(
+                $this->userId,
+                'analyzing',
+                [
+                    'message' => 'Step 5/8: Solution Generation',
+                    'current_step' => 5,
+                    'total_steps' => 8,
+                ]
+            ));
             $solutionsResult = $this->runSolutionGeneration($sessionId, $rootCauseResult);
             $reportSections['solutions'] = $solutionsResult;
 
             // STEP 6: Cost Impact Simulation
             Log::info('Step 6: Running CostImpactSimulatorAgent');
+            broadcast(new FirstTimeAnalysisStatusUpdated(
+                $this->userId,
+                'analyzing',
+                [
+                    'message' => 'Step 6/8: Impact Simulation',
+                    'current_step' => 6,
+                    'total_steps' => 8,
+                ]
+            ));
             $simulationResult = $this->runCostImpactSimulation($sessionId, $solutionsResult);
             $reportSections['simulation'] = $simulationResult;
 
             // STEP 7: Value Mapping
             Log::info('Step 7: Running ValueMapper');
+            broadcast(new FirstTimeAnalysisStatusUpdated(
+                $this->userId,
+                'analyzing',
+                [
+                    'message' => 'Step 7/8: Value Mapping',
+                    'current_step' => 7,
+                    'total_steps' => 8,
+                ]
+            ));
             $valueMappingResult = $this->runValueMapping($sessionId, $simulationResult, $companyContext);
             $reportSections['value_mapping'] = $valueMappingResult;
 
             // STEP 8: Smart Reduction (Final Recommendations)
             Log::info('Step 8: Running SmartReducer');
+            broadcast(new FirstTimeAnalysisStatusUpdated(
+                $this->userId,
+                'analyzing',
+                [
+                    'message' => 'Step 8/8: Final Recommendations',
+                    'current_step' => 8,
+                    'total_steps' => 8,
+                ]
+            ));
             $finalRecommendations = $this->runSmartReduction($sessionId, $valueMappingResult);
             $reportSections['recommendations'] = $finalRecommendations;
 
@@ -165,6 +247,18 @@ class FirstTimeCostAnalysisJob implements ShouldQueue
                 'automation_id' => $automation->id,
             ]);
 
+            // Broadcast completion
+            Log::info('✅ Broadcasting analysis COMPLETED', ['user_id' => $this->userId]);
+            broadcast(new FirstTimeAnalysisStatusUpdated(
+                $this->userId,
+                'completed',
+                [
+                    'message' => 'Cost analysis complete!',
+                    'automation_id' => $automation->id,
+                ]
+            ));
+            Log::info('✅ Broadcast sent: analysis COMPLETED', ['user_id' => $this->userId]);
+
             // Schedule Master Orchestrator to run 24 hours later
             MasterOrchestratorJob::dispatch(
                 userId: $this->userId,
@@ -180,6 +274,19 @@ class FirstTimeCostAnalysisJob implements ShouldQueue
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            // Broadcast failure
+            Log::error('❌ Broadcasting analysis FAILED', ['user_id' => $this->userId]);
+            broadcast(new FirstTimeAnalysisStatusUpdated(
+                $this->userId,
+                'failed',
+                [
+                    'message' => 'Analysis failed. Please try again.',
+                    'error' => $e->getMessage(),
+                ]
+            ));
+            Log::info('✅ Broadcast sent: analysis FAILED', ['user_id' => $this->userId]);
+
             throw $e;
         }
     }

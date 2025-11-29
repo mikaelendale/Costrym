@@ -8,7 +8,6 @@ import { GoogleGmail, NotionIcon, Xero, Zoho } from 'brand-logos';
 import { Bot, LoaderCircle, Trash2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { PaddleCheckout } from '@/components/paddle-checkout';
 
 import {
     AlertDialog,
@@ -101,9 +100,8 @@ const ANIMATION_CONFIG = {
 } as const;
 
 interface OnboardingProps {
-    checkout_data?: { type: string; options: any };
-    checkout_plan?: string;
-    checkout_error?: string;
+    session_id?: string;
+    cancelled?: string;
 }
 
 // sessionStorage helper with user ID prefix (clears when browser tab/window closes)
@@ -119,10 +117,9 @@ const clearAllOnboardingStorage = (userId: string) => {
 };
 
 
-export default function Onboarding({ checkout_data, checkout_plan, checkout_error }: OnboardingProps = {}) {
-    const { auth, paddle, subscription, customer } = usePage<SharedData>().props;
+export default function Onboarding({ session_id, cancelled }: OnboardingProps = {}) {
+    const { auth, subscription, customer } = usePage<SharedData>().props;
     const userId = auth.user?.id?.toString() || '1';
-    const paddleToken = (paddle as any)?.client_side_token;
     const isSubscribed = (subscription as any)?.states?.subscribed || false;
     const currentPlan = (customer as any)?.plan || null;
 
@@ -165,8 +162,7 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
     const [analysisResult, setAnalysisResult] = useState<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Paddle checkout state
-    const [showCheckout, setShowCheckout] = useState(false);
+    // Paddle checkout state (removed - using Stripe redirect)
     const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
     const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
     const subscriptionStatus = subscription ? {
@@ -175,21 +171,74 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
         status: (subscription as any).states,
     } : null;
 
-    // Handle checkout data from backend
+    // Handle return from Stripe checkout
     useEffect(() => {
-        if (checkout_data && checkout_plan) {
-            setShowCheckout(true);
-            toast.success('Opening secure checkout...');
+        if (session_id) {
+            // User returned from successful Stripe checkout
+            toast.success('Payment completed! Verifying subscription...');
+            setIsVerifyingPayment(true);
+            
+            // Reload Inertia props to get fresh subscription data
+            router.reload({ only: ['subscription', 'customer'] });
+            
+            // Poll for subscription verification
+            const checkStatus = async () => {
+                try {
+                    const response = await fetch(route('onboarding.check-subscription'));
+                    const data = await response.json();
+                    
+                    if (data.success && data.subscribed) {
+                        setIsVerifyingPayment(false);
+                        if (data.current_plan) {
+                            setSelectedPlan(data.current_plan);
+                        }
+                        toast.success('🎉 Subscription activated! Proceeding to integrations...');
+                        
+                        // Reload one more time to ensure UI has latest data
+                        router.reload({ only: ['subscription', 'customer'] });
+                        
+                        setTimeout(() => {
+                            handleStepChange(5);
+                        }, 1500);
+                        return true; // Stop polling
+                    }
+                    return false; // Continue polling
+                } catch (error) {
+                    console.error('Failed to check subscription status:', error);
+                    return false;
+                }
+            };
+            
+            // Check immediately
+            checkStatus().then((verified) => {
+                if (verified) return;
+                
+                // Poll every 2 seconds for up to 30 seconds
+                let attempts = 0;
+                const maxAttempts = 15;
+                const pollInterval = setInterval(async () => {
+                    attempts++;
+                    const verified = await checkStatus();
+                    
+                    if (verified || attempts >= maxAttempts) {
+                        clearInterval(pollInterval);
+                        if (attempts >= maxAttempts && !verified) {
+                            setIsVerifyingPayment(false);
+                            toast.error('Verification timeout. Please refresh the page.');
+                        }
+                    }
+                }, 2000);
+                
+                // Cleanup
+                return () => clearInterval(pollInterval);
+            });
         }
-    }, [checkout_data, checkout_plan]);
-
-    useEffect(() => {
-        if (checkout_error) {
-            setIsLoadingCheckout(false);
+        
+        if (cancelled === '1') {
+            toast.info('Checkout cancelled. You can select a plan when ready.');
             setSelectedPlan(null);
-            toast.error(checkout_error);
         }
-    }, [checkout_error]);
+    }, [session_id, cancelled]);
 
     // Track subscription status changes (from polling or Ably broadcasts)
     const prevSubscribedRef = useRef(isSubscribed);
@@ -322,66 +371,6 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
             }
         };
     }, [auth.user?.id, userId, isSubscribed]);
-
-    // Handle Paddle checkout completion with reliable polling
-    useEffect(() => {
-        let pollInterval: NodeJS.Timeout | null = null;
-        let pollAttempts = 0;
-        const maxPollAttempts = 30; // Poll for up to 90 seconds (30 * 3s)
-
-        const checkSubscriptionStatus = () => {
-            console.log(`🔄 Checking subscription status (attempt ${pollAttempts + 1}/${maxPollAttempts})`);
-            router.reload({ only: ['subscription', 'customer'] });
-        };
-
-        const handleCheckoutComplete = () => {
-            toast.success('Payment completed! Verifying subscription...');
-            setShowCheckout(false);
-            setIsVerifyingPayment(true);
-            pollAttempts = 0;
-            
-            // Immediate check
-            console.log('✅ Payment completed, starting verification...');
-            setTimeout(() => checkSubscriptionStatus(), 1000);
-            
-            // Continuous polling every 3 seconds
-            pollInterval = setInterval(() => {
-                pollAttempts++;
-                checkSubscriptionStatus();
-                
-                if (pollAttempts >= maxPollAttempts) {
-                    console.warn('⚠️ Polling timeout reached');
-                    if (pollInterval) {
-                        clearInterval(pollInterval);
-                        pollInterval = null;
-                    }
-                    setIsVerifyingPayment(false);
-                    toast.error('Verification taking longer than expected. Please refresh the page.');
-                }
-            }, 3000); // Poll every 3 seconds
-        };
-
-        const handleCheckoutClosed = () => {
-            setShowCheckout(false);
-            if (selectedPlan) {
-                setIsVerifyingPayment(true);
-                console.log('🔄 Checkout closed, verifying subscription...');
-                setTimeout(() => checkSubscriptionStatus(), 1000);
-            }
-        };
-
-        window.addEventListener('paddle-checkout-complete', handleCheckoutComplete);
-        window.addEventListener('paddle-checkout-closed', handleCheckoutClosed);
-
-        return () => {
-            window.removeEventListener('paddle-checkout-complete', handleCheckoutComplete);
-            window.removeEventListener('paddle-checkout-closed', handleCheckoutClosed);
-            if (pollInterval) {
-                clearInterval(pollInterval);
-                console.log('🛡️ Cleaned up polling interval');
-            }
-        };
-    }, [selectedPlan]);
 
     // Stop polling when subscription is verified
     useEffect(() => {
@@ -773,31 +762,9 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
         setSelectedPlan(plan);
         setIsLoadingCheckout(true);
 
-        // Save plan preference and create checkout session in one request (non-reloading)
-        router.post(
-            route('onboarding.select-plan'),
-            { plan },
-            {
-                onSuccess: () => {
-                    setIsLoadingCheckout(false);
-                    // Checkout overlay will open automatically via useEffect watching checkout_data
-                },
-                onError: (errors) => {
-                    setIsLoadingCheckout(false);
-                    setSelectedPlan(null);
-                    
-                    const errorMessage =
-                        errors?.error ||
-                        errors?.message ||
-                        errors?.checkout_error ||
-                        'Failed to process plan selection. Please try again.';
-                    
-                    toast.error(errorMessage);
-                },
-                preserveScroll: true,
-                preserveState: true,
-            },
-        );
+        // Redirect to the select-plan route which will redirect to Stripe checkout
+        // We use window.location instead of router.post to allow full redirect to Stripe
+        window.location.href = route('onboarding.select-plan') + '?plan=' + plan;
     };
 
     const handleClearClick = () => {
@@ -1436,8 +1403,7 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
                                         onClick={() => handlePlanSelect('startup-monthly')}
                                         disabled={
                                             isLoadingCheckout || 
-                                            (subscriptionStatus?.subscribed && subscriptionStatus?.current_plan === 'startup-monthly') ||
-                                            (selectedPlan !== null && selectedPlan !== 'startup-monthly')
+                                            subscriptionStatus?.subscribed
                                         }
                                     >
                                         {isLoadingCheckout && selectedPlan === 'startup-monthly' ? (
@@ -1501,8 +1467,7 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
                                             onClick={() => handlePlanSelect('startup-annual')}
                                             disabled={
                                                 isLoadingCheckout || 
-                                                (subscriptionStatus?.subscribed && subscriptionStatus?.current_plan === 'startup-annual') ||
-                                                (selectedPlan !== null && selectedPlan !== 'startup-annual')
+                                                subscriptionStatus?.subscribed
                                             }
                                         >
                                             {isLoadingCheckout && selectedPlan === 'startup-annual' ? (
@@ -1585,8 +1550,7 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
                                         onClick={() => handlePlanSelect('enterprise-annual')}
                                         disabled={
                                             isLoadingCheckout || 
-                                            (subscriptionStatus?.subscribed && subscriptionStatus?.current_plan === 'enterprise-annual') ||
-                                            (selectedPlan !== null && selectedPlan !== 'enterprise-annual')
+                                            subscriptionStatus?.subscribed
                                         }
                                     >
                                         {isLoadingCheckout && selectedPlan === 'enterprise-annual' ? (
@@ -1623,31 +1587,18 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
                                     <span className="sm:hidden">Continue</span>
                                     <CaretRightIcon className="size-4" />
                                 </Button>
-                            ) : selectedPlan ? (
-                                <Button 
-                                    size="sm" 
-                                    onClick={() => handleStepChange(5)} 
-                                    variant="outline" 
-                                    className="flex-1 sm:flex-none"
-                                    disabled={isLoadingCheckout}
-                                >
-                                    {isLoadingCheckout ? (
-                                        <>
-                                            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                                            <span className="hidden sm:inline">Processing...</span>
-                                            <span className="sm:hidden">Processing</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span className="hidden sm:inline">Continue (Checkout Required)</span>
-                                            <span className="sm:hidden">Continue</span>
-                                            <CaretRightIcon className="size-4" />
-                                        </>
-                                    )}
-                                </Button>
                             ) : (
                                 <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
-                                    Please select a plan
+                                    {isVerifyingPayment ? (
+                                        <div className="flex items-center gap-2">
+                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                            <span>Verifying payment...</span>
+                                        </div>
+                                    ) : selectedPlan ? (
+                                        'Please complete payment to continue'
+                                    ) : (
+                                        'Please select a plan to continue'
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -1992,18 +1943,6 @@ export default function Onboarding({ checkout_data, checkout_plan, checkout_erro
                     </AuthSimpleLayout>
                 )}
             </div>
-
-            {/* Paddle Checkout Overlay - Opens Paddle's overlay directly, no modal needed */}
-            <PaddleCheckout
-                open={showCheckout}
-                onOpenChange={setShowCheckout}
-                checkoutData={checkout_data || null}
-                paddleToken={paddleToken}
-                onError={(error) => {
-                    toast.error(error);
-                    setShowCheckout(false);
-                }}
-            />
 
             {/* More Integrations Modal */}
             <Dialog open={showMoreIntegrationsModal} onOpenChange={setShowMoreIntegrationsModal}>

@@ -14,13 +14,13 @@ return new class extends Migration
         Schema::create('subscription_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('subscription_id');
-            $table->string('product_id');
-            $table->string('price_id');
-            $table->string('status');
-            $table->integer('quantity');
+            $table->string('stripe_id')->unique();
+            $table->string('stripe_product');
+            $table->string('stripe_price');
+            $table->integer('quantity')->nullable();
             $table->timestamps();
 
-            $table->unique(['subscription_id', 'price_id']);
+            $table->index(['subscription_id', 'stripe_price']);
         });
     }
 

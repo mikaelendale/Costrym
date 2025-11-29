@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
-use Laravel\Paddle\Exceptions\PaddleException;
 
 /**
  * Onboarding Controller
@@ -24,12 +23,10 @@ use Laravel\Paddle\Exceptions\PaddleException;
  * 1. Company information processing
  * 2. AI-powered chat conversation
  * 3. Value proposition estimation
- * 4. Plan selection and Paddle checkout
- * 5. Onboarding completion
+ * 4. Onboarding completion
  *
  * Features:
  * - AI agent integration for intelligent conversations
- * - Paddle subscription checkout with discount support
  * - Knowledge base persistence for user context
  * - Graceful error handling and logging
  */
@@ -199,25 +196,14 @@ class OnboardingController extends Controller
     }
 
     // ============================================================================
-    // PLAN SELECTION & PADDLE CHECKOUT
+    // PLAN SELECTION & SUBSCRIPTION
     // ============================================================================
 
     /**
-     * Handles plan selection and creates Paddle checkout session.
-     *
-     * Flow:
-     * 1. Validates selected plan against available options
-     * 2. Checks if user already has active subscription (redirects if yes)
-     * 3. Saves plan preference to user profile
-     * 4. Creates Paddle checkout session with discount applied
-     * 5. Returns checkout options via Inertia (non-reloading)
-     *
-     * The checkout options are used by the frontend PaddleCheckout component
-     * to open Paddle's overlay checkout. Discounts are automatically applied
-     * based on plan configuration in services.php.
+     * Handle plan selection during onboarding and redirect to Stripe checkout.
      *
      * @param  Request  $request  HTTP request containing the selected plan
-     * @return \Inertia\Response|\Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\RedirectResponse Redirects to Stripe checkout
      */
     public function selectPlan(Request $request)
     {
@@ -227,323 +213,84 @@ class OnboardingController extends Controller
 
         try {
             $user = $request->user();
+            $plan = $request->input('plan');
 
-            if (! $user) {
-                return redirect()->back()->withErrors(['error' => 'User not authenticated']);
+            // Map plan IDs to Stripe price IDs
+            $priceMap = [
+                'startup-monthly' => env('STRIPE_PRICE_STARTER_MONTHLY'),
+                'startup-annual' => env('STRIPE_PRICE_STARTER_ANNUAL'),
+                'enterprise-annual' => env('STRIPE_PRICE_ENTERPRISE_ANNUAL'),
+            ];
+
+            $priceId = $priceMap[$plan] ?? null;
+
+            if (!$priceId) {
+                return back()->withErrors(['error' => 'Invalid plan selected']);
             }
 
-            // Rate limiting: prevent too many checkout attempts
-            $key = 'onboarding-checkout:'.$user->id;
-            if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
-                $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
-                Log::warning('Rate limit exceeded for checkout attempts', [
-                    'user_id' => $user->id,
-                    'seconds_remaining' => $seconds,
-                ]);
-
-                return Inertia::render('onboarding', [
-                    'checkout_error' => 'Too many checkout attempts. Please wait a moment and try again.',
-                ]);
-            }
-            \Illuminate\Support\Facades\RateLimiter::hit($key, 60); // 5 attempts per minute
-
-            // Check if user already has an active subscription
-            if ($user->subscribed('default')) {
-                Log::info('User already subscribed, redirecting to onboarding', [
-                    'user_id' => $user->id,
-                    'selected_plan' => $request->input('plan'),
-                ]);
-
-                return redirect()->route('onboarding')->with('info', 'You are already subscribed.');
-            }
-
-            // Save plan preference to user profile for tracking
-            $user->plan = $request->input('plan');
+            // Save plan preference
+            $user->plan = $plan;
             $user->save();
 
-            Log::info('Plan selected during onboarding', [
-                'user_id' => $user->id,
-                'plan' => $request->input('plan'),
-            ]);
-
-            // Create Paddle checkout session with discount support
-            try {
-                $plan = $request->input('plan');
-
-                // Map plan identifiers to Paddle price IDs
-                $plans = [
-                    'startup-monthly' => config('services.paddle.startup_monthly_price_id'),
-                    'startup-annual' => config('services.paddle.startup_annual_price_id'),
-                    'enterprise-annual' => config('services.paddle.enterprise_annual_price_id'),
+            // Create Stripe checkout session
+            $checkout = $user->newSubscription('default', $priceId);
+            
+            // Apply coupon if enabled
+            if (env('STRIPE_COUPONS_ENABLED', false)) {
+                $couponMap = [
+                    'startup-monthly' => env('STRIPE_COUPON_STARTER_MONTHLY'),
+                    'startup-annual' => env('STRIPE_COUPON_STARTER_ANNUAL'),
+                    'enterprise-annual' => env('STRIPE_COUPON_ENTERPRISE_ANNUAL'),
                 ];
-
-                // Map plans to discount IDs (configured in services.php)
-                $discounts = [
-                    'startup-monthly' => config('services.paddle.startup_monthly_discount'),
-                    'startup-annual' => config('services.paddle.startup_annual_discount'),
-                    'enterprise-annual' => config('services.paddle.enterprise_annual_discount'),
-                ];
-
-                // Validate plan exists and has price ID
-                if (! isset($plans[$plan]) || empty($plans[$plan])) {
-                    throw new \RuntimeException('Invalid plan selected');
+                
+                $couponCode = $couponMap[$plan] ?? null;
+                if ($couponCode) {
+                    $checkout->withCoupon($couponCode);
                 }
-
-                $priceId = $plans[$plan];
-
-                // Log detailed information before attempting checkout
-                Log::info('Attempting to create Paddle checkout', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'plan' => $plan,
-                    'price_id' => $priceId,
-                    'has_paddle_customer' => $user->paddle_id !== null,
-                    'paddle_customer_id' => $user->paddle_id,
-                    'app_env' => config('app.env', 'unknown'),
-                ]);
-
-                // Ensure user has a Paddle customer ID
-                // Laravel Cashier should create this automatically, but we'll check first
-                if (! $user->paddle_id) {
-                    Log::info('User does not have Paddle customer ID, Cashier will create one', [
-                        'user_id' => $user->id,
-                        'user_email' => $user->email,
-                    ]);
-
-                    // Try to manually create customer first to get better error messages
-                    // This helps diagnose API key permission issues
-                    try {
-                        $user->createAsCustomer();
-                        Log::info('Paddle customer created successfully', [
-                            'user_id' => $user->id,
-                            'paddle_id' => $user->paddle_id,
-                        ]);
-                    } catch (PaddleException $e) {
-                        // If customer creation fails, log detailed error but continue
-                        // The subscribe() call will also try to create customer
-                        Log::warning('Failed to pre-create Paddle customer, will retry in subscribe()', [
-                            'user_id' => $user->id,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                }
-
-                // Create Paddle checkout session using Laravel Cashier
-                // Returns to onboarding page to maintain single-page experience
-                $checkout = $user->subscribe($priceId, 'default')
-                    ->returnTo(route('onboarding'));
-
-                Log::info('Paddle checkout object created', [
-                    'user_id' => $user->id,
-                    'plan' => $plan,
-                    'price_id' => $plans[$plan],
-                    'discount_id' => $discounts[$plan] ?? null,
-                    'checkout_class' => get_class($checkout),
-                ]);
-
-                // Laravel Cashier Paddle returns a Checkout object (not a URL)
-                // We extract options to pass to frontend Paddle.js SDK
-                if (! method_exists($checkout, 'options')) {
-                    throw new \RuntimeException('Checkout object does not have options method');
-                }
-
-                $checkoutOptions = $checkout->options();
-
-                // Apply discount if configured for this plan
-                // Paddle.js Checkout.open() accepts discountId in options
-                $discountId = $discounts[$plan] ?? null;
-                if ($discountId && ! empty($discountId)) {
-                    $checkoutOptions['discountId'] = $discountId;
-
-                    Log::info('Discount applied to checkout', [
-                        'user_id' => $user->id,
-                        'plan' => $plan,
-                        'discount_id' => $discountId,
-                    ]);
-                } else {
-                    Log::info('No discount configured for plan', [
-                        'user_id' => $user->id,
-                        'plan' => $plan,
-                    ]);
-                }
-
-                // Package checkout options for frontend
-                // Frontend PaddleCheckout component will use Paddle.Checkout.open()
-                $checkoutData = [
-                    'type' => 'paddle_checkout',
-                    'options' => $checkoutOptions,
-                ];
-
-                Log::info('Checkout options created during plan selection', [
-                    'user_id' => $user->id,
-                    'plan' => $plan,
-                    'has_options' => ! empty($checkoutOptions),
-                ]);
-
-                // Return Inertia response with checkout data (non-reloading)
-                // Frontend automatically opens checkout overlay when this prop is received
-                return Inertia::render('onboarding', [
-                    'checkout_data' => $checkoutData,
-                    'checkout_plan' => $plan,
-                ]);
-            } catch (PaddleException $e) {
-                // Enhanced error logging for Paddle API errors
-                $errorMessage = $e->getMessage();
-                $errorCode = method_exists($e, 'getCode') ? $e->getCode() : null;
-
-                Log::error('Paddle checkout creation error in plan selection', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'plan' => $request->input('plan'),
-                    'price_id' => $plans[$plan] ?? null,
-                    'error' => $errorMessage,
-                    'error_code' => $errorCode,
-                    'error_class' => get_class($e),
-                    'has_paddle_customer' => $user->paddle_id !== null,
-                    'paddle_customer_id' => $user->paddle_id,
-                    'app_env' => config('app.env', 'unknown'),
-                    'trace' => $e->getTraceAsString(),
-                ]);
-
-                // Provide more specific error messages based on error type
-                $userFriendlyMessage = 'Failed to create checkout. Please try again.';
-
-                if (str_contains($errorMessage, "aren't permitted")) {
-                    $userFriendlyMessage = 'Unable to process payment request. Please contact support if this persists.';
-                    Log::warning('Paddle permissions error - possible API key or customer setup issue', [
-                        'user_id' => $user->id,
-                        'plan' => $request->input('plan'),
-                        'has_paddle_api_key' => ! empty(env('PADDLE_API_KEY')),
-                        'paddle_api_key_length' => strlen(env('PADDLE_API_KEY', '')),
-                        'paddle_api_key_prefix' => substr(env('PADDLE_API_KEY', ''), 0, 10).'...',
-                    ]);
-
-                    // Additional diagnostic: Check if this is a customer creation issue
-                    if (! $user->paddle_id && str_contains($errorMessage, "aren't permitted")) {
-                        Log::error('CRITICAL: Paddle API key may not have customer creation permissions', [
-                            'user_id' => $user->id,
-                            'issue' => 'API key lacks permission to create customers',
-                            'solution' => 'Verify PADDLE_API_KEY has correct permissions in Paddle dashboard',
-                        ]);
-                    }
-                } elseif (str_contains($errorMessage, 'rate limit') || str_contains($errorMessage, 'too many')) {
-                    $userFriendlyMessage = 'Too many requests. Please wait a moment and try again.';
-                } elseif (str_contains($errorMessage, 'invalid') || str_contains($errorMessage, 'not found')) {
-                    $userFriendlyMessage = 'Invalid plan selected. Please refresh the page and try again.';
-                }
-
-                return Inertia::render('onboarding', [
-                    'checkout_error' => $userFriendlyMessage,
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Checkout URL creation error', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'plan' => $request->input('plan'),
-                    'error' => $e->getMessage(),
-                    'error_class' => get_class($e),
-                    'trace' => $e->getTraceAsString(),
-                ]);
-
-                return Inertia::render('onboarding', [
-                    'checkout_error' => 'An unexpected error occurred. Please try again.',
-                ]);
+            } else {
+                // Allow user to enter their own promo codes
+                $checkout->allowPromotionCodes();
             }
-        } catch (\Exception $e) {
-            Log::error('Plan selection error', [
-                'user_id' => $request->user()?->id,
-                'plan' => $request->input('plan'),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+            
+            $checkout = $checkout->checkout([
+                'success_url' => route('onboarding') . '?session_id={CHECKOUT_SESSION_ID}&plan=' . $plan,
+                'cancel_url' => route('onboarding') . '?cancelled=1',
             ]);
 
-            return redirect()->back()
-                ->withErrors(['error' => 'Failed to save plan selection. Please try again.']);
+            return $checkout;
+        } catch (\Exception $e) {
+            Log::error('Plan selection error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'plan' => $request->input('plan'),
+            ]);
+
+            return back()->withErrors(['error' => 'Failed to process plan selection. Please try again.']);
         }
     }
 
-    // ============================================================================
-    // SUBSCRIPTION STATUS CHECK
-    // ============================================================================
-
     /**
-     * Checks the current subscription status for the authenticated user.
+     * Check subscription status (called after returning from Stripe checkout).
      *
-     * Returns comprehensive subscription information including:
-     * - Subscription state (active, trial, grace period, etc.)
-     * - Current plan identifier
-     * - Subscription validity and status flags
-     *
-     * Note: This endpoint is available but subscription status is primarily
-     * accessed via Inertia shared props (HandleInertiaRequests middleware)
-     * for better performance and real-time updates.
-     *
-     * @param  Request  $request  HTTP request
-     * @return JsonResponse Subscription status information
+     * @param  Request  $request
+     * @return JsonResponse
      */
     public function checkSubscriptionStatus(Request $request): JsonResponse
     {
         try {
             $user = $request->user();
 
-            if (! $user) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'User not authenticated',
-                ], 401);
-            }
-
-            // Check subscription status using Laravel Cashier methods
-            $subscription = $user->subscription('default');
-
-            $status = [
-                'subscribed' => $user->subscribed('default'),
-                'has_subscription' => $subscription !== null,
-                'valid' => $subscription && $subscription->valid(),
-                'active' => $subscription && $subscription->active(),
-                'recurring' => $subscription && $subscription->recurring(),
-                'on_trial' => $subscription && $subscription->onTrial(),
-                'on_grace_period' => $subscription && $subscription->onGracePeriod(),
-                'canceled' => $subscription && $subscription->canceled(),
-                'paused' => $subscription && $subscription->paused(),
-                'past_due' => $subscription && $subscription->pastDue(),
-            ];
-
-            // Get current plan if subscribed
-            $currentPlan = null;
-            $plans = [
-                'startup-monthly' => config('services.paddle.startup_monthly_price_id'),
-                'startup-annual' => config('services.paddle.startup_annual_price_id'),
-                'enterprise-annual' => config('services.paddle.enterprise_annual_price_id'),
-            ];
-
-            if ($subscription) {
-                foreach ($plans as $planKey => $priceId) {
-                    if ($user->subscribedToPrice($priceId, 'default')) {
-                        $currentPlan = $planKey;
-                        break;
-                    }
-                }
-            }
-
             return response()->json([
                 'success' => true,
-                'status' => $status,
-                'current_plan' => $currentPlan,
-                'subscription_id' => $subscription?->id,
-                'paddle_id' => $subscription?->paddle_id,
+                'subscribed' => $user->subscribed('default'),
+                'plan' => $user->subscription('default')?->stripe_price ?? null,
+                'current_plan' => $user->plan,
             ]);
         } catch (\Exception $e) {
-            Log::error('Subscription status check error', [
-                'user_id' => $request->user()?->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Subscription status check error: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to check subscription status',
-                'message' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }

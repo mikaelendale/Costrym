@@ -14,10 +14,9 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
 import type { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import { AlertTriangle, CreditCard, Download, Pin, SearchX } from 'lucide-react';
+import { AlertTriangle, CreditCard, Pin } from 'lucide-react';
 import { useState } from 'react';
 
 interface SubscriptionState {
@@ -55,28 +54,6 @@ interface SubscriptionData {
     states: Omit<SubscriptionState, 'subscribed' | 'subscribedToDefault' | 'onGenericTrial' | 'hasExpiredTrial'>;
 }
 
-interface Transaction {
-    id: string;
-    paddle_id: string;
-    paddle_subscription_id?: string;
-    invoice_number: string;
-    status: string;
-    total: number;
-    tax: number;
-    currency: string;
-    billed_at?: string;
-    created_at: string;
-}
-
-interface Receipt {
-    id: string;
-    paddle_id: string;
-    amount: number;
-    currency: string;
-    status: string;
-    created_at: string;
-}
-
 interface PageProps {
     customer: {
         plan: string;
@@ -94,14 +71,10 @@ interface PageProps {
         subscriptions: SubscriptionData[];
         trialEndsAt?: string;
     };
-    billing: {
-        transactions: Transaction[];
-        receipts: Receipt[];
-    };
 }
 
 export default function Billing() {
-    const { customer, price, subscription, billing } = usePage<SharedData & PageProps>().props;
+    const { customer, price, subscription } = usePage<SharedData & PageProps>().props;
 
     const [modal, setModal] = useState<null | { plan: string; billing: string; name: string; price: string }>(null);
     const openModal = (plan: string, billing: string, name: string, price: string) => {
@@ -114,9 +87,6 @@ export default function Billing() {
             closeModal();
         }
     };
-
-    // Keep mock data for apiCalls if not provided by backend
-    const mockApiCalls = { current: 12500, limit: 50000 };
 
     const plans = [
         {
@@ -148,12 +118,6 @@ export default function Billing() {
         router.post(route('subscription.cancel'));
     };
 
-    const formatCurrency = (amount: number, currency = 'USD') => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currency,
-        }).format(amount / 100);
-    };
     const formatDate = (dateString?: string) => {
         if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -205,26 +169,6 @@ export default function Billing() {
                             <Badge variant={subscription.states.active ? 'default' : 'secondary'}>
                                 {subscription.hasSubscription ? 'Active' : 'None'}
                             </Badge>
-                        </div>
-                        <Separator />
-                        <div className="flex items-center justify-between">
-                            {subscription.states.onPausedGracePeriod ? (
-                                <>
-                                    <Badge variant="destructive">Paused</Badge>
-                                    <Button onClick={() => router.post(route('subscription.resume'))} variant="outline" size="sm">
-                                        Resume
-                                    </Button>
-                                </>
-                            ) : (
-                                <>
-                                    <Badge variant="outline" className="bg-emerald-500/20">
-                                        Active
-                                    </Badge>
-                                    <Button onClick={() => router.post(route('subscription.pause'))} variant="outline" size="sm">
-                                        Pause
-                                    </Button>
-                                </>
-                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -336,43 +280,6 @@ export default function Billing() {
                                 </div>
                             </div>
                         ))}
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader className="pb-4">
-                    <CardTitle className="text-base">Billing History</CardTitle>
-                    <CardDescription className="text-sm">View and download your invoices</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        {billing.transactions.length > 0 ? (
-                            billing.transactions.map((transaction) => (
-                                <div key={transaction.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                                    <div className="flex-1">
-                                        <p className="font-medium">{transaction.invoice_number}</p>
-                                        <p className="text-xs text-muted-foreground">{formatDate(transaction.billed_at)}</p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <Badge variant={transaction.status === 'Paid' ? 'default' : 'secondary'} className="text-xs">
-                                            {transaction.status}
-                                        </Badge>
-                                        <span className="font-semibold">{formatCurrency(transaction.total, transaction.currency)}</span>
-                                        <a href={`/download-invoice?transaction_id=${transaction.id}`}>
-                                            <Button size="icon" variant="ghost" className="h-8 w-8">
-                                                <Download className="h-4 w-4" />
-                                            </Button>
-                                        </a>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="py-8 text-center">
-                                <SearchX className="mx-auto h-8 w-8 text-muted-foreground/50" />
-                                <p className="mt-2 text-sm text-muted-foreground">No transactions found</p>
-                            </div>
-                        )}
                     </div>
                 </CardContent>
             </Card>

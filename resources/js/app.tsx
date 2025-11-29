@@ -4,45 +4,59 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
-import { configureEcho } from '@laravel/echo-react';
-
-// Configure and initialize Echo for Ably broadcasting
-try {
-    console.log('🚀 Initializing Echo with Ably (Pusher compatibility mode)...');
-    
-    // Get Ably public key from environment
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+``
+// Initialize Echo with Ably
+const initEcho = () => {
     const ablyKey = import.meta.env.VITE_ABLY_PUBLIC_KEY;
     
     if (!ablyKey) {
-        console.error('❌ VITE_ABLY_PUBLIC_KEY not found in environment variables');
-        console.log('💡 Add VITE_ABLY_PUBLIC_KEY to your .env file');
-        console.log('💡 Example: VITE_ABLY_PUBLIC_KEY="your-key-part-before-colon"');
-    } else {
-        // Configure Echo with Ably using Pusher protocol
-        configureEcho({
-            broadcaster: 'ably',
-            key: ablyKey,
+        console.error('❌ VITE_ABLY_PUBLIC_KEY not set');
+        return;
+    }
+    
+    try {
+        // Get CSRF token from meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
+        if (!csrfToken) {
+            console.error('❌ CSRF token not found in meta tag');
+            return;
+        }
+        
+        const pusherClient = new Pusher(ablyKey, {
+            cluster: 'mt1',
             wsHost: 'realtime-pusher.ably.io',
             wsPort: 443,
+            wssPort: 443,
             disableStats: true,
-            encrypted: true,
+            authEndpoint: '/broadcasting/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+            },
         });
         
-        console.log('✅ Echo configured with Ably (Pusher compatibility mode)');
+        (window as any).Echo = new Echo({
+            broadcaster: 'pusher',
+            client: pusherClient,
+        });
         
-        // Check if Echo is available after configuration
-        setTimeout(() => {
-            const echo = (window as any).Echo;
-            if (echo) {
-                console.log('✅ Echo instance available globally');
-            } else {
-                console.warn('⚠️ Echo instance not found on window');
-            }
-        }, 100);
+        console.log('✅ Echo initialized with Ably');
+        console.log('🔑 CSRF Token:', csrfToken.substring(0, 10) + '...');
+    } catch (error) {
+        console.error('❌ Failed to initialize Echo:', error);
     }
-} catch (error) {
-    console.error('❌ Failed to initialize Echo:', error);
-    // Don't throw - allow app to continue without real-time features
+};
+
+// Initialize Echo after DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEcho);
+} else {
+    initEcho();
 }
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';

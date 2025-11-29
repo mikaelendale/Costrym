@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\DataIngestionStatusUpdated;
 use App\Models\ConnectedAccount;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -52,6 +53,18 @@ class DataIngestionJob implements ShouldQueue
             'is_initial_sync' => $this->isInitialSync,
             'has_json_file' => ! is_null($this->jsonFilePath),
         ]);
+
+        // Broadcast ingestion started
+        Log::info('🚀 Broadcasting ingestion STARTED', ['user_id' => $this->userId]);
+        broadcast(new DataIngestionStatusUpdated(
+            $this->userId,
+            'started',
+            [
+                'message' => 'Starting data ingestion...',
+                'is_initial_sync' => $this->isInitialSync,
+            ]
+        ));
+        Log::info('✅ Broadcast sent: ingestion STARTED', ['user_id' => $this->userId]);
 
         // Get all active connected accounts for this user
         $connectedAccounts = ConnectedAccount::where('user_id', $this->userId)
@@ -137,6 +150,15 @@ class DataIngestionJob implements ShouldQueue
                     'user_id' => $userId,
                 ]);
 
+                // Broadcast processing status
+                Log::info('📊 Broadcasting ingestion CATEGORIZING', ['user_id' => $userId]);
+                broadcast(new DataIngestionStatusUpdated(
+                    $userId,
+                    'categorizing',
+                    ['message' => 'Data ingested successfully. Categorizing records...']
+                ));
+                Log::info('✅ Broadcast sent: ingestion CATEGORIZING', ['user_id' => $userId]);
+
                 // First, categorize all the ingested financial records
                 // And trigger FirstTimeCostAnalysisJob when done
                 FinancialCategorizerJob::dispatch($userId, batchSize: 20, triggerAnalysis: true);
@@ -150,6 +172,21 @@ class DataIngestionJob implements ShouldQueue
                     'user_id' => $userId,
                     'error' => $e->getMessage(),
                 ]);
+
+                // Broadcast failure
+                Log::error('❌ Broadcasting ingestion FAILED', [
+                    'user_id' => $userId,
+                    'error' => $e->getMessage(),
+                ]);
+                broadcast(new DataIngestionStatusUpdated(
+                    $userId,
+                    'failed',
+                    [
+                        'message' => 'Data ingestion failed. Please try again.',
+                        'error' => $e->getMessage(),
+                    ]
+                ));
+                Log::info('✅ Broadcast sent: ingestion FAILED', ['user_id' => $userId]);
             })
             ->onQueue('data_ingestion')
             ->dispatch();

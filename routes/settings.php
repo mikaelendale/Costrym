@@ -34,8 +34,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/integrations', [IntegrationsController::class, 'index'])->name('integrations.index');
 
     Route::get('settings/billing', [BillingController::class, 'index'])->name('billing.index');
-    Route::post('settings/billing/change-plan', [BillingController::class, 'changePlan'])->name('billing.change-plan');
-    Route::post('settings/billing/update-payment', [BillingController::class, 'updatePaymentMethod'])->name('billing.update-payment');
-    Route::post('settings/billing/cancel', [BillingController::class, 'cancelSubscription'])->name('billing.cancel');
-    Route::get('settings/billing/invoice/{transaction}', [BillingController::class, 'downloadInvoice'])->name('billing.download-invoice');
+    Route::post('subscription/cancel', [BillingController::class, 'cancelSubscription'])->name('subscription.cancel');
+    Route::post('subscription/resume', [BillingController::class, 'resumeSubscription'])->name('subscription.resume');
+    Route::post('subscription/swap', [BillingController::class, 'swapPlan'])->name('subscription.swap');
+    Route::post('subscription/stop-cancellation', [BillingController::class, 'resumeSubscription'])->name('subscription.stop-cancellation');
+    Route::get('subscription/payment-method', [BillingController::class, 'updatePaymentMethod'])->name('subscription.payment-method');
+    Route::get('download-invoice', [BillingController::class, 'downloadInvoice'])->name('subscription.download-invoice');
 });

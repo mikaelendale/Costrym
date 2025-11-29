@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\AiAgents\CategorizerAgent;
+use App\Events\DataIngestionStatusUpdated;
 use App\Models\FinancialRecord;
 use App\Models\User;
 use Illuminate\Bus\Batchable;
@@ -189,6 +190,27 @@ class FinancialCategorizerJob implements ShouldQueue
                 // No more records, trigger analysis if requested
                 if ($this->triggerAnalysis) {
                     Log::info('FinancialCategorizerJob: All records categorized. Triggering FirstTimeCostAnalysisJob.', ['user_id' => $this->userId]);
+                    
+                    $totalRecords = FinancialRecord::where('user_id', $this->userId)->count();
+                    $categorizedRecords = FinancialRecord::where('user_id', $this->userId)->whereNotNull('category_id')->count();
+                    
+                    // Broadcast completion
+                    Log::info('✅ Broadcasting ingestion COMPLETED', [
+                        'user_id' => $this->userId,
+                        'total_records' => $totalRecords,
+                        'categorized_records' => $categorizedRecords,
+                    ]);
+                    broadcast(new DataIngestionStatusUpdated(
+                        $this->userId,
+                        'completed',
+                        [
+                            'message' => 'Data ingestion and categorization complete!',
+                            'total_records' => $totalRecords,
+                            'categorized_records' => $categorizedRecords,
+                        ]
+                    ));
+                    Log::info('✅ Broadcast sent: ingestion COMPLETED', ['user_id' => $this->userId]);
+                    
                     FirstTimeCostAnalysisJob::dispatch($this->userId);
                 }
             }

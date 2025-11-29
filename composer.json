@@ -14,7 +14,7 @@
         "inertiajs/inertia-laravel": "^2.0",
         "jpcaparas/laravel-firecrawl": "^0.1.0",
         "knackline/excel-to-x": "^2.1",
-        "laravel/cashier-paddle": "^2.6",
+        "laravel/cashier": "^16.0",
         "laravel/framework": "^12.0",
         "laravel/nightwatch": "^1.19",
         "laravel/socialite": "^5.23",

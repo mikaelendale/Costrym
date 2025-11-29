@@ -5,393 +5,193 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Laravel\Paddle\Exceptions\PaddleException;
+use Laravel\Cashier\Subscription;
 
 class BillingController extends Controller
 {
-    private array $plans;
-
-    /**
-     * Create a new controller instance.
-     *
-     * Initializes the available subscription plans with their details.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        $this->plans = [
-            'free' => [
-                'name' => 'Free Plan',
-                'paddle_id' => null,
-                'price' => 0,
-                'features' => ['Basic features'],
-            ],
-            'plus-monthly' => [
-                'name' => 'plus Monthly',
-                'paddle_id' => config('services.paddle.plus_monthly_price_id'),
-                'price' => 29,
-                'features' => ['Advanced features'],
-            ],
-            'plus-annual' => [
-                'name' => 'plus Annual',
-                'paddle_id' => config('services.paddle.plus_annual_price_id'),
-                'price' => 290,
-                'features' => ['Advanced features', '2 months free'],
-            ],
-        ];
-    }
-
-    /**
-     * Display the billing dashboard.
-     *
-     * @return \Inertia\Response
-     */
     public function index(Request $request)
     {
         $user = $request->user();
 
         // Get subscription data
+        $defaultSubscription = $user->subscription('default');
+        $hasSubscription = $defaultSubscription !== null;
 
-        return Inertia::render('user/billing-section');
-    }
+        // Build subscription states
+        $states = [
+            'valid' => $hasSubscription && $defaultSubscription->valid(),
+            'active' => $hasSubscription && $defaultSubscription->active(),
+            'onTrial' => $hasSubscription && $defaultSubscription->onTrial(),
+            'expiredTrial' => false,
+            'notOnTrial' => !$hasSubscription || !$defaultSubscription->onTrial(),
+            'recurring' => $hasSubscription && $defaultSubscription->recurring(),
+            'pastDue' => $hasSubscription && $defaultSubscription->pastDue(),
+            'paused' => false, // Stripe doesn't support pausing
+            'notPaused' => true,
+            'onPausedGracePeriod' => false,
+            'notOnPausedGracePeriod' => true,
+            'canceled' => $hasSubscription && $defaultSubscription->canceled(),
+            'notCanceled' => !$hasSubscription || !$defaultSubscription->canceled(),
+            'onGracePeriod' => $hasSubscription && $defaultSubscription->onGracePeriod(),
+            'notOnGracePeriod' => !$hasSubscription || !$defaultSubscription->onGracePeriod(),
+            'subscribed' => $user->subscribed('default'),
+            'subscribedToDefault' => $user->subscribed('default'),
+            'onGenericTrial' => $user->onGenericTrial(),
+            'hasExpiredTrial' => false,
+        ];
 
-    /**
-     * Get the user's recent billing history.
-     *
-     * @param  mixed  $user  The user instance
-     * @return array Formatted transaction history
-     */
-    private function getBillingHistory($user)
-    {
-        $transactions = $user->transactions()->latest()->take(10)->get();
+        // Get current plan info
+        $currentPlan = 'Free';
+        $subscriptionAmount = '$0/month';
 
-        return $transactions->map(function ($transaction) {
-            return [
-                'id' => $transaction->id,
-                'date' => $transaction->billed_at->format('M d, Y'),
-                'amount' => $transaction->total() == 0 ? '$0.00' : '$'.number_format((float) $transaction->total() / 100, 2),
-                'status' => ucfirst($transaction->paddle_status),
-                'description' => $transaction->total() == 0 ? 'Trial Setup' : 'Subscription Payment',
+        if ($hasSubscription) {
+            $priceId = $defaultSubscription->stripe_price;
+            
+            $planMap = [
+                env('STRIPE_PRICE_STARTER_MONTHLY') => 'startup-monthly',
+                env('STRIPE_PRICE_STARTER_ANNUAL') => 'startup-annual',
+                env('STRIPE_PRICE_ENTERPRISE_ANNUAL') => 'enterprise-annual',
             ];
-        })->toArray();
-    }
 
-    /**
-     * Get the user's current subscription plan.
-     *
-     * @param  mixed  $user  The user instance
-     * @return string The current plan identifier
-     */
-    private function getCurrentPlan($user)
-    {
-        $activeSub = $user->subscription('default');
+            $currentPlan = $planMap[$priceId] ?? 'startup-monthly';
 
-        if (! $activeSub) {
-            return 'free';
+            $amountMap = [
+                'startup-monthly' => '$' . env('STRIPE_PRICE_STARTER_MONTHLY'),
+                'startup-annual' => '$' . env('STRIPE_PRICE_STARTER_ANNUAL'),
+                'enterprise-annual' => '$' . env('STRIPE_PRICE_ENTERPRISE_ANNUAL'),
+            ];
+
+            $subscriptionAmount = $amountMap[$currentPlan] ?? '$0/month';
         }
 
-        foreach ($this->plans as $planId => $plan) {
-            if ($plan['paddle_id'] === $activeSub->paddle_price_id) {
-                return $planId;
-            }
-        }
 
-        return 'free';
-    }
-
-    /**
-     * Get plan name from Paddle price ID.
-     *
-     * @param  string  $paddleId  The Paddle price ID
-     * @return string The plan name or 'Unknown'
-     */
-    private function getPlanNameFromPaddleId($paddleId)
-    {
-        foreach ($this->plans as $plan) {
-            if ($plan['paddle_id'] === $paddleId) {
-                return $plan['name'];
-            }
-        }
-
-        return 'Unknown';
-    }
-
-    /**
-     * Change the user's subscription plan.
-     *
-     * Handles both upgrading to paid plans and downgrading to free plan.
-     * For free plan, cancels existing subscription. For paid plans, creates
-     * new subscription or swaps existing one.
-     *
-     * @param  Request  $request  The incoming request
-     * @return \Illuminate\Http\RedirectResponse|\Inertia\Response|\Illuminate\Contracts\View\View Redirects back, to checkout, or returns billing view
-     */
-    public function changePlan(Request $request)
-    {
-        $request->validate([
-            'plan' => 'required|string|in:'.implode(',', array_keys($this->plans)),
-            'billing' => 'sometimes|string|in:immediate,no_prorate,next_cycle',
+        $prices = [
+            'startup_monthly'  => '$' . env('STRIPE_PRICE_STARTER_MONTHLY'),
+            'startup_annual' => '$' . env('STRIPE_PRICE_STARTER_ANNUAL'),
+            'enterprise_annual' => '$' . env('STRIPE_PRICE_ENTERPRISE_ANNUAL'),
+        ];
+        return Inertia::render('user/billing-section', [
+            'customer' => [
+                'plan' => $currentPlan,
+                'subscriptionAmount' => $subscriptionAmount,
+            ],
+            'price' => $prices,
+            'subscription' => [
+                'hasSubscription' => $hasSubscription,
+                'defaultSubscription' => $defaultSubscription ? [
+                    'id' => $defaultSubscription->id,
+                    'type' => $defaultSubscription->type,
+                    'paddle_id' => $defaultSubscription->stripe_id,
+                    'status' => $defaultSubscription->stripe_status,
+                    'trial_ends_at' => $defaultSubscription->trial_ends_at?->toDateTimeString(),
+                    'ends_at' => $defaultSubscription->ends_at?->toDateTimeString(),
+                    'paused_at' => null, // Stripe doesn't have paused_at like Paddle
+                    'created_at' => $defaultSubscription->created_at->toDateTimeString(),
+                    'updated_at' => $defaultSubscription->updated_at->toDateTimeString(),
+                    'states' => array_filter($states, function ($key) {
+                        return !in_array($key, ['subscribed', 'subscribedToDefault', 'onGenericTrial', 'hasExpiredTrial']);
+                    }, ARRAY_FILTER_USE_KEY),
+                ] : null,
+                'states' => $states,
+                'subscriptions' => $user->subscriptions->map(function ($sub) {
+                    return [
+                        'id' => $sub->id,
+                        'type' => $sub->type,
+                        'paddle_id' => $sub->stripe_id,
+                        'status' => $sub->stripe_status,
+                        'trial_ends_at' => $sub->trial_ends_at?->toDateTimeString(),
+                        'ends_at' => $sub->ends_at?->toDateTimeString(),
+                        'created_at' => $sub->created_at->toDateTimeString(),
+                        'updated_at' => $sub->updated_at->toDateTimeString(),
+                    ];
+                })->toArray(),
+                'trialEndsAt' => $defaultSubscription?->trial_ends_at?->toDateTimeString(),
+            ],  
         ]);
-
-        $planId = $request->input('plan');
-        $billing = $request->input('billing', 'next_cycle');
-        $user = $request->user();
-
-        $plan = $this->plans[$planId];
-
-        // Handle free plan
-        if ($planId === 'free') {
-            $subscription = $user->subscription('default');
-            if ($subscription) {
-                try {
-                    $subscription->cancel();
-
-                    return back()->with('success', 'Subscription canceled. You\'ll have access until the end of your billing period.');
-                } catch (PaddleException $e) {
-                    return back()->with('error', 'Unable to cancel subscription.');
-                }
-            }
-
-            return back()->with('success', 'You\'re already on the free plan.');
-        }
-
-        // Handle paid plans
-        $subscription = $user->subscription('default');
-
-        if (! $subscription || ! $subscription->valid()) {
-            // Create new subscription
-            try {
-                $checkout = $user->subscribe($plan['paddle_id'], 'default')
-                    ->returnTo(route('billing.index'));
-
-                return view('billing', ['checkout' => $checkout]);
-            } catch (PaddleException $e) {
-                return back()->with('error', 'Unable to create subscription.');
-            }
-        }
-
-        // Swap existing subscription
-        try {
-            switch ($billing) {
-                case 'immediate':
-                    $subscription->swapAndInvoice($plan['paddle_id']);
-                    $message = "Successfully switched to {$plan['name']} plan! You've been charged immediately.";
-                    break;
-                case 'no_prorate':
-                    $subscription->noProrate()->swap($plan['paddle_id']);
-                    $message = "Successfully switched to {$plan['name']} plan! Changes take effect next billing cycle.";
-                    break;
-                default:
-                    $subscription->swap($plan['paddle_id']);
-                    $message = "Successfully switched to {$plan['name']} plan! Changes take effect next billing cycle.";
-                    break;
-            }
-
-            return back()->with('success', $message);
-        } catch (PaddleException $e) {
-            return back()->with('error', 'Unable to switch plans.');
-        }
     }
 
-    /**
-     * Update the payment method for the user's subscription.
-     *
-     * Redirects the user to Paddle's secure payment method update page.
-     *
-     * @param  Request  $request  The incoming request
-     * @return \Illuminate\Http\RedirectResponse|\Inertia\Response Redirects to Paddle or back with error
-     */
-    public function updatePaymentMethod(Request $request)
-    {
-        $user = $request->user();
-        $subscription = $user->subscription('default');
-
-        if (! $subscription) {
-            return back()->with('error', 'No active subscription found.');
-        }
-
-        try {
-            return redirect($subscription->redirectToUpdatePaymentMethod());
-        } catch (PaddleException $e) {
-            return back()->with('error', 'Unable to update payment method.');
-        }
-    }
-
-    /**
-     * Cancel the user's active subscription.
-     *
-     * Schedules the subscription for cancellation at the end of the billing period.
-     * User retains access until the subscription expires.
-     *
-     * @param  Request  $request  The incoming request
-     * @return \Illuminate\Http\RedirectResponse Redirects back with success/error message
-     */
     public function cancelSubscription(Request $request)
     {
         $user = $request->user();
         $subscription = $user->subscription('default');
 
-        if (! $subscription) {
-            return back()->with('error', 'No active subscription found.');
-        }
-
-        try {
+        if ($subscription) {
             $subscription->cancel();
-
-            return back()->with('success', 'Subscription canceled. You\'ll have access until the end of your billing period.');
-        } catch (PaddleException $e) {
-            return back()->with('error', 'Unable to cancel subscription.');
         }
+
+        return redirect()->route('billing.index')->with('success', 'Subscription cancelled. You will retain access until the end of your billing period.');
     }
 
-    /**
-     * Download an invoice PDF for a specific transaction.
-     *
-     * @param  Request  $request  The incoming request
-     * @param  string  $transactionId  The transaction ID
-     * @return \Illuminate\Http\RedirectResponse Redirects to invoice PDF or back with error
-     */
-    public function downloadInvoice(Request $request, $transactionId)
-    {
-        $user = $request->user();
-        $transaction = $user->transactions()->where('id', $transactionId)->first();
-
-        if (! $transaction) {
-            return back()->with('error', 'Invoice not found.');
-        }
-
-        try {
-            return $transaction->redirectToInvoicePdf();
-        } catch (PaddleException $e) {
-            return back()->with('error', 'Unable to download invoice.');
-        }
-    }
-
-    /**
-     * Pause the user's active subscription.
-     *
-     * Temporarily suspends billing and service access.
-     * Can be resumed later using resumeSubscription().
-     *
-     * @param  Request  $request  The incoming request
-     * @return \Illuminate\Http\RedirectResponse Redirects back with success/error message
-     */
-    public function pauseSubscription(Request $request)
-    {
-        $user = $request->user();
-        $subscription = $user->subscription('default');
-
-        if (! $subscription) {
-            return back()->with('error', 'No active subscription found.');
-        }
-
-        try {
-            $subscription->pause();
-
-            return back()->with('success', 'Subscription paused successfully.');
-        } catch (PaddleException $e) {
-            return back()->with('error', 'Unable to pause subscription.');
-        }
-    }
-
-    /**
-     * Resume a paused or canceled subscription.
-     *
-     * Reactivates a paused subscription or stops a scheduled cancellation.
-     * Restores normal billing and service access.
-     *
-     * @param  Request  $request  The incoming request
-     * @return \Illuminate\Http\RedirectResponse Redirects back with success/error message
-     */
     public function resumeSubscription(Request $request)
     {
         $user = $request->user();
-        $pausedSubscription = $user->subscription('default');
+        $subscription = $user->subscription('default');
 
-        if (! $pausedSubscription) {
-            $canceledSubscription = $user->subscription('default');
-
-            if ($canceledSubscription) {
-                try {
-                    $canceledSubscription->resume();
-
-                    return back()->with('success', 'Subscription resumed successfully.');
-                } catch (PaddleException $e) {
-                    return back()->with('error', 'Unable to resume subscription.');
-                }
-            }
-
-            return back()->with('error', 'No paused or canceled subscription found to resume.');
+        if ($subscription && $subscription->onGracePeriod()) {
+            $subscription->resume();
         }
 
-        try {
-            $pausedSubscription->resume();
-
-            return back()->with('success', 'Subscription resumed successfully.');
-        } catch (PaddleException $e) {
-            return back()->with('error', 'Unable to resume subscription.');
-        }
+        return redirect()->route('billing.index')->with('success', 'Subscription resumed successfully.');
     }
 
-    /**
-     * Swap the user's current subscription to a different plan.
-     *
-     * Changes the subscription plan with various billing options including
-     * immediate billing, proration, and next-cycle changes.
-     *
-     * @param  Request  $request  The incoming request
-     * @return \Illuminate\Http\RedirectResponse Redirects back with success/error message
-     */
     public function swapPlan(Request $request)
     {
         $request->validate([
-            'plan' => 'required|string|in:'.implode(',', array_keys($this->plans)),
-            'billing' => 'sometimes|string|in:immediate,no_prorate,no_prorate_immediate,no_bill,next_cycle',
+            'plan' => 'required|string',
+            'billing' => 'required|in:immediate,next_cycle,no_prorate',
         ]);
 
-        $plan = $request->input('plan');
-        $billing = $request->input('billing', 'next_cycle');
         $user = $request->user();
-
         $subscription = $user->subscription('default');
 
-        if (! $subscription || ! $subscription->valid()) {
-            return back()->with('error', 'No active subscription found to swap.');
+        // Map plan IDs to Stripe price IDs
+        $priceMap = [
+            'startup-monthly' => env('STRIPE_PRICE_STARTER_MONTHLY'),
+            'startup-annual' => env('STRIPE_PRICE_STARTER_ANNUAL'),
+            'enterprise-annual' => env('STRIPE_PRICE_ENTERPRISE_ANNUAL'),
+        ];
+
+        $newPriceId = $priceMap[$request->plan] ?? null;
+
+        if (!$newPriceId) {
+            return back()->withErrors(['plan' => 'Invalid plan selected.']);
         }
 
-        try {
-            switch ($billing) {
+        if ($subscription) {
+            switch ($request->billing) {
                 case 'immediate':
-                    $subscription->swapAndInvoice($this->plans[$plan]['paddle_id']);
-                    $message = "Successfully switched to {$this->plans[$plan]['name']} plan! You've been charged immediately.";
+                    // Swap immediately with proration
+                    $subscription->swap($newPriceId);
                     break;
-
+                case 'next_cycle':
+                    // Swap at next billing cycle
+                    $subscription->noProrate()->swap($newPriceId);
+                    break;
                 case 'no_prorate':
-                    $subscription->noProrate()->swap($this->plans[$plan]['paddle_id']);
-                    $message = "Successfully switched to {$this->plans[$plan]['name']} plan! Changes take effect next billing cycle (no proration).";
-                    break;
-
-                case 'no_prorate_immediate':
-                    $subscription->noProrate()->swapAndInvoice($this->plans[$plan]['paddle_id']);
-                    $message = "Successfully switched to {$this->plans[$plan]['name']} plan! You've been charged immediately (no proration).";
-                    break;
-
-                case 'no_bill':
-                    $subscription->doNotBill()->swap($this->plans[$plan]['paddle_id']);
-                    $message = "Successfully switched to {$this->plans[$plan]['name']} plan! No additional charges.";
-                    break;
-
-                default:
-                    $subscription->swap($this->plans[$plan]['paddle_id']);
-                    $message = "Successfully switched to {$this->plans[$plan]['name']} plan! Changes take effect next billing cycle.";
+                    // Swap without proration
+                    $subscription->noProrate()->swap($newPriceId);
                     break;
             }
 
-            return back()->with('success', $message);
-
-        } catch (PaddleException $e) {
-            return back()->with('error', 'Unable to switch plans.');
+            return redirect()->route('billing.index')->with('success', 'Plan changed successfully.');
         }
+
+        return back()->withErrors(['subscription' => 'No active subscription found.']);
+    }
+
+    public function updatePaymentMethod(Request $request)
+    {
+        // Redirect to Stripe's billing portal for payment method update
+        return $request->user()->redirectToBillingPortal(route('billing.index'));
+    }
+
+    public function downloadInvoice(Request $request, $invoiceId)
+    {
+        $user = $request->user();
+
+        return $user->downloadInvoice($invoiceId, [
+            'vendor' => config('app.name'),
+            'product' => 'Subscription',
+        ]);
     }
 }

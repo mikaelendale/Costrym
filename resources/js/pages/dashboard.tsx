@@ -5,7 +5,9 @@ import { Head, usePage, Link } from '@inertiajs/react';
 
 import WorkflowCards from '@/components/DashBoard/WorkflowCards';
 import RecentAutomations from '@/components/DashBoard/RecentAutomations';
-import { useState } from 'react';
+import IngestionStatusCard from '@/components/DashBoard/IngestionStatusCard';
+import AnalysisStatusCard from '@/components/DashBoard/AnalysisStatusCard';
+import { useState, useEffect } from 'react';
 import { PromptInput, PromptInputAction, PromptInputActions } from '@/components/ui/prompt-input';
 import { Button } from '@/components/ui/button';
 import { PromptInputTextarea } from '@/components/ui/prompt-input';
@@ -17,6 +19,7 @@ import { ArrowUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, Clock, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { CreditCard } from '@phosphor-icons/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -40,12 +43,53 @@ interface DashboardProps {
     } | null;
     recentAutomations: any[];
     totalAutomations: number;
+    subscription: {
+        isSubscribed: boolean;
+        onTrial: boolean;
+        onGracePeriod: boolean;
+        plan: string | null;
+        endsAt: string | null;
+    };
 }
 
-export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAutomations, totalAutomations }: DashboardProps) {
+export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAutomations, totalAutomations, subscription }: DashboardProps) {
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { auth } = usePage<SharedData>().props;
+
+    const [ingestionStatus, setIngestionStatus] = useState<{
+        status: 'idle' | 'started' | 'processing' | 'categorizing' | 'completed' | 'failed';
+        message?: string;
+        data?: any;
+    }>({ status: 'idle' });
+
+    const [analysisStatus, setAnalysisStatus] = useState<{
+        status: 'idle' | 'started' | 'analyzing' | 'completed' | 'failed';
+        message?: string;
+        data?: any;
+    }>({ status: 'idle' });
+
+    useEffect(() => {
+        if (!auth.user?.id) return;
+        const echo = (window as any).Echo;
+        if (!echo) return;
+        const channel = echo.private(`private-user.${auth.user.id}`);
+        console.log('📡 Subscribed to:', `private-user.${auth.user.id}`);
+        channel.subscribed(() => console.log('✅ Connected!'));
+        channel.listen('.ingestion.status.updated', (e: any) => {
+            console.log('📨 INGESTION:', e.status, '-', e.data?.message);
+            setIngestionStatus({ status: e.status, message: e.data?.message, data: e.data });
+        });
+        channel.listen('.analysis.status.updated', (e: any) => {
+            console.log('🧠 ANALYSIS:', e.status, '-', e.data?.message);
+            setAnalysisStatus({ status: e.status, message: e.data?.message, data: e.data });
+        });
+        return () => {
+            channel.stopListening('.ingestion.status.updated');
+            channel.stopListening('.analysis.status.updated');
+            echo.leave(`private-user.${auth.user.id}`);
+        };
+    }, [auth.user?.id]);
 
     const handleSubmit = () => {
         if (!prompt.trim()) return;
@@ -71,7 +115,7 @@ export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAut
                         {/* <p className="text-sm text-muted-foreground">Welcome to your dashboard</p> */}
                     </div>
 
-                </div>
+                </div> 
                 <div className="inset-x-0 top-5 mx-auto mt-5 min-w-3xl px-3 pb-3 md:pb-5 space-y-2">
                     {/* First Time Automation Status Card */}
 
@@ -133,13 +177,16 @@ export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAut
                             </PromptInputActions>
                         </div>
                     </PromptInput>
+                    
+                    <IngestionStatusCard status={ingestionStatus.status} message={ingestionStatus.message} data={ingestionStatus.data} className="mt-4" />
+                    <AnalysisStatusCard status={analysisStatus.status} message={analysisStatus.message} data={analysisStatus.data} className="mt-4" />
                 </div>
 
                 {/* Recent Automations Section */}
                 <div className="flex flex-col pt-10">
-                    <RecentAutomations 
-                        automations={recentAutomations} 
-                        totalCount={totalAutomations} 
+                    <RecentAutomations
+                        automations={recentAutomations}
+                        totalCount={totalAutomations}
                     />
                 </div>
                 <div className="flex flex-col pt-10">

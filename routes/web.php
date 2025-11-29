@@ -13,6 +13,9 @@ use App\Http\Controllers\Socialite\ProviderCallbackController;
 use App\Http\Controllers\Socialite\ProviderRedirectController;
 use App\Http\Controllers\WorkflowController;
 use App\Jobs\TaskDesignerJob;
+use Illuminate\Broadcasting\BroadcastManager;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -23,6 +26,9 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return redirect()->route('dashboard');
 })->name('home');
+
+// Broadcasting authentication endpoint
+Broadcast::routes(['middleware' => ['auth:web']]);
 
 // Changelog
 Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
@@ -61,14 +67,45 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
         $totalAutomations = \App\Models\Automation::where('user_id', auth()->id())
             ->where('status', 'active')
             ->count();
+        $user = auth()->user();
 
         return Inertia::render('dashboard', [
             'pendingTasks' => $pendingTasks,
             'firstTimeAutomation' => $firstTimeAutomation,
             'recentAutomations' => $recentAutomations,
             'totalAutomations' => $totalAutomations,
+            'subscription' => [
+                'isSubscribed' => $user->subscribed('default'),
+                'onTrial' => $user->onTrial('default'),
+                'onGracePeriod' => $user->subscription('default')?->onGracePeriod() ?? false,
+                'plan' => $user->subscription('default')?->stripe_price ?? null,
+                'endsAt' => $user->subscription('default')?->ends_at?->toDateTimeString() ?? null,
+            ],
         ]);
     })->name('dashboard');
+
+    // Subscription Checkout
+    Route::get('/subscription-checkout', function (Request $request) {
+        return $request->user()
+            ->newSubscription('default', env('STRIPE_PRICE_STARTER_MONTHLY'))
+            ->allowPromotionCodes()
+            ->checkout([
+                'success_url' => route('subscription.success'),
+                'cancel_url' => route('subscription.cancel'),
+            ]);
+    })->name('subscription.checkout');
+
+    // Subscription Success
+    Route::get('/subscription-success', function (Request $request) {
+        return Inertia::render('subscription/success', [
+            'subscribed' => $request->user()->subscribed('default'),
+        ]);
+    })->name('subscription.success');
+
+    // Subscription Cancelled
+    Route::get('/subscription-cancel', function (Request $request) {
+        return Inertia::render('subscription/cancel');
+    })->name('subscription.cancel');
 
     // Integrations
     // Route::get('integrations', function () {
@@ -129,10 +166,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('onboarding/chat', [OnboardingController::class, 'chat'])->name('onboarding.chat');
     Route::post('onboarding/estimation', [OnboardingController::class, 'estimation'])->name('onboarding.estimation');
-    Route::get('onboarding/select-plan', function () {
-        return redirect()->route('onboarding');
-    })->name('onboarding.select-plan.get');
-    Route::post('onboarding/select-plan', [OnboardingController::class, 'selectPlan'])->name('onboarding.select-plan');
+    Route::get('onboarding/select-plan', [OnboardingController::class, 'selectPlan'])->name('onboarding.select-plan');
     Route::get('onboarding/check-subscription', [OnboardingController::class, 'checkSubscriptionStatus'])->name('onboarding.check-subscription');
     Route::post('onboarding/upload-financial-data', [OnboardingController::class, 'uploadFinancialData'])->name('onboarding.upload-financial-data');
     Route::get('onboarding/upload-financial-data/status/{sessionId}', [OnboardingController::class, 'getUploadStatus'])->name('onboarding.upload-financial-data.status');
@@ -192,19 +226,15 @@ Route::get('/ai/test', [WorkflowController::class, 'index'])->name('ai.workflow'
 Route::get('/auth/{provider}/redirect', ProviderRedirectController::class)->name('auth.redirect')->middleware(['throttle:5,1']);
 Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name('auth.callback')->middleware(['throttle:5,1']);
 
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
-require __DIR__.'/paymentRoute.php';
+require __DIR__ . '/settings.php';
+require __DIR__ . '/auth.php';
 
-Route::middleware(['auth', 'verified', 'onboarding'])->get('/dispatch', function () {
-    $user = auth()->user();
-    if (! $user) {
-        abort(403);
-    }
-    TaskDesignerJob::dispatch($user->id);
+// Route::middleware(['auth', 'verified', 'onboarding'])->get('/dispatch', function () {
+//     $user = auth()->user();
+//     if (! $user) {
+//         abort(403);
+//     }
+//     TaskDesignerJob::dispatch($user->id);
 
-    return redirect()->route('dashboard')->with('success', 'Task designer job dispatched');
-})->name('task.designer');
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
-require __DIR__.'/paymentRoute.php';
+//     return redirect()->route('dashboard')->with('success', 'Task designer job dispatched');
+// })->name('task.designer');
