@@ -141,7 +141,7 @@ class DiagnoseIngestion extends Command
     }
 
     /**
-     * Check uploaded files in local storage
+     * Check uploaded files in S3
      */
     protected function checkUploadedFiles(User $user): void
     {
@@ -149,17 +149,17 @@ class DiagnoseIngestion extends Command
         
         $path = "financial_data/{$user->id}";
         
-        if (!Storage::disk('local')->exists($path)) {
+        if (!Storage::exists($path)) {
             $this->warn('  No upload directory found.');
         } else {
-            $files = Storage::disk('local')->files($path);
+            $files = Storage::files($path);
             
             if (empty($files)) {
                 $this->warn('  No files found in upload directory.');
             } else {
                 foreach ($files as $file) {
-                    $size = Storage::disk('local')->size($file);
-                    $lastModified = Storage::disk('local')->lastModified($file);
+                    $size = Storage::size($file);
+                    $lastModified = Storage::lastModified($file);
                     $this->line("  - " . basename($file) . " (" . $this->formatBytes($size) . ", " . date('Y-m-d H:i:s', $lastModified) . ")");
                 }
             }

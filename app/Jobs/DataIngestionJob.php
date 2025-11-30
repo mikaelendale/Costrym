@@ -8,7 +8,6 @@ use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -55,29 +54,17 @@ class DataIngestionJob implements ShouldQueue
             'has_json_file' => ! is_null($this->jsonFilePath),
         ]);
 
-        // Store status in cache for polling
-        Cache::put("ingestion_status_{$this->userId}", [
-            'status' => 'started',
-            'message' => 'Starting data ingestion...',
-            'data' => ['is_initial_sync' => $this->isInitialSync],
-            'updated_at' => now()->toDateTimeString(),
-        ], 3600); // 1 hour TTL
-
-        // Broadcast ingestion started (optional, for real-time if working)
+        // Broadcast ingestion started
         Log::info('🚀 Broadcasting ingestion STARTED', ['user_id' => $this->userId]);
-        try {
-            broadcast(new DataIngestionStatusUpdated(
-                $this->userId,
-                'started',
-                [
-                    'message' => 'Starting data ingestion...',
-                    'is_initial_sync' => $this->isInitialSync,
-                ]
-            ));
-            Log::info('✅ Broadcast sent: ingestion STARTED', ['user_id' => $this->userId]);
-        } catch (\Exception $e) {
-            Log::warning('Broadcast failed, using polling fallback', ['error' => $e->getMessage()]);
-        }
+        broadcast(new DataIngestionStatusUpdated(
+            $this->userId,
+            'started',
+            [
+                'message' => 'Starting data ingestion...',
+                'is_initial_sync' => $this->isInitialSync,
+            ]
+        ));
+        Log::info('✅ Broadcast sent: ingestion STARTED', ['user_id' => $this->userId]);
 
         // Get all active connected accounts for this user
         $connectedAccounts = ConnectedAccount::where('user_id', $this->userId)
@@ -163,26 +150,14 @@ class DataIngestionJob implements ShouldQueue
                     'user_id' => $userId,
                 ]);
 
-                // Store status in cache
-                Cache::put("ingestion_status_{$userId}", [
-                    'status' => 'categorizing',
-                    'message' => 'Data ingested successfully. Categorizing records...',
-                    'data' => [],
-                    'updated_at' => now()->toDateTimeString(),
-                ], 3600);
-
-                // Broadcast processing status (optional)
+                // Broadcast processing status
                 Log::info('📊 Broadcasting ingestion CATEGORIZING', ['user_id' => $userId]);
-                try {
-                    broadcast(new DataIngestionStatusUpdated(
-                        $userId,
-                        'categorizing',
-                        ['message' => 'Data ingested successfully. Categorizing records...']
-                    ));
-                    Log::info('✅ Broadcast sent: ingestion CATEGORIZING', ['user_id' => $userId]);
-                } catch (\Exception $e) {
-                    Log::warning('Broadcast failed, using polling fallback', ['error' => $e->getMessage()]);
-                }
+                broadcast(new DataIngestionStatusUpdated(
+                    $userId,
+                    'categorizing',
+                    ['message' => 'Data ingested successfully. Categorizing records...']
+                ));
+                Log::info('✅ Broadcast sent: ingestion CATEGORIZING', ['user_id' => $userId]);
 
                 // First, categorize all the ingested financial records
                 // And trigger FirstTimeCostAnalysisJob when done
@@ -192,36 +167,26 @@ class DataIngestionJob implements ShouldQueue
                     'user_id' => $userId,
                 ]);
             })
-            ->catch(function (\Illuminate\Bus\Batch $batch) use ($userId) {
+            ->catch(function (\Throwable $e) use ($userId) {
                 Log::error('Ingestion batch failed', [
                     'user_id' => $userId,
-                    'batch_id' => $batch->id,
+                    'error' => $e->getMessage(),
                 ]);
 
-                // Store failure status in cache
-                Cache::put("ingestion_status_{$userId}", [
-                    'status' => 'failed',
-                    'message' => 'Data ingestion failed. Please try again.',
-                    'data' => ['batch_id' => $batch->id],
-                    'updated_at' => now()->toDateTimeString(),
-                ], 3600);
-
-                // Broadcast failure (optional)
+                // Broadcast failure
                 Log::error('❌ Broadcasting ingestion FAILED', [
                     'user_id' => $userId,
+                    'error' => $e->getMessage(),
                 ]);
-                try {
-                    broadcast(new DataIngestionStatusUpdated(
-                        $userId,
-                        'failed',
-                        [
-                            'message' => 'Data ingestion failed. Please try again.',
-                        ]
-                    ));
-                    Log::info('✅ Broadcast sent: ingestion FAILED', ['user_id' => $userId]);
-                } catch (\Exception $broadcastError) {
-                    Log::warning('Broadcast failed, using polling fallback', ['error' => $broadcastError->getMessage()]);
-                }
+                broadcast(new DataIngestionStatusUpdated(
+                    $userId,
+                    'failed',
+                    [
+                        'message' => 'Data ingestion failed. Please try again.',
+                        'error' => $e->getMessage(),
+                    ]
+                ));
+                Log::info('✅ Broadcast sent: ingestion FAILED', ['user_id' => $userId]);
             })
             ->onQueue('data_ingestion')
             ->dispatch();
