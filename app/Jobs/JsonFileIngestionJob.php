@@ -49,12 +49,12 @@ class JsonFileIngestionJob implements ShouldQueue
         ]);
 
         try {
-            // 1. Load JSON Data from S3
-            if (! Storage::exists($this->filePath)) {
+            // 1. Load JSON Data from local storage
+            if (! Storage::disk('local')->exists($this->filePath)) {
                 throw new \Exception("File not found: {$this->filePath}");
             }
 
-            $jsonContent = Storage::get($this->filePath);
+            $jsonContent = Storage::disk('local')->get($this->filePath);
             $data = json_decode($jsonContent, true);
 
             if (! is_array($data)) {

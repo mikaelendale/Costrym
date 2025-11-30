@@ -192,24 +192,23 @@ class DataIngestionJob implements ShouldQueue
                     'user_id' => $userId,
                 ]);
             })
-            ->catch(function (\Throwable $e) use ($userId) {
+            ->catch(function (\Illuminate\Bus\Batch $batch) use ($userId) {
                 Log::error('Ingestion batch failed', [
                     'user_id' => $userId,
-                    'error' => $e->getMessage(),
+                    'batch_id' => $batch->id,
                 ]);
 
                 // Store failure status in cache
                 Cache::put("ingestion_status_{$userId}", [
                     'status' => 'failed',
                     'message' => 'Data ingestion failed. Please try again.',
-                    'data' => ['error' => $e->getMessage()],
+                    'data' => ['batch_id' => $batch->id],
                     'updated_at' => now()->toDateTimeString(),
                 ], 3600);
 
                 // Broadcast failure (optional)
                 Log::error('❌ Broadcasting ingestion FAILED', [
                     'user_id' => $userId,
-                    'error' => $e->getMessage(),
                 ]);
                 try {
                     broadcast(new DataIngestionStatusUpdated(
@@ -217,7 +216,6 @@ class DataIngestionJob implements ShouldQueue
                         'failed',
                         [
                             'message' => 'Data ingestion failed. Please try again.',
-                            'error' => $e->getMessage(),
                         ]
                     ));
                     Log::info('✅ Broadcast sent: ingestion FAILED', ['user_id' => $userId]);
