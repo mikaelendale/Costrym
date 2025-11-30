@@ -267,8 +267,8 @@ class DiagnoseIngestion extends Command
         
         $hasRecords = FinancialRecord::where('user_id', $user->id)->exists();
         $hasConnections = ConnectedAccount::where('user_id', $user->id)->where('is_active', true)->exists();
-        $hasFiles = Storage::disk('local')->exists("financial_data/{$user->id}") && 
-                    !empty(Storage::disk('local')->files("financial_data/{$user->id}"));
+        $hasFiles = Storage::disk('private')->exists("financial_data/{$user->id}") && 
+                    !empty(Storage::disk('private')->files("financial_data/{$user->id}"));
         
         if ($hasRecords) {
             $this->info('  ✅ Financial records are being ingested');

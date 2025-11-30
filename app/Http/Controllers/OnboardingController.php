@@ -362,7 +362,7 @@ class OnboardingController extends Controller
                     'potential_path' => $potentialPath,
                 ]);
                 
-                if (Storage::disk('local')->exists($potentialPath)) {
+                if (Storage::disk('private')->exists($potentialPath)) {
                     $jsonFilePath = $potentialPath;
                     Log::info('Onboarding completion: JSON file found', [
                         'user_id' => $user->id,
@@ -372,7 +372,7 @@ class OnboardingController extends Controller
                     Log::warning('Onboarding completion: JSON file specified but not found', [
                         'user_id' => $user->id,
                         'path' => $potentialPath,
-                        'all_storage_files' => Storage::disk('local')->files('financial_data/'.$user->id),
+                        'all_storage_files' => Storage::disk('private')->files('financial_data/'.$user->id),
                     ]);
                 }
             } else {
@@ -496,10 +496,10 @@ class OnboardingController extends Controller
                 'message' => 'Storing processed data...',
             ], 600);
 
-            // Store JSON file in local storage
+            // Store JSON file in private storage
             $jsonFileName = 'financial_data_'.$user->id.'_'.time().'.json';
             $jsonFilePath = 'financial_data/'.$user->id.'/'.$jsonFileName;
-            Storage::disk('local')->put($jsonFilePath, $conversionResult['json']);
+            Storage::disk('private')->put($jsonFilePath, $conversionResult['json']);
 
             Log::info('JSON file stored', [
                 'user_id' => $user->id,
