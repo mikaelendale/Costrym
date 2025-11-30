@@ -2,15 +2,11 @@
 
 namespace App\Events;
 
-use IlluminateBroadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
 
-class DataIngestionStatusUpdated implements ShouldBroadcastNow
+class DataIngestionStatusUpdated
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
 
     public int $userId;
     public string $status;
@@ -30,33 +26,5 @@ class DataIngestionStatusUpdated implements ShouldBroadcastNow
         $this->data = $data;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     */
-    public function broadcastOn(): array
-    {
-        return [
-            new Channel('user.' . $this->userId),
-        ];
-    }
 
-    /**
-     * The event's broadcast name.
-     */
-    public function broadcastAs(): string
-    {
-        return 'ingestion.status.updated';
-    }
-
-    /**
-     * Get the data to broadcast.
-     */
-    public function broadcastWith(): array
-    {
-        return [
-            'status' => $this->status,
-            'data' => $this->data,
-            'timestamp' => now()->toDateTimeString(),
-        ];
-    }
 }

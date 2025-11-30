@@ -98,7 +98,7 @@ export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAut
         router.visit(`/chat?message=${encodeURIComponent(prompt)}`, {
             method: 'get',
         });
-    };
+    };y
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
