@@ -149,17 +149,17 @@ class FixIngestion extends Command
     }
 
     /**
-     * Find uploaded JSON files for user
+     * Find uploaded JSON files for user in S3
      */
     protected function findJsonFiles(int $userId): array
     {
         $path = "financial_data/{$userId}";
         
-        if (!Storage::disk('local')->exists($path)) {
+        if (!Storage::exists($path)) {
             return [];
         }
 
-        $files = Storage::disk('local')->files($path);
+        $files = Storage::files($path);
         
         // Filter only JSON files and sort by most recent
         $jsonFiles = array_filter($files, function ($file) {
@@ -168,7 +168,7 @@ class FixIngestion extends Command
 
         // Sort by last modified time (most recent first)
         usort($jsonFiles, function ($a, $b) {
-            return Storage::disk('local')->lastModified($b) - Storage::disk('local')->lastModified($a);
+            return Storage::lastModified($b) - Storage::lastModified($a);
         });
 
         return $jsonFiles;
