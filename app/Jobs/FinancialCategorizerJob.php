@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -48,6 +49,7 @@ class FinancialCategorizerJob implements ShouldQueue
             Log::info('FinancialCategorizerJob: Batch was cancelled', [
                 'user_id' => $this->userId,
             ]);
+
             return;
         }
 
@@ -77,9 +79,36 @@ class FinancialCategorizerJob implements ShouldQueue
             ]);
 
             // If triggered to run analysis and no records left, run it now
+            // But only if analysis doesn't already exist AND not already running
             if ($this->triggerAnalysis) {
-                Log::info('FinancialCategorizerJob: Triggering FirstTimeCostAnalysisJob (no records left)', ['user_id' => $this->userId]);
-                FirstTimeCostAnalysisJob::dispatch($this->userId);
+                $analysisExists = \App\Models\Automation::where('user_id', $this->userId)
+                    ->where('type', 'first_time_cost_analysis')
+                    ->exists();
+
+                // Also check if analysis is already running (in cache)
+                $analysisStatus = Cache::get("analysis_status_{$this->userId}");
+                $isAnalysisRunning = $analysisStatus && in_array($analysisStatus['status'] ?? '', ['started', 'analyzing']);
+
+                // Use a lock to prevent duplicate dispatches
+                $analysisLockKey = "analysis_dispatch_{$this->userId}";
+                $isAnalysisLocked = Cache::has($analysisLockKey);
+
+                if (! $analysisExists && ! $isAnalysisRunning && ! $isAnalysisLocked) {
+                    // Set lock for 30 seconds to prevent duplicate dispatches
+                    Cache::put($analysisLockKey, true, 30);
+                    Log::info('FinancialCategorizerJob: Triggering FirstTimeCostAnalysisJob (no records left)', ['user_id' => $this->userId]);
+                    FirstTimeCostAnalysisJob::dispatch($this->userId);
+                } else {
+                    if ($analysisExists) {
+                        Log::info('FinancialCategorizerJob: FirstTimeCostAnalysisJob already exists, skipping', ['user_id' => $this->userId]);
+                    }
+                    if ($isAnalysisRunning) {
+                        Log::info('FinancialCategorizerJob: FirstTimeCostAnalysisJob already running, skipping', ['user_id' => $this->userId]);
+                    }
+                    if ($isAnalysisLocked) {
+                        Log::info('FinancialCategorizerJob: FirstTimeCostAnalysisJob dispatch already locked, skipping', ['user_id' => $this->userId]);
+                    }
+                }
             }
 
             return;
@@ -109,14 +138,14 @@ class FinancialCategorizerJob implements ShouldQueue
 
         try {
             // Run CategorizerAgent
-            $agentResponse = CategorizerAgent::for('categorization_' . $this->userId . '_' . time())->respond($prompt);
+            $agentResponse = CategorizerAgent::for('categorization_'.$this->userId.'_'.time())->respond($prompt);
 
             $response = $agentResponse;
 
             Log::info('FinancialCategorizerJob: Agent response received', [
                 'type' => gettype($response),
                 'is_array' => is_array($response),
-                'content_preview' => is_string($response) ? substr($response, 0, 100) : (is_array($response) ? 'Array keys: ' . implode(', ', array_keys($response)) : 'Object/Other'),
+                'content_preview' => is_string($response) ? substr($response, 0, 100) : (is_array($response) ? 'Array keys: '.implode(', ', array_keys($response)) : 'Object/Other'),
             ]);
 
             // Parse the agent's response
@@ -184,34 +213,83 @@ class FinancialCategorizerJob implements ShouldQueue
 
                 // Dispatch another job to continue categorizing
                 // Add a small delay to avoid overwhelming the system
-                dispatch(new self($this->userId, $this->batchSize, $this->triggerAnalysis))
-                    ->delay(now()->addSeconds(2));
+                // Use a lock to prevent duplicate dispatches
+                $lockKey = "categorizer_dispatch_{$this->userId}";
+                if (! Cache::has($lockKey)) {
+                    Cache::put($lockKey, true, 5); // 5 second lock
+                    dispatch(new self($this->userId, $this->batchSize, $this->triggerAnalysis))
+                        ->delay(now()->addSeconds(2));
+                } else {
+                    Log::info('FinancialCategorizerJob: Dispatch already in progress, skipping', ['user_id' => $this->userId]);
+                }
             } else {
                 // No more records, trigger analysis if requested
+                // But only if analysis doesn't already exist
                 if ($this->triggerAnalysis) {
-                    Log::info('FinancialCategorizerJob: All records categorized. Triggering FirstTimeCostAnalysisJob.', ['user_id' => $this->userId]);
-                    
-                    $totalRecords = FinancialRecord::where('user_id', $this->userId)->count();
-                    $categorizedRecords = FinancialRecord::where('user_id', $this->userId)->whereNotNull('category_id')->count();
-                    
-                    // Broadcast completion
-                    Log::info('✅ Broadcasting ingestion COMPLETED', [
-                        'user_id' => $this->userId,
-                        'total_records' => $totalRecords,
-                        'categorized_records' => $categorizedRecords,
-                    ]);
-                    broadcast(new DataIngestionStatusUpdated(
-                        $this->userId,
-                        'completed',
-                        [
+                    $analysisExists = \App\Models\Automation::where('user_id', $this->userId)
+                        ->where('type', 'first_time_cost_analysis')
+                        ->exists();
+
+                    // Also check if analysis is already running (in cache)
+                    $analysisStatus = Cache::get("analysis_status_{$this->userId}");
+                    $isAnalysisRunning = $analysisStatus && in_array($analysisStatus['status'] ?? '', ['started', 'analyzing']);
+
+                    // Use a lock to prevent duplicate dispatches
+                    $analysisLockKey = "analysis_dispatch_{$this->userId}";
+                    $isAnalysisLocked = Cache::has($analysisLockKey);
+
+                    if (! $analysisExists && ! $isAnalysisRunning && ! $isAnalysisLocked) {
+                        // Set lock for 30 seconds to prevent duplicate dispatches
+                        Cache::put($analysisLockKey, true, 30);
+                        Log::info('FinancialCategorizerJob: All records categorized. Triggering FirstTimeCostAnalysisJob.', ['user_id' => $this->userId]);
+
+                        $totalRecords = FinancialRecord::where('user_id', $this->userId)->count();
+                        $categorizedRecords = FinancialRecord::where('user_id', $this->userId)->whereNotNull('category_id')->count();
+
+                        // Store completion status in cache
+                        Cache::put("ingestion_status_{$this->userId}", [
+                            'status' => 'completed',
                             'message' => 'Data ingestion and categorization complete!',
+                            'data' => [
+                                'total_records' => $totalRecords,
+                                'categorized_records' => $categorizedRecords,
+                            ],
+                            'updated_at' => now()->toDateTimeString(),
+                        ], 3600);
+
+                        // Broadcast completion (optional)
+                        Log::info('✅ Broadcasting ingestion COMPLETED', [
+                            'user_id' => $this->userId,
                             'total_records' => $totalRecords,
                             'categorized_records' => $categorizedRecords,
-                        ]
-                    ));
-                    Log::info('✅ Broadcast sent: ingestion COMPLETED', ['user_id' => $this->userId]);
-                    
-                    FirstTimeCostAnalysisJob::dispatch($this->userId);
+                        ]);
+                        try {
+                            broadcast(new DataIngestionStatusUpdated(
+                                $this->userId,
+                                'completed',
+                                [
+                                    'message' => 'Data ingestion and categorization complete!',
+                                    'total_records' => $totalRecords,
+                                    'categorized_records' => $categorizedRecords,
+                                ]
+                            ));
+                            Log::info('✅ Broadcast sent: ingestion COMPLETED', ['user_id' => $this->userId]);
+                        } catch (\Exception $e) {
+                            Log::warning('Broadcast failed, using polling fallback', ['error' => $e->getMessage()]);
+                        }
+
+                        FirstTimeCostAnalysisJob::dispatch($this->userId);
+                    } else {
+                        if ($analysisExists) {
+                            Log::info('FinancialCategorizerJob: FirstTimeCostAnalysisJob already exists, skipping', ['user_id' => $this->userId]);
+                        }
+                        if ($isAnalysisRunning) {
+                            Log::info('FinancialCategorizerJob: FirstTimeCostAnalysisJob already running, skipping', ['user_id' => $this->userId]);
+                        }
+                        if ($isAnalysisLocked) {
+                            Log::info('FinancialCategorizerJob: FirstTimeCostAnalysisJob dispatch already locked, skipping', ['user_id' => $this->userId]);
+                        }
+                    }
                 }
             }
         } catch (\Exception $e) {

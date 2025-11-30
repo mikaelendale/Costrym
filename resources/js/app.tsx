@@ -6,7 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
-``
+
 // Initialize Echo with Ably
 const initEcho = () => {
     const ablyKey = import.meta.env.VITE_ABLY_PUBLIC_KEY;
@@ -17,14 +17,6 @@ const initEcho = () => {
     }
     
     try {
-        // Get CSRF token from meta tag
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        
-        if (!csrfToken) {
-            console.error('❌ CSRF token not found in meta tag');
-            return;
-        }
-        
         const pusherClient = new Pusher(ablyKey, {
             cluster: 'mt1',
             wsHost: 'realtime-pusher.ably.io',
@@ -32,12 +24,6 @@ const initEcho = () => {
             wssPort: 443,
             disableStats: true,
             authEndpoint: '/broadcasting/auth',
-            auth: {
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                },
-            },
         });
         
         (window as any).Echo = new Echo({
@@ -46,7 +32,6 @@ const initEcho = () => {
         });
         
         console.log('✅ Echo initialized with Ably');
-        console.log('🔑 CSRF Token:', csrfToken.substring(0, 10) + '...');
     } catch (error) {
         console.error('❌ Failed to initialize Echo:', error);
     }

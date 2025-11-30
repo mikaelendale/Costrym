@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { SharedData, type BreadcrumbItem } from '@/types';
-import { Head, usePage, Link } from '@inertiajs/react';
+import { Head, usePage, Link, router } from '@inertiajs/react';
 ('use client');
 
 import WorkflowCards from '@/components/DashBoard/WorkflowCards';
@@ -94,14 +94,10 @@ export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAut
     const handleSubmit = () => {
         if (!prompt.trim()) return;
 
-        setIsLoading(true);
-
-        // Simulate API call
-        console.log('Processing:', prompt);
-        setTimeout(() => {
-            setPrompt('');
-            setIsLoading(false);
-        }, 1500);
+        // Redirect to chat page with the message as URL parameter
+        router.visit(`/chat?message=${encodeURIComponent(prompt)}`, {
+            method: 'get',
+        });
     };
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

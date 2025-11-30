@@ -188,8 +188,8 @@ export default function Register({ referralData }: RegisterPageProps) {
 
                         <div className="text-center text-xs text-muted-foreground">
                            By continuing, you agree to our <TextLink href="/terms">Terms of Service</TextLink> and <TextLink href="/privacy">Privacy Policy</TextLink>.
-                           <br />
-                           You can check the pricing <TextLink href={route('pricing')}>here</TextLink>.
+                           {/* <br /> */}
+                           {/* You can check the pricing <TextLink href={route('pricing')}>here</TextLink>. */}
                         </div>
 
 

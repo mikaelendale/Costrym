@@ -13,9 +13,9 @@ use App\Http\Controllers\Socialite\ProviderCallbackController;
 use App\Http\Controllers\Socialite\ProviderRedirectController;
 use App\Http\Controllers\WorkflowController;
 use App\Jobs\TaskDesignerJob;
-use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -83,6 +83,38 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
             ],
         ]);
     })->name('dashboard');
+
+    // API: Get ingestion and analysis status (for polling)
+    Route::get('api/status/progress', function (Request $request) {
+        $userId = $request->user()->id;
+
+        $ingestionStatus = Cache::get("ingestion_status_{$userId}");
+        $analysisStatus = Cache::get("analysis_status_{$userId}");
+
+        // Auto-clear cache for completed/failed statuses after 10 seconds
+        if ($ingestionStatus && in_array($ingestionStatus['status'] ?? '', ['completed', 'failed'])) {
+            $updatedAt = \Carbon\Carbon::parse($ingestionStatus['updated_at'] ?? now());
+            if ($updatedAt->diffInSeconds(now()) > 10) {
+                // Clear cache after 10 seconds
+                Cache::forget("ingestion_status_{$userId}");
+                $ingestionStatus = null;
+            }
+        }
+
+        if ($analysisStatus && in_array($analysisStatus['status'] ?? '', ['completed', 'failed'])) {
+            $updatedAt = \Carbon\Carbon::parse($analysisStatus['updated_at'] ?? now());
+            if ($updatedAt->diffInSeconds(now()) > 10) {
+                // Clear cache after 10 seconds
+                Cache::forget("analysis_status_{$userId}");
+                $analysisStatus = null;
+            }
+        }
+
+        return response()->json([
+            'ingestion' => $ingestionStatus ?: ['status' => 'idle'],
+            'analysis' => $analysisStatus ?: ['status' => 'idle'],
+        ]);
+    })->name('api.status.progress');
 
     // Subscription Checkout
     Route::get('/subscription-checkout', function (Request $request) {
@@ -154,6 +186,10 @@ Route::middleware(['auth', 'verified', 'onboarding'])->group(function () {
     Route::get('integration-ingestor/integrations', [IntegrationIngestorController::class, 'getAvailableIntegrations'])->name('integration.ingestor.integrations');
     Route::get('integration-ingestor/tools', [IntegrationIngestorController::class, 'getAvailableTools'])->name('integration.ingestor.tools');
     Route::get('integration-ingestor/test/invoices', [IntegrationIngestorController::class, 'testFetchInvoices'])->name('integration.ingestor.test.invoices');
+
+    // Chat routes
+    Route::get('chat', [\App\Http\Controllers\ChatController::class, 'index'])->name('chat');
+    Route::post('chat', [\App\Http\Controllers\ChatController::class, 'chat'])->name('chat.send');
 });
 
 // Onboarding route (accessible without onboarding middleware to avoid redirect loops)
@@ -226,8 +262,8 @@ Route::get('/ai/test', [WorkflowController::class, 'index'])->name('ai.workflow'
 Route::get('/auth/{provider}/redirect', ProviderRedirectController::class)->name('auth.redirect')->middleware(['throttle:5,1']);
 Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name('auth.callback')->middleware(['throttle:5,1']);
 
-require __DIR__ . '/settings.php';
-require __DIR__ . '/auth.php';
+require __DIR__.'/settings.php';
+require __DIR__.'/auth.php';
 
 // Route::middleware(['auth', 'verified', 'onboarding'])->get('/dispatch', function () {
 //     $user = auth()->user();
