@@ -185,9 +185,9 @@ export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAut
                         totalCount={totalAutomations}
                     />
                 </div>
-                <div className="flex flex-col pt-10">
+                {/* <div className="flex flex-col pt-10">
                     <WorkflowCards />
-                </div>
+                </div> */}
 
             </div>
         </AppLayout>
