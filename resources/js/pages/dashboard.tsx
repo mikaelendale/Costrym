@@ -69,25 +69,68 @@ export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAut
         data?: any;
     }>({ status: 'idle' });
 
+    // Poll backend for ingestion + analysis status (cache-based)
     useEffect(() => {
-        if (!auth.user?.id) return;
-        const echo = (window as any).Echo;
-        if (!echo) return;
-        const channel = echo.private(`private-user.${auth.user.id}`);
-        console.log('📡 Subscribed to:', `private-user.${auth.user.id}`);
-        channel.subscribed(() => console.log('✅ Connected!'));
-        channel.listen('.ingestion.status.updated', (e: any) => {
-            console.log('📨 INGESTION:', e.status, '-', e.data?.message);
-            setIngestionStatus({ status: e.status, message: e.data?.message, data: e.data });
-        });
-        channel.listen('.analysis.status.updated', (e: any) => {
-            console.log('🧠 ANALYSIS:', e.status, '-', e.data?.message);
-            setAnalysisStatus({ status: e.status, message: e.data?.message, data: e.data });
-        });
+        if (!auth.user?.id) {
+            return;
+        }
+
+        let pollInterval: number | undefined;
+
+        const pollStatus = async () => {
+            try {
+                const response = await fetch('/api/status/progress', {
+                    method: 'GET',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Ingestion status
+                if (data.ingestion) {
+                    const status = (data.ingestion.status as typeof ingestionStatus.status) ?? 'idle';
+                    setIngestionStatus({
+                        status,
+                        message: data.ingestion.message,
+                        data: data.ingestion.data,
+                    });
+                } else {
+                    setIngestionStatus({ status: 'idle' });
+                }
+
+                // Analysis status (includes 1/8 ... 8/8 steps)
+                if (data.analysis) {
+                    const status = (data.analysis.status as typeof analysisStatus.status) ?? 'idle';
+                    setAnalysisStatus({
+                        status,
+                        message: data.analysis.message,
+                        data: data.analysis.data,
+                    });
+                } else {
+                    setAnalysisStatus({ status: 'idle' });
+                }
+            } catch (error) {
+                // Silent fail; next tick will retry
+                console.warn('Status polling failed', error);
+            }
+        };
+
+        // Initial poll + interval
+        pollStatus();
+        pollInterval = window.setInterval(pollStatus, 2000);
+
         return () => {
-            channel.stopListening('.ingestion.status.updated');
-            channel.stopListening('.analysis.status.updated');
-            echo.leave(`private-user.${auth.user.id}`);
+            if (pollInterval) {
+                window.clearInterval(pollInterval);
+            }
         };
     }, [auth.user?.id]);
 
@@ -173,9 +216,24 @@ export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAut
                             </PromptInputActions>
                         </div>
                     </PromptInput>
-                    
-                    <IngestionStatusCard status={ingestionStatus.status} message={ingestionStatus.message} data={ingestionStatus.data} className="mt-4" />
-                    <AnalysisStatusCard status={analysisStatus.status} message={analysisStatus.message} data={analysisStatus.data} className="mt-4" />
+
+                    {/* Show cards only when there is active or recent progress */}
+                    {ingestionStatus.status !== 'idle' && (
+                        <IngestionStatusCard
+                            status={ingestionStatus.status}
+                            message={ingestionStatus.message}
+                            data={ingestionStatus.data}
+                            className="mt-4"
+                        />
+                    )}
+                    {analysisStatus.status !== 'idle' && (
+                        <AnalysisStatusCard
+                            status={analysisStatus.status}
+                            message={analysisStatus.message}
+                            data={analysisStatus.data}
+                            className="mt-4"
+                        />
+                    )}
                 </div>
 
                 {/* Recent Automations Section */}
