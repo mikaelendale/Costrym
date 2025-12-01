@@ -12,7 +12,7 @@ const initEcho = () => {
     const ablyKey = import.meta.env.VITE_ABLY_PUBLIC_KEY;
     
     if (!ablyKey) {
-        console.error('❌ VITE_ABLY_PUBLIC_KEY not set');
+        // console.error('❌ VITE_ABLY_PUBLIC_KEY not set');
         return;
     }
     
@@ -31,9 +31,9 @@ const initEcho = () => {
             client: pusherClient,
         });
         
-        console.log('✅ Echo initialized with Ably');
+        // console.log('✅ Echo initialized with Ably');
     } catch (error) {
-        console.error('❌ Failed to initialize Echo:', error);
+        // console.error('❌ Failed to initialize Echo:', error);
     }
 };
 

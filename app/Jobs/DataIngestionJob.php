@@ -138,8 +138,19 @@ class DataIngestionJob implements ShouldQueue
             return;
         }
 
+        // Update status to processing while individual ingestion jobs run
+        Cache::put("ingestion_status_{$this->userId}", [
+            'status' => 'processing',
+            'message' => 'Fetching financial data from connected integrations...',
+            'data' => [
+                'is_initial_sync' => $this->isInitialSync,
+                'job_count' => count($ingestionJobs),
+            ],
+            'updated_at' => now()->toDateTimeString(),
+        ], 3600);
+
         // Batch all ingestion jobs together
-        // When ALL complete successfully, dispatch MasterOrchestratorJob
+        // When ALL complete successfully, dispatch categorization
         $userId = $this->userId;
         $isInitialSync = $this->isInitialSync;
 

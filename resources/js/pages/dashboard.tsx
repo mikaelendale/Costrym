@@ -7,7 +7,7 @@ import WorkflowCards from '@/components/DashBoard/WorkflowCards';
 import RecentAutomations from '@/components/DashBoard/RecentAutomations';
 import IngestionStatusCard from '@/components/DashBoard/IngestionStatusCard';
 import AnalysisStatusCard from '@/components/DashBoard/AnalysisStatusCard';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PromptInput, PromptInputAction, PromptInputActions } from '@/components/ui/prompt-input';
 import { Button } from '@/components/ui/button';
 import { PromptInputTextarea } from '@/components/ui/prompt-input';
@@ -69,6 +69,9 @@ export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAut
         data?: any;
     }>({ status: 'idle' });
 
+    // Track whether we've already reloaded after analysis completion
+    const hasReloadedAfterAnalysis = useRef(false);
+
     // Poll backend for ingestion + analysis status (cache-based)
     useEffect(() => {
         if (!auth.user?.id) {
@@ -119,7 +122,7 @@ export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAut
                 }
             } catch (error) {
                 // Silent fail; next tick will retry
-                console.warn('Status polling failed', error);
+                // console.warn('Status polling failed', error);
             }
         };
 
@@ -133,6 +136,24 @@ export default function Dashboard({ pendingTasks, firstTimeAutomation, recentAut
             }
         };
     }, [auth.user?.id]);
+
+    // When analysis is finished, reload dashboard data via Inertia so new results show up
+    useEffect(() => {
+        if (!auth.user?.id) {
+            return;
+        }
+
+        if (analysisStatus.status === 'completed' || analysisStatus.status === 'failed') {
+            if (!hasReloadedAfterAnalysis.current) {
+                hasReloadedAfterAnalysis.current = true;
+
+                router.reload({
+                    only: ['pendingTasks', 'firstTimeAutomation', 'recentAutomations', 'totalAutomations', 'subscription'],
+                    preserveUrl: true,
+                });
+            }
+        }
+    }, [analysisStatus.status, auth.user?.id]);
 
     const handleSubmit = () => {
         if (!prompt.trim()) return;

@@ -204,7 +204,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                     }
                     return false; // Continue polling
                 } catch (error) {
-                    console.error('Failed to check subscription status:', error);
+                    // console.error('Failed to check subscription status:', error);
                     return false;
                 }
             };
@@ -263,7 +263,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
     // Listen for live subscription status updates via Ably
     useEffect(() => {
         if (!auth.user?.id) {
-            console.log('❌ Echo setup skipped: No user ID');
+            // console.log('❌ Echo setup skipped: No user ID');
             return;
         }
 
@@ -272,29 +272,29 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
             // Get Echo instance from window (configured globally in app.tsx)
             const echo = (window as any).Echo;
             if (!echo) {
-                console.warn('⚠️ Echo not ready yet, retrying...');
+                // console.warn('⚠️ Echo not ready yet, retrying...');
                 return false;
             }
 
-            console.log('✅ Setting up Echo listener for user:', auth.user.id);
+            // console.log('✅ Setting up Echo listener for user:', auth.user.id);
             
             const channelName = `private-user.${auth.user.id}`;
-            console.log('📡 Subscribing to channel:', channelName);
+            // console.log('📡 Subscribing to channel:', channelName);
             
             const channel = echo.private(channelName);
 
             // Listen for connection events
             channel.subscribed(() => {
-                console.log('✅ Successfully subscribed to channel:', channelName);
+                // console.log('✅ Successfully subscribed to channel:', channelName);
             });
 
             channel.error((error: any) => {
-                console.error('❌ Channel subscription error:', error);
+                // console.error('❌ Channel subscription error:', error);
             });
 
             // Listen for subscription status updates
             channel.listen('.subscription.status.updated', (data: any) => {
-                console.log('📨 Received subscription update:', data);
+                // console.log('📨 Received subscription update:', data);
                 
                 const subscriptionData = data.subscription || {};
                 
@@ -326,10 +326,10 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                     }
                     
                     // Reload subscription data to sync with backend
-                    console.log('🔄 Reloading subscription data from backend...');
+                    // console.log('🔄 Reloading subscription data from backend...');
                     router.reload({ only: ['subscription', 'customer'] });
                 } else {
-                    console.log('⚠️ Received update but subscription not active yet:', subscriptionData);
+                    // console.log('⚠️ Received update but subscription not active yet:', subscriptionData);
                 }
             });
 
@@ -349,7 +349,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                     retryTimeout = setTimeout(() => {
                         channel = setupEcho();
                         if (!channel) {
-                            console.warn('⚠️ Echo not available. Falling back to polling only.');
+                            // console.warn('⚠️ Echo not available. Falling back to polling only.');
                         }
                     }, 1000);
                 }
@@ -361,7 +361,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                 clearTimeout(retryTimeout);
             }
             if (channel && auth.user?.id) {
-                console.log('🔌 Cleaning up Echo listener for user:', auth.user.id);
+                // console.log('🔌 Cleaning up Echo listener for user:', auth.user.id);
                 const channelName = `private-user.${auth.user.id}`;
                 channel.stopListening('.subscription.status.updated');
                 const echo = (window as any).Echo;
@@ -375,7 +375,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
     // Stop polling when subscription is verified
     useEffect(() => {
         if (isSubscribed && isVerifyingPayment && step === 4) {
-            console.log('✅ Subscription verified via polling!');
+            // console.log('✅ Subscription verified via polling!');
             setIsVerifyingPayment(false);
         }
     }, [isSubscribed, isVerifyingPayment, step]);
@@ -613,7 +613,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                     }
                 })
                 .catch((error) => {
-                    console.error('Failed to fetch estimation:', error);
+                    // console.error('Failed to fetch estimation:', error);
                 })
                 .finally(() => {
                     setIsLoadingEstimation(false);
@@ -920,7 +920,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                 }
                             }
                         } catch (error) {
-                            console.error('Error polling progress:', error);
+                            // console.error('Error polling progress:', error);
                             attempts++;
                             if (attempts < maxAttempts) {
                                 setTimeout(poll, 1000);

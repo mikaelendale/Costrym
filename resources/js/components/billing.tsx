@@ -163,8 +163,7 @@ export default function Billing() {
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-2xl font-bold">{customer.plan}</p>
-                                <p className="text-sm text-muted-foreground">{customer.subscriptionAmount}</p>
+                                <p className="text-2xl font-bold">{customer.plan}</p> 
                             </div>
                             <Badge variant={subscription.states.active ? 'default' : 'secondary'}>
                                 {subscription.hasSubscription ? 'Active' : 'None'}

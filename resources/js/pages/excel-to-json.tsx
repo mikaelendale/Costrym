@@ -11,6 +11,7 @@ interface ExcelToJsonProps {
     errors?: {
         error?: string;
     };
+    [key: string]: unknown;
 }
 
 export default function ExcelToJson() {
@@ -22,9 +23,9 @@ export default function ExcelToJson() {
     // Debug: Log props when they change
     useEffect(() => {
         if (props.json) {
-            console.log('JSON received:', props.json.substring(0, 100) + '...');
-            console.log('Data received:', props.data);
-            console.log('Filename:', props.filename);
+            // console.log('JSON received:', props.json.substring(0, 100) + '...');
+            // console.log('Data received:', props.data);
+            // console.log('Filename:', props.filename);
         }
     }, [props.json, props.data]);
 
@@ -65,12 +66,12 @@ export default function ExcelToJson() {
         const jsonToDownload = props.json || (props.data ? JSON.stringify(props.data, null, 2) : null);
         
         if (!jsonToDownload) {
-            console.error('No JSON data available for download');
+            // console.error('No JSON data available for download');
             toast.error('No JSON data available');
             return;
         }
 
-        console.log('Downloading JSON, size:', jsonToDownload.length);
+        // console.log('Downloading JSON, size:', jsonToDownload.length);
         
         try {
             const blob = new Blob([jsonToDownload], { type: 'application/json' });
@@ -83,9 +84,9 @@ export default function ExcelToJson() {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             toast.success('JSON file downloaded!');
-            console.log('Download triggered successfully');
+            // console.log('Download triggered successfully');
         } catch (error) {
-            console.error('Download error:', error);
+            // console.error('Download error:', error);
             toast.error('Failed to download file');
         }
     };

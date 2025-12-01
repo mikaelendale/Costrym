@@ -66,9 +66,9 @@ class BillingController extends Controller
 
 
         $prices = [
-            'startup_monthly'  => '$' . env('STRIPE_PRICE_STARTER_MONTHLY'),
-            'startup_annual' => '$' . env('STRIPE_PRICE_STARTER_ANNUAL'),
-            'enterprise_annual' => '$' . env('STRIPE_PRICE_ENTERPRISE_ANNUAL'),
+            'startup_monthly'  => '$79.99' ,
+            'startup_annual' => '$960',
+            'enterprise_annual' => '$7,000',
         ];
         return Inertia::render('user/billing-section', [
             'customer' => [

@@ -65,7 +65,7 @@ export default function AIChatPanel({ userName }: { userName?: string }) {
             setAgentActions(null);
             setChatHistory((prev) => [...prev, { sender: 'agent', content: `Echo: ${userPrompt}` }]);
         } catch (error) {
-            console.error('Mock agent failed:', error);
+            // console.error('Mock agent failed:', error);
             setChatHistory((prev) => [...prev, { sender: 'agent', content: 'Something went wrong locally.' }]);
         } finally {
             setIsLoading(false);

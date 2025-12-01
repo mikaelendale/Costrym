@@ -71,7 +71,7 @@ const ConnectServiceModal = ({ open, onClose, title, services = '' }: { open: bo
             window.location.href = data.authUrl;
             setStatuses((prev) => ({ ...prev, [src]: 'success' }));
         } catch (e) {
-            console.error('Connect error', e);
+            // console.error('Connect error', e);
             setStatuses((prev) => ({ ...prev, [src]: 'error' }));
         } finally {
             setConnecting(null);

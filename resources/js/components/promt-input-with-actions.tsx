@@ -21,7 +21,7 @@ function PromptInputWithActions() {
     setIsLoading(true)
 
     // Simulate API call
-    console.log("Processing:", prompt)
+    // console.log("Processing:", prompt)
     setTimeout(() => {
       setPrompt("")
       setIsLoading(false)
