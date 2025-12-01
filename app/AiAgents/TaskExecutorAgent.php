@@ -6,6 +6,8 @@ use App\Models\FinancialRecord;
 use Illuminate\Support\Facades\DB;
 use LarAgent\Agent;
 use LarAgent\Attributes\Tool;
+use App\Traits\LoadsPipedreamTools;
+use Vizra\VizraADK\System\AgentContext;
 
 /**
  * Task Executor Agent
@@ -15,6 +17,8 @@ use LarAgent\Attributes\Tool;
  */
 class TaskExecutorAgent extends Agent
 {
+    use LoadsPipedreamTools;
+
     protected $model = 'gpt-4o-mini';
 
     protected $history = 'in_memory';
@@ -46,6 +50,21 @@ class TaskExecutorAgent extends Agent
     {
         $this->userId = $userId;
         return $this;
+    }
+
+    /**
+     * Before calling the LLM, load Pipedream tools based on user's connected integrations.
+     */
+    public function beforeLlmCall(array $inputMessages, AgentContext $context): array
+    {
+        if ($this->userId !== null) {
+            $context->setState('user_id', $this->userId);
+        }
+
+        // Load only tools for required integrations to keep toolset focused
+        $this->loadPipedreamTools($context, true);
+
+        return $inputMessages;
     }
 
     /**

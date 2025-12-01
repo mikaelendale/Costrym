@@ -1,10 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { GoogleDrive } from 'brand-logos';
 import { ArrowLeft, Sparkles, Zap, FileDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -63,6 +64,9 @@ export default function Show({ automation }: { automation: Automation }) {
         }
     };
 
+    const [executionStatus, setExecutionStatus] = useState<'idle' | 'executing' | 'success' | 'error'>('idle');
+    const [executionMessage, setExecutionMessage] = useState<string | null>(null);
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString('en-US', {
             month: 'short',
@@ -72,6 +76,42 @@ export default function Show({ automation }: { automation: Automation }) {
             minute: '2-digit',
         });
     };
+
+    const handleExecute = () => {
+        if (executionStatus === 'executing') return;
+
+        setExecutionStatus('executing');
+        setExecutionMessage('Executing this automation using your connected integrations...');
+
+        router.post(`/automations/${automation.id}/execute`, {}, {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                // Try to surface any flash message from backend if available
+                const props: any = page.props || {};
+                const flash = props.flash || {};
+                const msg = flash.success || flash.error || 'Execution completed. Check your systems for applied changes.';
+
+                setExecutionStatus(flash.error ? 'error' : 'success');
+                setExecutionMessage(msg);
+            },
+            onError: () => {
+                setExecutionStatus('error');
+                setExecutionMessage('Execution failed. Please ensure you have required integrations connected and try again.');
+            },
+        });
+    };
+
+    // Auto-clear transient status message after a while (but keep last result in UI for a bit)
+    useEffect(() => {
+        if (executionStatus === 'success' || executionStatus === 'error') {
+            const timeout = setTimeout(() => {
+                setExecutionStatus('idle');
+                setExecutionMessage(null);
+            }, 10000);
+
+            return () => clearTimeout(timeout);
+        }
+    }, [executionStatus]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -267,10 +307,20 @@ export default function Show({ automation }: { automation: Automation }) {
                                         <p className="text-sm text-muted-foreground">
                                             Apply the recommendations from this analysis
                                         </p>
-                                        <button className="flex-shrink-0 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
-                                            Execute
+                                        <button
+                                            type="button"
+                                            onClick={handleExecute}
+                                            disabled={executionStatus === 'executing'}
+                                            className="flex-shrink-0 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed"
+                                        >
+                                            {executionStatus === 'executing' ? 'Executing…' : 'Execute'}
                                         </button>
                                     </div>
+                                    {executionMessage && (
+                                        <p className="mt-2 text-xs text-muted-foreground">
+                                            {executionMessage}
+                                        </p>
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>
