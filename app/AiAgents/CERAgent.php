@@ -20,6 +20,10 @@ class CERAgent extends Agent
 
     protected $tools = [
         \App\Tools\CERCalculator::class,
+        \App\Tools\LarAgentQueryFinancialRecordsTool::class,
+        \App\Tools\LarAgentListFinancialCategoriesTool::class,
+        \App\Tools\LarAgentKnowledgeBaseTool::class,
+        \App\Tools\FirecrawlTool::class,
     ];
 
     public function instructions()

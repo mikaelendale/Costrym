@@ -326,9 +326,22 @@ class FirstTimeCostAnalysisJob implements ShouldQueue
 
         $prompt = "Benchmark Data:\n{$benchmarkData}\n\n";
         $prompt .= "Actual Spend:\n".json_encode($actualSpend, JSON_PRETTY_PRINT)."\n\n";
-        $prompt .= 'Calculate cost efficiency ratios and identify high-priority variances.';
+        $prompt .= "**IMPORTANT INSTRUCTIONS:**\n";
+        $prompt .= "1. Call `knowledge_base` to understand company products and business context.\n";
+        $prompt .= "2. Call `query_financial_records` with operation='spending_summary' to get actual spending data.\n";
+        $prompt .= "3. Call `query_financial_records` with operation='category_breakdown' to analyze cost distribution by category.\n";
+        $prompt .= "4. Use this REAL financial data to calculate accurate cost efficiency ratios - DO NOT use placeholder values like \$X.\n";
+        $prompt .= "5. For each category, calculate: CER = Actual Spend / Should-Cost Benchmark.\n";
+        $prompt .= "\n**NOTE:** The tools automatically access the current user's data. You do NOT need to provide user_id.\n\n";
+        $prompt .= 'Calculate cost efficiency ratios and identify high-priority variances using ACTUAL data from the tools.';
 
-        $response = CERAgent::for($sessionId)->respond($prompt);
+        // Bind user_id to container so tools can access it
+        app()->instance('laragent.user_id', $this->userId);
+
+        // Create user message with metadata (laragent pattern)
+        $userMessage = new UserMessage($prompt, ['user_id' => $this->userId]);
+
+        $response = CERAgent::for($sessionId)->message($userMessage)->respond();
 
         return $response;
     }
