@@ -265,13 +265,3 @@ Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
-
-// Route::middleware(['auth', 'verified', 'onboarding'])->get('/dispatch', function () {
-//     $user = auth()->user();
-//     if (! $user) {
-//         abort(403);
-//     }
-//     TaskDesignerJob::dispatch($user->id);
-
-//     return redirect()->route('dashboard')->with('success', 'Task designer job dispatched');
-// })->name('task.designer');

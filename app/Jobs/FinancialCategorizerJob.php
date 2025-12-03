@@ -6,6 +6,7 @@ use App\AiAgents\CategorizerAgent;
 use App\Events\DataIngestionStatusUpdated;
 use App\Models\FinancialRecord;
 use App\Models\User;
+use App\Models\FinancialCategory;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -310,6 +311,15 @@ class FinancialCategorizerJob implements ShouldQueue
     {
         $transactionsJson = json_encode($transactions, JSON_PRETTY_PRINT);
         $count = count($transactions);
+        $categories = FinancialCategory::all();
+
+    $categoriesList = '';
+    foreach ($categories as $category) {
+        $categoriesList .= "- {$category->name} (ID: {$category->id})\n";
+    }
+   Log::info('categories fetched', [
+    'list' => $transactionsJson,
+]);
 
         return <<<PROMPT
 # Batch Transaction Categorization
@@ -326,6 +336,9 @@ You need to categorize {$count} financial transactions into the appropriate expe
 ```json
 {$transactionsJson}
 ```
+
+# Avaliable categories and their respectiveid 
+    {$categoriesList}
 
 ## Important Notes:
 - Use the transaction description as the primary indicator
