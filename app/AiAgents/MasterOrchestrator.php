@@ -13,7 +13,7 @@ use LarAgent\Agent;
  */
 class MasterOrchestrator extends Agent
 {
-    protected $model = 'gpt-4o-mini';
+    protected $model = 'gpt-5.1';
 
     protected $history = 'in_memory';
 

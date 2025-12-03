@@ -10,7 +10,7 @@ use LarAgent\Agent;
 
 class ChatAgent extends Agent
 {
-    protected $model = 'gpt-4o-mini';
+    protected $model = 'gpt-5.1';
 
     protected $history = 'session'; // Use session to persist conversation history
 

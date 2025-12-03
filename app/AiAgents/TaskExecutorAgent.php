@@ -19,7 +19,7 @@ class TaskExecutorAgent extends Agent
 {
     use LoadsPipedreamTools;
 
-    protected $model = 'gpt-4o-mini';
+    protected $model = 'gpt-5.1';
 
     protected $history = 'in_memory';
 

@@ -6,7 +6,7 @@ use LarAgent\Agent;
 
 class OnboardingAgent extends Agent
 {
-    protected $model = 'gpt-4o-mini';
+    protected $model = 'gpt-5.1';
 
     protected $history = 'session'; // Use cache to persist conversation history
 

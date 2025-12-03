@@ -118,14 +118,15 @@ class OnboardingController extends Controller
      * Generates AI-powered value proposition estimation for the user.
      *
      * Creates a personalized estimation based on:
-     * - User's company information from knowledge base
+     * - User's company information from chat understanding (passed from frontend)
+     * - Fallback to knowledge base if not provided
      * - Industry-specific benchmarks
      * - Realistic savings projections
      *
      * The estimation is displayed in step 3 of onboarding to show users
      * the potential value Costrym can provide for their specific business.
      *
-     * @param  Request  $request  HTTP request containing understanding and organized content
+     * @param  Request  $request  HTTP request containing understanding and organized content from chat
      * @return JsonResponse AI-generated value proposition estimation
      */
     public function estimation(Request $request): JsonResponse
@@ -139,30 +140,45 @@ class OnboardingController extends Controller
             $user = $request->user();
             $userId = $user?->id ?? $request->ip();
 
-            // Get user's company information from knowledge base
-            $knowledgeBase = KnowledgeBase::where('user_id', $user?->id)->first();
-            $context = $knowledgeBase?->context ?? [];
+            // Get understanding from request (passed from frontend chat)
+            $understanding = $request->input('understanding', '');
+            $organizedContent = $request->input('organized_content', '');
 
-            // Build prompt with company information
+            Log::info('Estimation request received', [
+                'has_understanding' => !empty($understanding),
+                'has_organized_content' => !empty($organizedContent),
+                'understanding_length' => strlen($understanding),
+                'organized_content_length' => strlen($organizedContent),
+            ]);
+
+            // Fallback to knowledge base if not provided in request
+            if (empty($understanding) && empty($organizedContent)) {
+                $knowledgeBase = KnowledgeBase::where('user_id', $user?->id)->first();
+                $context = $knowledgeBase?->context ?? [];
+                $understanding = $context['understanding'] ?? '';
+                $organizedContent = $context['organized_content'] ?? '';
+            }
+
+            // Build prompt with company information from chat understanding
             $prompt = 'Based on the company information below, provide a concise 2-3 line estimation. ';
             $prompt .= 'First line: What Costrym can specifically save for this business in their industry (be specific with dollar amounts). ';
             $prompt .= 'Second line: How much competitors in their industry are saving with Costrym (provide realistic benchmark numbers). ';
             $prompt .= 'Third line (optional): One key cost optimization opportunity for their business type. ';
             $prompt .= "Be factual, specific, and realistic. No fluff, just numbers and facts. Format as 2-3 short sentences, no markdown.\n\n";
 
-            if (! empty($context['understanding'])) {
-                $prompt .= "Company Understanding:\n".$context['understanding']."\n\n";
+            if (! empty($understanding)) {
+                $prompt .= "Company Understanding from Chat:\n".$understanding."\n\n";
             }
 
-            if (! empty($context['organized_content'])) {
-                $prompt .= "Company Summary:\n".$context['organized_content']."\n\n";
+            if (! empty($organizedContent)) {
+                $prompt .= "Company Summary:\n".$organizedContent."\n\n";
             }
 
-            if (empty($context)) {
+            if (empty($understanding) && empty($organizedContent)) {
                 $prompt .= 'Note: Limited company information available. Provide a general industry-based estimation with typical savings ranges.';
             }
 
-            // Use OnboardingEstimationAgent
+            // Use OnboardingEstimationAgent with context
             $sessionId = 'estimation_'.$userId;
             $agent = OnboardingEstimationAgent::for($sessionId);
 
