@@ -76,6 +76,10 @@ class HandleInertiaRequests extends Middleware
                 'enterprise_annual' => env('STRIPE_PRICE_ENTERPRISE_ANNUAL')
             ],
             
+            'features' => [
+                'coupons_enabled' => env('STRIPE_COUPONS_ENABLED', false),
+            ],
+            
             'customer' => fn () => $request->user() ? [
                 'plan' => $request->user()->plan ?? 'free',
             ] : null,

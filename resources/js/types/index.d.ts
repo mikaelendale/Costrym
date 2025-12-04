@@ -54,6 +54,9 @@ export interface SharedData {
         plan: string;
         subscriptionAmount: string;
     };
+    features?: {
+        coupons_enabled: boolean;
+    };
     ziggy: Config & { location: string };
     sidebarOpen: boolean;
     [key: string]: unknown;

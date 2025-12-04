@@ -72,11 +72,11 @@ const essentialTools: Tool[] = [
 // Additional expense management integrations (shown in modal)
 const additionalAccountingTools: Tool[] = [
     {
-        name: 'Expensify', 
-        appId: 'expensify', 
-        iconUrl: 'https://www.expensify.com/favicon.ico', 
+        name: 'Expensify',
+        appId: 'expensify',
+        iconUrl: 'https://www.expensify.com/favicon.ico',
         requiresPipedream: true,
-        required: false 
+        required: false
     },
 ];
 
@@ -118,10 +118,11 @@ const clearAllOnboardingStorage = (userId: string) => {
 
 
 export default function Onboarding({ session_id, cancelled }: OnboardingProps = {}) {
-    const { auth, subscription, customer } = usePage<SharedData>().props;
+    const { auth, subscription, customer, features } = usePage<SharedData>().props;
     const userId = auth.user?.id?.toString() || '1';
     const isSubscribed = (subscription as any)?.states?.subscribed || false;
     const currentPlan = (customer as any)?.plan || null;
+    const couponsEnabled = features?.coupons_enabled ?? false;
 
     // State management
     const [step, setStep] = useState(() => {
@@ -177,26 +178,26 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
             // User returned from successful Stripe checkout
             toast.success('Payment completed! Verifying subscription...');
             setIsVerifyingPayment(true);
-            
+
             // Reload Inertia props to get fresh subscription data
             router.reload({ only: ['subscription', 'customer'] });
-            
+
             // Poll for subscription verification
             const checkStatus = async () => {
                 try {
                     const response = await fetch(route('onboarding.check-subscription'));
                     const data = await response.json();
-                    
+
                     if (data.success && data.subscribed) {
                         setIsVerifyingPayment(false);
                         if (data.current_plan) {
                             setSelectedPlan(data.current_plan);
                         }
                         toast.success('🎉 Subscription activated! Proceeding to integrations...');
-                        
+
                         // Reload one more time to ensure UI has latest data
                         router.reload({ only: ['subscription', 'customer'] });
-                        
+
                         setTimeout(() => {
                             handleStepChange(5);
                         }, 1500);
@@ -208,18 +209,18 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                     return false;
                 }
             };
-            
+
             // Check immediately
             checkStatus().then((verified) => {
                 if (verified) return;
-                
+
                 // Poll every 2 seconds for up to 30 seconds
                 let attempts = 0;
                 const maxAttempts = 15;
                 const pollInterval = setInterval(async () => {
                     attempts++;
                     const verified = await checkStatus();
-                    
+
                     if (verified || attempts >= maxAttempts) {
                         clearInterval(pollInterval);
                         if (attempts >= maxAttempts && !verified) {
@@ -228,12 +229,12 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                         }
                     }
                 }, 2000);
-                
+
                 // Cleanup
                 return () => clearInterval(pollInterval);
             });
         }
-        
+
         if (cancelled === '1') {
             toast.info('Checkout cancelled. You can select a plan when ready.');
             setSelectedPlan(null);
@@ -248,7 +249,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
             if (isSubscribed && !prevSubscribedRef.current) {
                 setIsVerifyingPayment(false);
                 toast.success('🎉 Subscription activated! Proceeding to integrations...');
-                
+
                 // Auto-proceed to next step (integrations) after payment verification
                 if (step === 4) {
                     setTimeout(() => {
@@ -277,10 +278,10 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
             }
 
             // console.log('✅ Setting up Echo listener for user:', auth.user.id);
-            
+
             const channelName = `private-user.${auth.user.id}`;
             // console.log('📡 Subscribing to channel:', channelName);
-            
+
             const channel = echo.private(channelName);
 
             // Listen for connection events
@@ -295,28 +296,28 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
             // Listen for subscription status updates
             channel.listen('.subscription.status.updated', (data: any) => {
                 // console.log('📨 Received subscription update:', data);
-                
+
                 const subscriptionData = data.subscription || {};
-                
+
                 // Update subscription status from broadcast
                 if (subscriptionData.subscribed && subscriptionData.current_plan) {
                     const newPlan = subscriptionData.current_plan;
-                    
+
                     console.log('✅ Subscription activated:', {
                         plan: newPlan,
                         subscribed: subscriptionData.subscribed,
                         active: subscriptionData.active
                     });
-                    
+
                     // Update local state (will be synced with backend reload)
                     setSelectedPlan(newPlan);
                     setIsVerifyingPayment(false);
                     setIsLoadingCheckout(false);
-                    
+
                     // Show success message
                     if (!isSubscribed) {
                         toast.success('🎉 Subscription activated! Proceeding to integrations...');
-                        
+
                         // Auto-proceed to next step (integrations) after payment verification
                         setTimeout(() => {
                             handleStepChange(5);
@@ -324,7 +325,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                     } else {
                         toast.success('✅ Subscription updated!');
                     }
-                    
+
                     // Reload subscription data to sync with backend
                     // console.log('🔄 Reloading subscription data from backend...');
                     router.reload({ only: ['subscription', 'customer'] });
@@ -430,7 +431,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                     setConnectedApps(appNames);
                 }
             }
-        } catch (error) {}
+        } catch (error) { }
     };
 
     // Initialize Pipedream client
@@ -538,11 +539,11 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
     }, [userId]);
 
     // Persist state to localStorage with user ID
-        useEffect(() => {
-            setStorage('step', step.toString(), userId);
-        }, [step, userId]);
+    useEffect(() => {
+        setStorage('step', step.toString(), userId);
+    }, [step, userId]);
 
-        useEffect(() => {
+    useEffect(() => {
         if (organizedContent) {
             setStorage('organized', organizedContent, userId);
         }
@@ -698,7 +699,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                 if (data.complete) {
                     setIsChatComplete(true);
                     setStorage('chat_complete', 'true', userId);
-                    
+
                     if (data.organized_content) {
                         setOrganizedContent(data.organized_content);
                     }
@@ -734,7 +735,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                 onSuccess: () => {
                     // Clear all onboarding storage data after successful completion
                     clearAllOnboardingStorage(userId);
-                    
+
                     // toast.success('Onboarding completed!');
                 },
                 onError: () => {
@@ -801,7 +802,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
         // Validate file type
         const validExtensions = ['.csv', '.xlsx', '.xls'];
         const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-        
+
         if (!validExtensions.includes(fileExtension)) {
             toast.error('Please upload a CSV or Excel file (.csv, .xlsx, .xls)');
             return;
@@ -850,12 +851,12 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
 
                 // Start polling for progress updates
                 const sessionId = data.session_id;
-                
+
                 // Poll for progress updates
                 const pollProgress = async () => {
                     const maxAttempts = 120; // 2 minutes max (120 * 1 second)
                     let attempts = 0;
-                    
+
                     const poll = async () => {
                         if (attempts >= maxAttempts) {
                             setUploadStatus('error');
@@ -876,12 +877,12 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
 
                             if (statusResponse.ok) {
                                 const statusData = await statusResponse.json();
-                                
+
                                 if (statusData.success && statusData.progress) {
                                     const progress = statusData.progress;
                                     setUploadProgress(progress.progress || 0);
                                     setUploadMessage(progress.message || 'Processing...');
-                                    
+
                                     // Map status to our state
                                     if (progress.status === 'uploading') {
                                         setUploadStatus('uploading');
@@ -895,13 +896,13 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                         setUploadStatus('uploaded');
                                         setUploadProgress(100);
                                         setAnalysisResult(progress.analysis);
-                                        
+
                                         if (progress.analysis?.meets_requirement) {
                                             toast.success('✅ File analyzed! Your company meets the transaction requirements.');
                                         } else {
                                             toast.warning('⚠️ File analyzed. Your company may not meet the minimum transaction requirements ($1000+/month).');
                                         }
-                                        
+
                                         setIsUploading(false);
                                         return; // Stop polling
                                     } else if (progress.status === 'error') {
@@ -911,7 +912,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                         toast.error(progress.message || 'Processing failed');
                                         return; // Stop polling
                                     }
-                                    
+
                                     // Continue polling if not completed
                                     if (progress.status !== 'completed' && progress.status !== 'error') {
                                         attempts++;
@@ -931,10 +932,10 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                             }
                         }
                     };
-                    
+
                     poll();
                 };
-                
+
                 pollProgress();
             } else {
                 throw new Error(data.error || data.message || 'Upload failed');
@@ -1087,11 +1088,10 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                                     className={`flex gap-1.5 sm:gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'} ${ANIMATION_CONFIG.messageEnter}`}
                                                 >
                                                     <div
-                                                        className={`max-w-[85%] rounded-lg px-2.5 py-1.5 text-xs break-words sm:max-w-[80%] sm:px-4 sm:py-2 sm:text-sm ${
-                                                            message.role === 'user'
-                                                                ? 'bg-primary text-primary-foreground'
-                                                                : 'bg-muted text-foreground'
-                                                        }`}
+                                                        className={`max-w-[85%] rounded-lg px-2.5 py-1.5 text-xs break-words sm:max-w-[80%] sm:px-4 sm:py-2 sm:text-sm ${message.role === 'user'
+                                                            ? 'bg-primary text-primary-foreground'
+                                                            : 'bg-muted text-foreground'
+                                                            }`}
                                                     >
                                                         <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
                                                     </div>
@@ -1239,7 +1239,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                     <CaretLeftIcon className="size-3.5 flex-shrink-0 sm:size-4" />
                                     <span className="hidden sm:inline">Back</span>
                                 </Button>
-                                
+
                                 {/* Show skip button after 2 user messages */}
                                 {userMessageCount >= 2 && !isChatComplete && (
                                     <Button
@@ -1253,7 +1253,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                         <CaretRightIcon className="size-3.5 flex-shrink-0 sm:size-4" />
                                     </Button>
                                 )}
-                                
+
                                 <Button
                                     size="sm"
                                     onClick={handleProceedToIntegrations}
@@ -1353,131 +1353,210 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                             </div>
                         </div>
                     ) : (
-                    <div className="mx-auto w-full max-w-6xl space-y-8 px-2 sm:px-4">
-                        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-                            {/* Startup Monthly Plan */}
-                            <div
-                                className={`group relative rounded-xl border bg-primary-foreground p-5 transition-all duration-300 sm:p-6 ${selectedPlan === 'startup-monthly' ? 'scale-105 border-primary shadow-lg shadow-primary/20' : 'border-border hover:shadow-sm'}`}
-                            >
-                                <div className="absolute -top-3 left-4 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-primary ">
-                                    62% OFF First 2 Months
-                                </div>
-                                <div className="space-y-4 pt-4">
-                                    <div>
-                                        <h3 className="text-lg font-normal font-spirax sm:text-3xl">Startup</h3>
-                                        <p className="text-xs text-muted-foreground sm:text-sm">Monthly plan</p>
-                                    </div>
-
-                                    <div className="space-y-2 rounded-lg bg-accent p-3 ">
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-2xl text-muted-foreground line-through opacity-60">$79.99</span>
-                                            <span className="text-3xl font-bold text-primary sm:text-4xl ">$29.99</span>
-                                            <span className="text-sm text-muted-foreground">/mo</span>
+                        <div className="mx-auto w-full max-w-6xl space-y-8 px-2 sm:px-4">
+                            <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+                                {/* Startup Monthly Plan */}
+                                <div
+                                    className={`group relative rounded-xl border bg-primary-foreground p-5 transition-all duration-300 sm:p-6 ${selectedPlan === 'startup-monthly' ? 'ring-2 ring-primary-foreground border scale-105 shadow-primary/20' : 'border-border hover:shadow-sm'}`}
+                                >
+                                    {couponsEnabled && (
+                                        <div className="absolute -top-3 left-4 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-primary ">
+                                            62% OFF First 2 Months
                                         </div>
-                                        <p className="text-xs font-bold text-primary">Then $79.99/mo • Limited time offer</p>
-                                    </div>
-
-                                    <ul className="space-y-2.5 text-xs sm:text-sm">
-                                        <li className="flex items-start gap-2">
-                                            <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                            <span>Save costs from day one—guaranteed</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                            <span>If we don’t save you at least $100 in your first month, you aren’t charged for that month</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                            <span>Right for companies with $1,000–$50,000/month in expenses</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                            <span>No monthly subscription—only pay for months we deliver real savings</span>
-                                        </li>
-                                    </ul>
-
-                                    <Button
-                                        className="mt-4 w-full"
-                                        variant={selectedPlan === 'startup-monthly' ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => handlePlanSelect('startup-monthly')}
-                                        disabled={
-                                            isLoadingCheckout || 
-                                            subscriptionStatus?.subscribed
-                                        }
-                                    >
-                                        {isLoadingCheckout && selectedPlan === 'startup-monthly' ? (
-                                            <>
-                                                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                                                Loading...
-                                            </>
-                                        ) : subscriptionStatus?.subscribed && subscriptionStatus?.current_plan === 'startup-monthly' ? (
-                                            'Current Plan'
-                                        ) : selectedPlan === 'startup-monthly' ? (
-                                            'Selected'
-                                        ) : (
-                                            'Select'
-                                        )}
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {/* Startup Annual Plan */}
-                            <div
-                                className={`group relative rounded-xl border bg-primary-foreground p-5 transition-all duration-300 sm:p-6 ${selectedPlan === 'startup-annual' ? 'scale-105 border-primary shadow-lg shadow-primary/20' : 'border-border hover:shadow-sm'}`}
-                            >
-                                <div className="absolute -top-3 left-4 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-primary ">
-                                    3 Months Discount
-                                </div>
-                                <div className="space-y-4 pt-4">
-                                    <div>
-                                        <h3 className="text-lg font-normal font-spirax sm:text-3xl">Startup</h3>
-                                        <p className="text-xs text-muted-foreground sm:text-sm">Annual plan</p>
-                                    </div>
-
-                                    <div className="space-y-2 rounded-lg bg-accent p-3 ">
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-2xl text-muted-foreground line-through opacity-60">$960</span>
-                                            <span className="text-3xl font-bold text-primary sm:text-4xl ">$500</span>
-                                            <span className="text-sm text-muted-foreground">/yr</span>
+                                    )}
+                                    <div className={`space-y-4 ${couponsEnabled ? 'pt-4' : ''}`}>
+                                        <div>
+                                            <h3 className="text-lg font-normal font-spirax sm:text-3xl">Startup</h3>
+                                            <p className="text-xs text-muted-foreground sm:text-sm">Monthly plan</p>
                                         </div>
-                                        <p className="text-xs font-bold text-primary">Save 52% vs monthly • Best Value</p>
-                                    </div>
 
-                                    <ul className="space-y-2.5 text-xs sm:text-sm">
-                                        <li className="flex items-start gap-2">
-                                            <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                            <span>All features included in the Monthly plan</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                            <span>3 months free—our best value plan</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                            <span>Quarterly strategy sessions with a human cost expert (over $800M in savings delivered across industries)</span>
-                                        </li>
-                                    </ul>
+                                        <div className="space-y-2 rounded-lg bg-primary-foreground border ring-3 ring-background p-3 ">
+                                            {couponsEnabled ? (
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-2xl text-muted-foreground line-through opacity-60">$79.99</span>
+                                                    <span className="text-3xl font-bold text-primary sm:text-4xl ">$29.99</span>
+                                                    <span className="text-sm text-muted-foreground">/mo</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-3xl font-bold text-primary sm:text-4xl ">$79.99</span>
+                                                    <span className="text-sm text-muted-foreground">/mo</span>
+                                                </div>
+                                            )}
+                                            <p className="text-xs font-normal text-primary">Popular</p>
+                                        </div>
 
-                                    <div className="absolute inset-x-0 bottom-0 left-0 p-5">
+                                        <ul className="space-y-2.5 text-xs sm:text-sm">
+                                            <li className="flex items-start gap-2">
+                                                <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
+                                                <span>Save costs from day one—guaranteed</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
+                                                <span>If we don’t save you at least $100 in your first month, you aren’t charged for that month</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
+                                                <span>Right for companies with $1,000–$50,000/month in expenses</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
+                                                <span>No monthly subscription—only pay for months we deliver real savings</span>
+                                            </li>
+                                        </ul>
+
                                         <Button
-                                            className="w-full"
-                                            variant={selectedPlan === 'startup-annual' ? 'default' : 'outline'}
+                                            className="mt-4 w-full"
+                                            variant={selectedPlan === 'startup-monthly' ? 'default' : 'default'}
                                             size="sm"
-                                            onClick={() => handlePlanSelect('startup-annual')}
+                                            onClick={() => handlePlanSelect('startup-monthly')}
                                             disabled={
-                                                isLoadingCheckout || 
+                                                isLoadingCheckout ||
                                                 subscriptionStatus?.subscribed
                                             }
                                         >
-                                            {isLoadingCheckout && selectedPlan === 'startup-annual' ? (
+                                            {isLoadingCheckout && selectedPlan === 'startup-monthly' ? (
                                                 <>
                                                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                                                     Loading...
                                                 </>
-                                            ) : subscriptionStatus?.subscribed && subscriptionStatus?.current_plan === 'startup-annual' ? (
+                                            ) : subscriptionStatus?.subscribed && subscriptionStatus?.current_plan === 'startup-monthly' ? (
                                                 'Current Plan'
-                                            ) : selectedPlan === 'startup-annual' ? (
+                                            ) : selectedPlan === 'startup-monthly' ? (
+                                                'Selected'
+                                            ) : (
+                                                'Select'
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* Startup Annual Plan */}
+                                <div
+                                    className={`group relative rounded-xl border bg-primary-foreground p-5 transition-all duration-300 sm:p-6 ${selectedPlan === 'startup-annual' ? 'ring-2 ring-primary-foreground border scale-105 shadow-primary/20' : 'border-border hover:shadow-sm'}`}
+                                >
+                                    <div className="space-y-4 pt-4">
+                                        <div>
+                                            <h3 className="text-lg font-normal font-spirax sm:text-3xl">Startup</h3>
+                                            <p className="text-xs text-muted-foreground sm:text-sm">Annual plan</p>
+                                        </div>
+
+                                        <div className="space-y-2 rounded-lg bg-primary-foreground border ring-3 ring-background p-3 ">
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-2xl text-muted-foreground line-through opacity-60">$960</span>
+                                                <span className="text-3xl font-bold text-primary sm:text-4xl ">$699</span>
+                                                <span className="text-sm text-muted-foreground">/yr</span>
+                                            </div>
+                                            <p className="text-xs font-normal text-primary">Save 47% • Best Value</p>
+                                        </div>
+
+                                        <ul className="space-y-2.5 text-xs sm:text-sm">
+                                            <li className="flex items-start gap-2">
+                                                <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
+                                                <span>All features included in the Monthly plan</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
+                                                <span>3 months free—our best value plan</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
+                                                <span>Quarterly strategy sessions with a human cost expert (over $800M in savings delivered across industries)</span>
+                                            </li>
+                                        </ul>
+
+                                        <div className="absolute inset-x-0 bottom-0 left-0 p-5">
+                                            <Button
+                                                className="w-full"
+                                                variant={selectedPlan === 'startup-annual' ? 'default' : 'default'}
+                                                size="sm"
+                                                onClick={() => handlePlanSelect('startup-annual')}
+                                                disabled={
+                                                    isLoadingCheckout ||
+                                                    subscriptionStatus?.subscribed
+                                                }
+                                            >
+                                                {isLoadingCheckout && selectedPlan === 'startup-annual' ? (
+                                                    <>
+                                                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                                        Loading...
+                                                    </>
+                                                ) : subscriptionStatus?.subscribed && subscriptionStatus?.current_plan === 'startup-annual' ? (
+                                                    'Current Plan'
+                                                ) : selectedPlan === 'startup-annual' ? (
+                                                    'Selected'
+                                                ) : (
+                                                    'Select'
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Enterprise Annual Plan */}
+                                <div
+                                    className={`group relative rounded-xl border bg-primary-foreground p-5 transition-all duration-300 sm:p-6 ${selectedPlan === 'enterprise-annual' ? 'ring-2 ring-primary-foreground border scale-105 shadow-primary/20' : 'border-border hover:shadow-sm'}`}
+                                >
+                                    <div className="space-y-4 pt-4">
+                                        <div>
+                                            <h3 className="text-lg font-normal font-spirax sm:text-3xl">Enterprise</h3>
+                                            <p className="text-xs text-muted-foreground sm:text-sm">Annual plan</p>
+                                        </div>
+
+                                        <div className="space-y-2 rounded-lg bg-primary-foreground border ring-3 ring-background p-3 ">
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-2xl text-muted-foreground line-through opacity-60">$7,000</span>
+                                                <span className="text-3xl font-bold text-primary sm:text-4xl ">$3,999</span>
+                                                <span className="text-sm text-muted-foreground">/yr</span>
+                                            </div>
+                                            <p className="text-xs font-normal text-primary">Save $3,001/year • Most Popular</p>
+                                        </div>
+
+                                        <ul className="space-y-2.5 text-xs sm:text-sm">
+                                            <li className="flex items-start gap-2">
+                                                <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
+                                                <span>
+                                                    Begin saving thousands from day one — guaranteed.
+                                                </span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
+                                                <span>
+                                                    Receive monthly cost audits led by seasoned experts.
+                                                </span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
+                                                <span>
+                                                    Unlock expected savings of <span className="font-semibold">$1,000–$10,000</span> every month.
+                                                </span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
+                                                <span>
+                                                    Ideal for companies with $50,000+ in monthly expenses.
+                                                </span>
+                                            </li>
+                                        </ul>
+
+                                        <Button
+                                            className="mt-4 w-full"
+                                            variant={selectedPlan === 'enterprise-annual' ? 'default' : 'default'}
+                                            size="sm"
+                                            onClick={() => handlePlanSelect('enterprise-annual')}
+                                            disabled={
+                                                isLoadingCheckout ||
+                                                subscriptionStatus?.subscribed
+                                            }
+                                        >
+                                            {isLoadingCheckout && selectedPlan === 'enterprise-annual' ? (
+                                                <>
+                                                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                                    Loading...
+                                                </>
+                                            ) : subscriptionStatus?.subscribed && subscriptionStatus?.current_plan === 'enterprise-annual' ? (
+                                                'Current Plan'
+                                            ) : selectedPlan === 'enterprise-annual' ? (
                                                 'Selected'
                                             ) : (
                                                 'Select'
@@ -1487,122 +1566,40 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                 </div>
                             </div>
 
-                            {/* Enterprise Annual Plan */}
-                            <div
-                                    className={`group relative rounded-xl border bg-primary-foreground p-5 transition-all duration-300 sm:p-6 ${selectedPlan === 'enterprise-annual' ? 'scale-105 border-primary shadow-lg shadow-primary/20' : 'border-border hover:shadow-sm'}`}
-                            >
-                                {selectedPlan === 'enterprise-annual' && (
-                                    <div className="absolute -top-3 right-4 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-primary ">
-                                        SAVE 43% NOW
-                                    </div>
-                                )}
-                                {!selectedPlan && (
-                                    <div className="absolute -top-3 right-4 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-primary ">
-                                        SAVE 43%
-                                    </div>
-                                )}
-                                <div className="space-y-4 pt-4">
-                                    <div>
-                                        <h3 className="text-lg font-normal font-spirax sm:text-3xl">Enterprise</h3>
-                                        <p className="text-xs text-muted-foreground sm:text-sm">Annual plan</p>
-                                    </div>
-
-                                    <div className="space-y-2 rounded-lg bg-accent p-3 ">
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-2xl text-muted-foreground line-through opacity-60">$7,000</span>
-                                            <span className="text-3xl font-bold text-primary sm:text-4xl ">$3,999</span>
-                                            <span className="text-sm text-muted-foreground">/yr</span>
-                                        </div>
-                                        <p className="text-xs font-bold text-primary">Save $3,001/year • Most Popular</p>
-                                    </div>
-
-                                    <ul className="space-y-2.5 text-xs sm:text-sm">
-                                        <li className="flex items-start gap-2">
-                                            <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                            <span>
-                                                Begin saving thousands from day one — guaranteed.
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                            <span>
-                                                Receive monthly cost audits led by seasoned experts.
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                            <span>
-                                                Unlock expected savings of <span className="font-semibold">$1,000–$10,000</span> every month.
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <CheckIcon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
-                                            <span>
-                                                Ideal for companies with $50,000+ in monthly expenses.
-                                            </span>
-                                        </li>
-                                    </ul>
-
-                                    <Button
-                                        className="mt-4 w-full"
-                                        variant={selectedPlan === 'enterprise-annual' ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => handlePlanSelect('enterprise-annual')}
-                                        disabled={
-                                            isLoadingCheckout || 
-                                            subscriptionStatus?.subscribed
-                                        }
-                                    >
-                                        {isLoadingCheckout && selectedPlan === 'enterprise-annual' ? (
-                                            <>
-                                                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                                                Loading...
-                                            </>
-                                        ) : subscriptionStatus?.subscribed && subscriptionStatus?.current_plan === 'enterprise-annual' ? (
-                                            'Current Plan'
-                                        ) : selectedPlan === 'enterprise-annual' ? (
-                                            'Selected'
-                                        ) : (
-                                            'Select'
-                                        )}
-                                    </Button>
-                                </div>
-                            </div>
-                        </div> 
-
-                        {/* Navigation */}
-                        <div className="flex w-full justify-between gap-2 pt-4 sm:gap-3">
-                            <Button variant="ghost" size="sm" onClick={handleBack} className="flex-1 sm:flex-none">
-                                <CaretLeftIcon className="size-4" />
-                                <span className="hidden sm:inline">Back</span>
-                            </Button>
-                            {isSubscribed ? (
-                                <Button 
-                                    size="sm" 
-                                    onClick={() => handleStepChange(5)} 
-                                    variant="default" 
-                                    className="flex-1 sm:flex-none"
-                                >
-                                    <span className="hidden sm:inline">Continue to Integrations</span>
-                                    <span className="sm:hidden">Continue</span>
-                                    <CaretRightIcon className="size-4" />
+                            {/* Navigation */}
+                            <div className="flex w-full justify-between gap-2 pt-4 sm:gap-3">
+                                <Button variant="ghost" size="sm" onClick={handleBack} className="flex-1 sm:flex-none">
+                                    <CaretLeftIcon className="size-4" />
+                                    <span className="hidden sm:inline">Back</span>
                                 </Button>
-                            ) : (
-                                <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
-                                    {isVerifyingPayment ? (
-                                        <div className="flex items-center gap-2">
-                                            <LoaderCircle className="h-4 w-4 animate-spin" />
-                                            <span>Verifying payment...</span>
-                                        </div>
-                                    ) : selectedPlan ? (
-                                        'Please complete payment to continue'
-                                    ) : (
-                                        'Please select a plan to continue'
-                                    )}
-                                </div>
-                            )}
+                                {isSubscribed ? (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => handleStepChange(5)}
+                                        variant="default"
+                                        className="flex-1 sm:flex-none"
+                                    >
+                                        <span className="hidden sm:inline">Continue to Integrations</span>
+                                        <span className="sm:hidden">Continue</span>
+                                        <CaretRightIcon className="size-4" />
+                                    </Button>
+                                ) : (
+                                    <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
+                                        {isVerifyingPayment ? (
+                                            <div className="flex items-center gap-2">
+                                                <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                <span>Verifying payment...</span>
+                                            </div>
+                                        ) : selectedPlan ? (
+                                            'Please complete payment to continue'
+                                        ) : (
+                                            'Please select a plan to continue'
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
-                    </div>
                     )}
                 </AuthSimpleLayout>
             )}
@@ -1633,11 +1630,10 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                             <Button
                                                 key={tool.name}
                                                 variant={isConnected ? 'default' : 'outline'}
-                                                className={`relative flex items-center gap-2 px-3 py-2 transition-all duration-200 hover:bg-accent hover:shadow-sm active:scale-95 sm:px-4 ${
-                                                    tool.required && !isConnected
-                                                        ? 'border-2 border-primary/50 bg-primary/5'
-                                                        : ''
-                                                }`}
+                                                className={`relative flex items-center gap-2 px-3 py-2 transition-all duration-200 hover:bg-accent hover:shadow-sm active:scale-95 sm:px-4 ${tool.required && !isConnected
+                                                    ? 'border-2 border-primary/50 bg-primary/5'
+                                                    : ''
+                                                    }`}
                                                 onClick={() => handleToolClick(tool)}
                                                 disabled={isConnecting || isConnected || !isClientReady || isFetchingToken}
                                             >
@@ -1673,7 +1669,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                         <span className="line-clamp-1 text-xs font-medium sm:text-sm">More...</span>
                                     </Button>
                                 </div>
-                                <div className="relative"> 
+                                <div className="relative">
                                     <div className="relative flex justify-center text-xs uppercase">
                                         <span className=" px-2 text-muted-foreground">Or Upload Financial Data</span>
                                     </div>
@@ -1687,7 +1683,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                         <div className="space-y-1">
                                             <h3 className="text-sm font-semibold">Upload Financial Data</h3>
                                             <p className="text-xs text-muted-foreground">
-                                                Upload your Excel or CSV file with financial data. Our team will review and approve it.
+                                                Upload your Excel or CSV file with financial data. Our agent will review and approve it.
                                             </p>
                                         </div>
                                         <div className="flex flex-col items-center gap-2 sm:flex-row">
@@ -1733,7 +1729,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                                 </span>
                                             )}
                                         </div>
-                                        
+
                                         {/* Progress Bar */}
                                         {isUploading && uploadProgress > 0 && (
                                             <div className="w-full space-y-1">
@@ -1749,28 +1745,25 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                                 </div>
                                             </div>
                                         )}
-                                        
+
                                         {/* Analysis Results */}
                                         {uploadStatus === 'uploaded' && analysisResult && (
-                                            <div className={`mt-2 rounded-lg border p-3 ${
-                                                analysisResult.meets_requirement 
-                                                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
-                                                    : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-                                            }`}>
-                                                <p className={`text-xs font-medium ${
-                                                    analysisResult.meets_requirement 
-                                                        ? 'text-green-800 dark:text-green-200' 
-                                                        : 'text-amber-800 dark:text-amber-200'
+                                            <div className={`mt-2 rounded-lg border p-3 ${analysisResult.meets_requirement
+                                                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                                                : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
                                                 }`}>
-                                                    {analysisResult.meets_requirement 
-                                                        ? '✓ Analysis Complete - Requirements Met' 
+                                                <p className={`text-xs font-medium ${analysisResult.meets_requirement
+                                                    ? 'text-green-800 dark:text-green-200'
+                                                    : 'text-amber-800 dark:text-amber-200'
+                                                    }`}>
+                                                    {analysisResult.meets_requirement
+                                                        ? '✓ Analysis Complete - Requirements Met'
                                                         : '⚠ Analysis Complete - Requirements Not Met'}
                                                 </p>
-                                                <p className={`mt-1 text-xs ${
-                                                    analysisResult.meets_requirement 
-                                                        ? 'text-green-700 dark:text-green-300' 
-                                                        : 'text-amber-700 dark:text-amber-300'
-                                                }`}>
+                                                <p className={`mt-1 text-xs ${analysisResult.meets_requirement
+                                                    ? 'text-green-700 dark:text-green-300'
+                                                    : 'text-amber-700 dark:text-amber-300'
+                                                    }`}>
                                                     {analysisResult.analysis_summary || 'Your financial data has been analyzed.'}
                                                 </p>
                                                 {analysisResult.monthly_transaction_amount && (
@@ -1780,7 +1773,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                                 )}
                                             </div>
                                         )}
-                                        
+
                                         {/* Error State */}
                                         {uploadStatus === 'error' && (
                                             <div className="mt-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
@@ -1807,7 +1800,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                         const hasEssentialIntegration = essentialTools.some((tool) => connectedApps.has(tool.appId.toLowerCase()));
                                         const fileMeetsRequirement = uploadStatus === 'uploaded' && analysisResult?.meets_requirement === true;
                                         const canProceed = hasEssentialIntegration || fileMeetsRequirement;
-                                        
+
                                         if (canProceed) {
                                             return (
                                                 <p className="mt-1 text-xs text-green-600 dark:text-green-400">
@@ -1829,7 +1822,16 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                         }
                                     })()}
                                 </div>
-                            )}
+                            )}<div className="justify-center items-center text-center">
+                                <p className="font-normal text-sm">
+                                    Stuck setting things up? Let’s hop on a quick &nbsp;
+                                    <a className="underline text-blue-500 underline-offset-2" href="https://calendly.com/alazarsolomon894/30min">
+                                        call
+                                    </a>
+                                    &nbsp;and sort it out together.
+                                </p>
+                            </div>
+
 
                             {/* Navigation */}
                             <div className="flex w-full justify-between gap-2 pt-4 sm:gap-3">
@@ -1854,7 +1856,7 @@ export default function Onboarding({ session_id, cancelled }: OnboardingProps = 
                                     <span className="sm:hidden">Continue</span>
                                     <CaretRightIcon className="size-4" />
                                 </Button>
-                            </div> 
+                            </div>
                         </div>
                     </AuthSimpleLayout>
                 )}

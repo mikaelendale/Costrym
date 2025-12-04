@@ -173,13 +173,7 @@ export default function Billing() {
                 </Card>
 
                 {/* Payment Method */}
-                <Card>
-                    <CardHeader className="pb-4">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <CreditCard className="h-4 w-4" />
-                            Payment Method
-                        </CardTitle>
-                    </CardHeader>
+                <Card> 
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">

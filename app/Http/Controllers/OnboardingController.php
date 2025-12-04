@@ -249,17 +249,12 @@ class OnboardingController extends Controller
             $user->save();
 
             // Create Stripe checkout session
+
             $checkout = $user->newSubscription('default', $priceId);
             
-            // Apply coupon if enabled
-            if (env('STRIPE_COUPONS_ENABLED', false)) {
-                $couponMap = [
-                    'startup-monthly' => env('STRIPE_COUPON_STARTER_MONTHLY'),
-                    'startup-annual' => env('STRIPE_COUPON_STARTER_ANNUAL'),
-                    'enterprise-annual' => env('STRIPE_COUPON_ENTERPRISE_ANNUAL'),
-                ];
-                
-                $couponCode = $couponMap[$plan] ?? null;
+            // Apply coupon only for startup-monthly plan if enabled
+            if (env('STRIPE_COUPONS_ENABLED', false) && $plan === 'startup-monthly') {
+                $couponCode = env('STRIPE_COUPON_STARTER_MONTHLY');
                 if ($couponCode) {
                     $checkout->withCoupon($couponCode);
                 }

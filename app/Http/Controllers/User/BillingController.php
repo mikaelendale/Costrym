@@ -67,8 +67,8 @@ class BillingController extends Controller
 
         $prices = [
             'startup_monthly'  => '$79.99' ,
-            'startup_annual' => '$960',
-            'enterprise_annual' => '$7,000',
+            'startup_annual' => '$699',
+            'enterprise_annual' => '$3,999',
         ];
         return Inertia::render('user/billing-section', [
             'customer' => [

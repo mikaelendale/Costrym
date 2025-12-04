@@ -40,7 +40,6 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                         {({ processing, recentlySuccessful, errors }) => (
                             <>
                                 <div className="grid gap-2">
-                                    {auth.user.id}
                                     <Label htmlFor="name">Name</Label>
 
                                     <Input
