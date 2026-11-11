@@ -55,7 +55,7 @@ class HandleInertiaRequests extends Middleware
                 'can' => $request->user()?->getAllPermissions()->pluck('name'),
                 'roles' => $request->user()?->getRoleNames(),
                 'notifications' => $request->user()?->notifications()->limit(3)->get(),
-            ],
+            ],onb
             
             // ============================================================================
             // SUBSCRIPTION DATA (Stripe)
